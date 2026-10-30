@@ -729,6 +729,21 @@ function renderResultCard(data) {
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.domElement.style.touchAction = 'none';
         root.appendChild(renderer.domElement);
+        const navigation = $('sceneNavigation'), interactionButton = $('sceneInteraction');
+        let mobileNavigation = false, interactionEnabled = false, portraitViewport = false;
+        let previousRenderWidth = 0, previousRenderHeight = 0, sceneVisible = true, scrollingUntil = 0;
+        function updateInteractionMode() {
+          renderer.domElement.style.touchAction = mobileNavigation && !interactionEnabled ? 'pan-x pan-y pinch-zoom' : 'none';
+          interactionButton.setAttribute('aria-pressed', String(interactionEnabled));
+          interactionButton.textContent = interactionEnabled ? 'Explorar / rolar' : 'Mover ingredientes';
+          $('sceneNavigationHint').textContent = interactionEnabled
+            ? 'Arraste os ingredientes. Nas bordas, a cozinha acompanha o movimento. Use “Explorar / rolar” para navegar.'
+            : 'Deslize para os lados para explorar a cozinha e para cima para rolar a página.';
+        }
+        interactionButton.addEventListener('click', () => { interactionEnabled = !interactionEnabled; updateInteractionMode() });
+        // Native scrolling reuses the canvas image; avoid competing with the compositor.
+        document.addEventListener('scroll', () => { scrollingUntil = performance.now() + 140 }, { passive: true, capture: true });
+        if (window.IntersectionObserver) new IntersectionObserver(entries => { sceneVisible = entries[0].isIntersecting }).observe(root);
 
         let scene = new THREE.Scene();
         scene.background = new THREE.Color(0x233629);
@@ -1741,8 +1756,10 @@ function renderResultCard(data) {
           return o ? o.userData.drag : null
         }
         let cnv = renderer.domElement;
+        let dragPointer = null;
         cnv.style.cursor = 'none';
         cnv.addEventListener('pointerdown', e => {
+          if (mobileNavigation && !interactionEnabled) return;
           cursorOn = true;
           if (drag) return; toNdc(e); ray.setFromCamera(ndc, camera);
           let dispHit = ray.intersectObjects([dispScreen, dispBezel], true);
@@ -1753,12 +1770,14 @@ function renderResultCard(data) {
           if (wh.length) { waterOn = !waterOn; return }
           if (phase === 'dough' && doughHit.visible && ray.intersectObject(doughHit, false).length) { startKnead(); return }
           let d = pickAt(); if (!d) return;
+          dragPointer = { clientX: e.clientX, clientY: e.clientY };
           drag = d; d.lift = d.o.position.y + .5; plane.constant = -d.lift;
           ray.setFromCamera(ndc, camera); ray.ray.intersectPlane(plane, hit3);
           d.off = { x: d.o.position.x - hit3.x, z: d.o.position.z - hit3.z };
           d.o.rotation.z = 0; cnv.setPointerCapture(e.pointerId)
         });
         cnv.addEventListener('pointermove', e => {
+          if (mobileNavigation && !interactionEnabled) return;
           toNdc(e); cursorOn = true;
           if (!drag) {
             ray.setFromCamera(ndc, camera);
@@ -1767,6 +1786,11 @@ function renderResultCard(data) {
             let overDough = phase === 'dough' && doughHit.visible && ray.intersectObject(doughHit, false).length > 0;
             let h = pickAt(); hovered = h; handHot = !!h || overDough; return
           }
+          dragPointer = { clientX: e.clientX, clientY: e.clientY };
+          moveDraggedObject();
+        });
+        function moveDraggedObject() {
+          toNdc(dragPointer);
           ray.setFromCamera(ndc, camera);
           if (!ray.ray.intersectPlane(plane, hit3)) return;
           let nx = THREE.MathUtils.clamp(hit3.x + drag.off.x, -6.5, 6.5),
@@ -1777,8 +1801,9 @@ function renderResultCard(data) {
             let distOven = Math.hypot(nx - 4.7, nz - (-3.0));
             if (distOven < 2.6 && doorTarget < .5) doorTarget = 1
           }
-        });
+        }
         function endDrag(e) {
+          dragPointer = null;
           if (e && cnv.hasPointerCapture(e.pointerId)) cnv.releasePointerCapture(e.pointerId);
           if (!drag) return; let d = drag; drag = null; hovered = null; d.pinT = 1.2;
           let x = d.o.position.x, z = d.o.position.z;
@@ -1837,6 +1862,7 @@ function renderResultCard(data) {
         }
         cnv.addEventListener('pointerup', endDrag);
         cnv.addEventListener('pointercancel', e => {
+          dragPointer = null;
           if (drag) { drag.back = true; drag.o.rotation.z = 0; drag = null }
           hovered = null; cursorOn = false;
           if (cnv.hasPointerCapture(e.pointerId)) cnv.releasePointerCapture(e.pointerId);
@@ -1859,6 +1885,15 @@ function renderResultCard(data) {
           if (mobileQuality && now - last < 1000 / 30) return;
           const elapsed = Math.max(0, (now - last) / 1000);
           let dt = Math.min(.05, elapsed); last = now; T += dt;
+          if (drag && dragPointer && portraitViewport) {
+            const bounds = root.getBoundingClientRect(), edge = 48;
+            const direction = dragPointer.clientX < bounds.left + edge ? -1 : dragPointer.clientX > bounds.right - edge ? 1 : 0;
+            if (direction) {
+              const before = root.scrollLeft;
+              root.scrollLeft += direction * 260 * dt;
+              if (root.scrollLeft !== before) moveDraggedObject();
+            }
+          }
           if (kneadT <= 0) updateCursorHand(dt, now);
           tools.forEach(d => {
             if (drag === d) return;
@@ -2143,19 +2178,32 @@ function renderResultCard(data) {
           camera.position.x += (camBase.x + (mobileQuality ? 0 : ndc.x * .4) - camera.position.x) * Math.min(1, dt * 3);
           camera.position.y += (camBase.y + (mobileQuality ? 0 : ndc.y * .22) - camera.position.y) * Math.min(1, dt * 3);
           camera.lookAt(0, .55, 0);
-          renderer.render(scene, camera)
+          if (sceneVisible && (drag || now >= scrollingUntil)) renderer.render(scene, camera)
         }
         requestAnimationFrame(t => { last = t; frame(t) });
 
         function resize() {
           if (!root.clientWidth || !root.clientHeight) return;
-          camera.aspect = root.clientWidth / root.clientHeight;
+          const wasPortrait = portraitViewport;
+          const nextMobile = matchMedia('(pointer: coarse), (max-width: 900px)').matches;
+          if (nextMobile !== mobileNavigation) { mobileNavigation = nextMobile; interactionEnabled = false }
+          navigation.hidden = !mobileNavigation;
+          portraitViewport = mobileNavigation && matchMedia('(orientation: portrait)').matches && root.clientWidth < 600;
+          updateInteractionMode();
+          const renderWidth = portraitViewport ? Math.max(760, root.clientWidth) : root.clientWidth;
+          // Browser toolbars can resize the viewport while scrolling. Avoid reallocating
+          // the WebGL drawing buffer when the actual scene dimensions stay unchanged.
+          if (renderWidth === previousRenderWidth && root.clientHeight === previousRenderHeight) return;
+          const scrollRatio = root.scrollLeft / Math.max(1, previousRenderWidth - root.clientWidth);
+          previousRenderWidth = renderWidth; previousRenderHeight = root.clientHeight;
+          camera.aspect = renderWidth / root.clientHeight;
           // Fit all workstations when rotating a phone, without moving under a finger.
           const distance = Math.max(11.65, 7.4 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
           camBase.set(0, 4.25, 10.6).normalize().multiplyScalar(distance);
           camera.position.copy(camBase); camera.lookAt(0, .55, 0);
           camera.updateProjectionMatrix();
-          renderer.setSize(root.clientWidth, root.clientHeight)
+          renderer.setSize(renderWidth, root.clientHeight);
+          root.scrollLeft = portraitViewport ? (renderWidth - root.clientWidth) * (wasPortrait ? scrollRatio : .5) : 0;
         }
         window.addEventListener('resize', resize);
         if (window.ResizeObserver) new ResizeObserver(resize).observe(root);
@@ -2169,6 +2217,7 @@ function renderResultCard(data) {
       } catch (err) { fallback() }
     }
     function fallback(reason) {
+      $('sceneNavigation').hidden = true;
       $('threeRoot').style.display = 'none'; $('fallback').style.display = 'flex'; $('engine').textContent = 'Modo 2D • Aceleração gráfica desativada';
       let msg = $('fallbackMsg'), btn = $('retry3D');
       if (reason === 'webgl' && msg) { msg.textContent = 'A aceleração gráfica (WebGL) está desativada no seu navegador. O jogo está 100% jogável no modo 2D logo abaixo!'; if (btn) { btn.textContent = '🔄 Tentar carregar 3D'; btn.style.display = 'inline-flex'; } }
