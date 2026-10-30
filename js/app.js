@@ -651,13 +651,14 @@ function renderResultCard(data) {
       if (typeof THREE === 'undefined') { fallback(); return }
       try {
         let root = $('threeRoot');
+        const mobileQuality = matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 600;
 
         /* ---------- Pré-validação silenciosa de WebGL para evitar spam de erros do Three.js ---------- */
         function probeWebGLContext() {
           if (typeof window === 'undefined' || !window.WebGLRenderingContext) return null;
           try {
             const canvas = document.createElement('canvas');
-            const opts = { antialias: true, alpha: false, powerPreference: 'default', failIfMajorPerformanceCaveat: false };
+            const opts = { antialias: !mobileQuality, alpha: false, powerPreference: mobileQuality ? 'low-power' : 'default', failIfMajorPerformanceCaveat: false };
             const gl = canvas.getContext('webgl2', opts) ||
                        canvas.getContext('webgl', opts) ||
                        canvas.getContext('experimental-webgl', opts);
@@ -679,7 +680,7 @@ function renderResultCard(data) {
           renderer = new THREE.WebGLRenderer({
             canvas: probe.canvas,
             context: probe.gl,
-            antialias: true,
+            antialias: !mobileQuality,
             alpha: false,
             powerPreference: 'default'
           });
@@ -720,8 +721,8 @@ function renderResultCard(data) {
           requestAnimationFrame(frame)
         }, false);
         renderer.setSize(root.clientWidth || 960, root.clientHeight || 560);
-        renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-        renderer.shadowMap.enabled = true;
+        renderer.setPixelRatio(Math.min(devicePixelRatio, mobileQuality ? 1 : 1.75));
+        renderer.shadowMap.enabled = !mobileQuality;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.06;
@@ -740,7 +741,7 @@ function renderResultCard(data) {
         function canvasTex(paint, size = 512, rx = 1, ry = 1) {
           let cv = document.createElement('canvas'); cv.width = cv.height = size; paint(cv.getContext('2d'), size);
           let t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
-          t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t
+          t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = mobileQuality ? 1 : 8; return t
         }
         function woodPaint(g, s, base = '#916134') {
           g.fillStyle = base; g.fillRect(0, 0, s, s);
@@ -1112,7 +1113,7 @@ function renderResultCard(data) {
 
         /* ---------- Modelos 3D reais (GLB otimizado, sem dependências) ---------- */
         const MODEL_FILES = { Chocolate: 'chocolate', Cookies: 'cookie', knife: 'faca', pan: 'panela' };
-        let glbCache = {}, modelCache = {}, modelTexCache = {};
+        let modelCache = {}, modelTexCache = {};
         function b64ToBuf(b64) {
           let bin = atob(b64), n = bin.length, u = new Uint8Array(n);
           for (let i = 0; i < n; i++)u[i] = bin.charCodeAt(i);
@@ -1152,7 +1153,8 @@ function renderResultCard(data) {
           return out
         }
         function glbImage(G, ti, colorSpace) {
-          let key = ti + '|' + colorSpace;
+          // Texture indices are local to a GLB, never shared across models.
+          let key = G.name + '|' + ti + '|' + colorSpace;
           if (modelTexCache[key]) return modelTexCache[key];
           let info = G.json.textures[ti], img = G.json.images[info.source], bv = G.json.bufferViews[img.bufferView];
           let bytes = new Uint8Array(G.bin, bv.byteOffset || 0, bv.byteLength), blob = new Blob([bytes], { type: img.mimeType || 'image/png' });
@@ -1167,7 +1169,8 @@ function renderResultCard(data) {
           let dec = fromImage(blob);
           let p = dec.then(o => {
             let t = new THREE.Texture(o.src);
-            t.flipY = false; t.colorSpace = colorSpace; t.needsUpdate = true; t.anisotropy = 4;
+            URL.revokeObjectURL(o.url);
+            t.flipY = false; t.colorSpace = colorSpace; t.needsUpdate = true; t.anisotropy = mobileQuality ? 1 : 4;
             let smp = info.sampler != null ? G.json.samplers[info.sampler] : null;
             let wrap = v => v === 33071 ? THREE.ClampToEdgeWrapping : v === 33648 ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
             t.wrapS = smp ? wrap(smp.wrapS) : THREE.RepeatWrapping;
@@ -1176,10 +1179,9 @@ function renderResultCard(data) {
           }).catch(() => null);
           modelTexCache[key] = p; return p
         }
-        const GLB_UV_CROP = { cookie: { u0: .50, u1: .999, v0: 0, v1: .53 } };
         function buildGLB(name) {
-          if (glbCache[name]) return glbCache[name];
-          let G = glbCache[name] = parseGLB(b64ToBuf(window.COZINHA_MODELS.files[name]));
+          let G = parseGLB(b64ToBuf(window.COZINHA_MODELS.files[name]));
+          G.name = name;
           let mats = [], defaultMat = new THREE.MeshStandardMaterial({ color: 0xcfc7b4, roughness: .7, metalness: .05 });
           function material(mi) {
             if (mats[mi]) return mats[mi];
@@ -1201,7 +1203,10 @@ function renderResultCard(data) {
           }
           function buildNode(ni, parent) {
             let n = G.json.nodes[ni], g = new THREE.Group();
-            if (n.matrix) { g.matrix.fromArray(n.matrix); g.matrix.decompose(g.position, g.quaternion, g.scale) }
+            // The cookie's exported wrapper rotates it onto its edge. Its mesh
+            // coordinates already lie flat on Y, suitable for the baking tray.
+            if (name === 'cookie') { /* retain the mesh's original flat pose */ }
+            else if (n.matrix) { g.matrix.fromArray(n.matrix); g.matrix.decompose(g.position, g.quaternion, g.scale) }
             else {
               if (n.translation) g.position.fromArray(n.translation);
               if (n.rotation) g.quaternion.fromArray(n.rotation);
@@ -1211,21 +1216,10 @@ function renderResultCard(data) {
               G.json.meshes[n.mesh].primitives.forEach(pr => {
                 let geo = new THREE.BufferGeometry(), at = pr.attributes;
                 let pa = readAcc(G, at.POSITION); geo.setAttribute('position', new THREE.BufferAttribute(pa.array, 3));
-                if (at.NORMAL) { let na = readAcc(G, at.NORMAL); geo.setAttribute('normal', new THREE.BufferAttribute(na.array, 3)) }
-                if (at.TEXCOORD_0) { let ua = readAcc(G, at.TEXCOORD_0); geo.setAttribute('uv', new THREE.BufferAttribute(ua.array, 2)) }
+                if (at.NORMAL != null) { let na = readAcc(G, at.NORMAL); geo.setAttribute('normal', new THREE.BufferAttribute(na.array, 3)) }
+                if (at.TEXCOORD_0 != null) { let ua = readAcc(G, at.TEXCOORD_0); geo.setAttribute('uv', new THREE.BufferAttribute(ua.array, 2)) }
                 if (pr.indices != null) geo.setIndex(new THREE.BufferAttribute(readIdx(G, pr.indices), 1));
-                let crop = GLB_UV_CROP[name];
-                if (crop && geo.index && geo.attributes.uv) {
-                  let ia = geo.index.array, ua = geo.attributes.uv.array, keep = [];
-                  for (let i = 0; i < ia.length; i += 3) {
-                    let cu = 0, cv = 0;
-                    for (let k = 0; k < 3; k++) { let j = ia[i + k] * 2; cu += ua[j]; cv += ua[j + 1] }
-                    cu /= 3; cv /= 3;
-                    if (cu >= crop.u0 && cu <= crop.u1 && cv >= crop.v0 && cv <= crop.v1) keep.push(ia[i], ia[i + 1], ia[i + 2])
-                  }
-                  geo.setIndex(keep)
-                }
-                if (!at.NORMAL) geo.computeVertexNormals();
+                if (at.NORMAL == null) geo.computeVertexNormals();
                 geo.computeBoundingBox(); geo.computeBoundingSphere();
                 let mesh = new THREE.Mesh(geo, pr.material != null ? material(pr.material) : defaultMat);
                 mesh.castShadow = true; mesh.receiveShadow = true;
@@ -1271,7 +1265,18 @@ function renderResultCard(data) {
 
         /* ---------- Fábrica de modelos fiéis dos ingredientes ---------- */
         function makeFood(name) {
-          let fm = FOOD_MODEL[name];
+          if (name === 'Cookies') {
+            const batch = new THREE.Group();
+            for (let i = 0; i < 6; i++) {
+              const cookie = modelInstance('cookie', { w: .37, h: .16, d: .32 });
+              if (!cookie) break;
+              cookie.position.set((i % 3 - 1) * .45, 0, (Math.floor(i / 3) - .5) * .37);
+              cookie.rotation.y = (i % 3 - 1) * .16;
+              batch.add(cookie);
+            }
+            if (batch.children.length === 6) { batch.userData.cookieBatch = true; return batch }
+          }
+          let fm = name === 'Cookies' ? null : FOOD_MODEL[name];
           if (fm) { let mo = modelInstance(fm.name, fm.fit); if (mo) { mo.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } }); return mo } }
           const g = new THREE.Group();
           const add = m => { g.add(m); return m };
@@ -1310,9 +1315,9 @@ function renderResultCard(data) {
               } break
             }
             case 'Cookies': {
-              let cookieCoords = [[-.34, -.17], [.34, -.17], [-.34, .17], [.34, .17]];
+              let cookieCoords = [[-.45, -.19], [0, -.19], [.45, -.19], [-.45, .19], [0, .19], [.45, .19]];
               cookieCoords.forEach(([cx, cz]) => {
-                let c = add(put(new THREE.CylinderGeometry(.22, .19, .1, 20), mat({ color: 0xc89656, roughness: .72 })));
+                let c = add(put(new THREE.CylinderGeometry(.18, .16, .1, 20), mat({ color: 0xc89656, roughness: .72 })));
                 c.position.set(cx, .05, cz);
                 for (let i = 0; i < 5; i++) {
                   let chip = add(put(new THREE.SphereGeometry(.042, 6, 6), mat({ color: 0x361f12, roughness: .4 })));
@@ -1529,7 +1534,12 @@ function renderResultCard(data) {
             return
           }
           let doughDone = tableDoughDone();
-          let unlocked = all.filter(nm => nm !== 'Cookies' && nm !== 'Focaccia' || doughDone);
+          let bakingCookies = correct === 'Cookies' && doughDone;
+          let unlocked = bakingCookies ? ['Cookies'] : all.filter(nm => nm !== 'Cookies' && nm !== 'Focaccia' || doughDone);
+          if (bakingCookies) {
+            $('feedback').textContent = 'Seis cookies modelados! Arraste o lote até a assadeira e depois leve-a ao forno.';
+            $('sceneHint').textContent = '🍪 6 cookies → assadeira → forno';
+          }
           let need = {}; unlocked.forEach(nm => need[nm] = 1);
           all.forEach(nm => {
             let d = pantry[nm];
@@ -1539,20 +1549,20 @@ function renderResultCard(data) {
             }
             let alive = !!d && cand.includes(d) && !d.retire && !d.absorb && !d.locked;
             if (!alive) {
-              let slot = tableSlot(all, nm), o = makeFood(nm);
+              let slot = tableSlot(unlocked, nm), o = makeFood(nm);
               o.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true } });
               let fs = foodSize(o);
               o.add(foodHit(o));
               let ol = foodOutline(o), tints = foodTints(o);
-              let scale = Math.min(slot.scale || 1, (slot.step || 1) * .94 / (fs.w || .6));
+              let scale = bakingCookies ? 1.6 : Math.min(slot.scale || 1, (slot.step || 1) * .94 / (fs.w || .6));
               o.position.set(slot.x, -.25, slot.z);
               o.scale.setScalar(scale);
-              let lb = labelSprite(nm); lb.position.y = 1.02; o.add(lb);
+              let lb = labelSprite(bakingCookies ? '6 cookies' : nm); lb.position.y = 1.02; o.add(lb);
               let dr = { o, home: new THREE.Vector3(slot.x, -.25, slot.z), restY: -.25, kind: 'food', name: nm, label: lb, pinT: 2.6, outMat: ol.mat, outs: ol.parts, tints, hlF: 0, baseScale: scale };
               o.userData.drag = dr;
               scene.add(o); cand.push(dr); pantry[nm] = dr;
             } else {
-              let slot = tableSlot(all, nm);
+              let slot = tableSlot(unlocked, nm);
               d.home.set(slot.x, -.25, slot.z); d.restY = -.25;
               if (!d.back && !d.snap && !d.snapBoard && !d.snapForm && drag !== d && Math.abs(d.o.position.x - slot.x) > .02) d.back = true;
               d.pinT = Math.max(d.pinT, 0)
@@ -1768,7 +1778,8 @@ function renderResultCard(data) {
             if (distOven < 2.6 && doorTarget < .5) doorTarget = 1
           }
         });
-        function endDrag() {
+        function endDrag(e) {
+          if (e && cnv.hasPointerCapture(e.pointerId)) cnv.releasePointerCapture(e.pointerId);
           if (!drag) return; let d = drag; drag = null; hovered = null; d.pinT = 1.2;
           let x = d.o.position.x, z = d.o.position.z;
           if (d.kind === 'food') {
@@ -1784,7 +1795,10 @@ function renderResultCard(data) {
             else if (verdict === 'on-board') { d.locked = true; d.snapBoard = true }
             else if (verdict === 'on-form') {
               d.locked = true; if (d.label) { d.label.visible = false; d.labelA = 0 }
+              if (d.outMat) d.outMat.opacity = 0;
+              if (d.tints) d.tints.forEach(t => { t.m.material.emissive.setHex(t.hex); t.m.material.emissiveIntensity = t.ei });
               formG.add(d.o); d.o.position.set(0, 0.06, 0); d.o.rotation.set(0, 0, 0);
+              if (d.o.userData.cookieBatch) d.o.scale.setScalar(1);
               let fm = toolMeta('form'); d.o.userData.drag = fm;
               d.o.traverse(ch => { if (ch.isMesh) ch.userData.drag = fm });
               formItems.push(d.o); cand = cand.filter(y => y !== d); if (pantry[d.name] === d) delete pantry[d.name]; pulse = 1
@@ -1822,7 +1836,11 @@ function renderResultCard(data) {
           }
         }
         cnv.addEventListener('pointerup', endDrag);
-        cnv.addEventListener('pointercancel', endDrag);
+        cnv.addEventListener('pointercancel', e => {
+          if (drag) { drag.back = true; drag.o.rotation.z = 0; drag = null }
+          hovered = null; cursorOn = false;
+          if (cnv.hasPointerCapture(e.pointerId)) cnv.releasePointerCapture(e.pointerId);
+        });
         cnv.addEventListener('pointerleave', () => { if (!drag) { hovered = null; handHot = false; cursorOn = false } });
 
         /* ---------- Loop de animação ---------- */
@@ -1837,7 +1855,10 @@ function renderResultCard(data) {
         function frame(now) {
           if (glLost) return;
           requestAnimationFrame(frame);
-          let dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+          if (document.hidden || !current || current.finished || !root.clientWidth) { last = now; return }
+          if (mobileQuality && now - last < 1000 / 30) return;
+          const elapsed = Math.max(0, (now - last) / 1000);
+          let dt = Math.min(.05, elapsed); last = now; T += dt;
           if (kneadT <= 0) updateCursorHand(dt, now);
           tools.forEach(d => {
             if (drag === d) return;
@@ -2009,11 +2030,19 @@ function renderResultCard(data) {
             }
           }
           else if (ovenT > 0) {
-            ovenT -= dt; bakeEl += dt;
+            ovenT -= elapsed; bakeEl += elapsed;
             ovenLight.intensity = 5.5 + Math.sin(T * 27) * 2.4;
             if (!bakedTinted && bakeEl > Math.min(2, (bakeDuration || 10) * .3)) {
               bakedTinted = true;
-              formItems.forEach(o => o.traverse(m => { if (m.isMesh && m.material && m.material.color) m.material.color.multiplyScalar(.78) }))
+              const bakedMaterials = new Map();
+              formItems.forEach(o => o.traverse(m => {
+                if (!m.isMesh || m.userData.outline || m.userData.hitbox || !m.material?.color) return;
+                if (!bakedMaterials.has(m.material)) {
+                  const baked = m.material.clone(); baked.color.multiplyScalar(.88);
+                  bakedMaterials.set(m.material, baked);
+                }
+                m.material = bakedMaterials.get(m.material);
+              }))
             }
             ovenSmoke.forEach(s => {
               s.ph = (s.ph + dt * .6) % 1;
@@ -2028,7 +2057,7 @@ function renderResultCard(data) {
             }
           }
           else if (ovenOutT > 0) {
-            ovenOutT -= dt;
+            ovenOutT -= elapsed;
             if (ovenOutT <= 0) { let fm = toolMeta('form'); fm.back = true; fm.noPick = false; formPlaced = false; renderOvenDoorCanvas('standby', currentOvenTemp, currentOvenTime); finishTool() }
           }
           ovenDoorT += (doorTarget - ovenDoorT) * Math.min(1, dt * 4);
@@ -2111,21 +2140,26 @@ function renderResultCard(data) {
             s.m.scale.setScalar(.6 + s.ph * .9)
           });
           if (ring.visible) ring.scale.setScalar(ringBase * (1 + Math.sin(T * 5) * .05));
-          camera.position.x += (camBase.x + ndc.x * .4 - camera.position.x) * Math.min(1, dt * 3);
-          camera.position.y += (camBase.y + ndc.y * .22 - camera.position.y) * Math.min(1, dt * 3);
+          camera.position.x += (camBase.x + (mobileQuality ? 0 : ndc.x * .4) - camera.position.x) * Math.min(1, dt * 3);
+          camera.position.y += (camBase.y + (mobileQuality ? 0 : ndc.y * .22) - camera.position.y) * Math.min(1, dt * 3);
           camera.lookAt(0, .55, 0);
           renderer.render(scene, camera)
         }
         requestAnimationFrame(t => { last = t; frame(t) });
 
         function resize() {
-          if (!root.clientWidth) return;
+          if (!root.clientWidth || !root.clientHeight) return;
           camera.aspect = root.clientWidth / root.clientHeight;
+          // Fit all workstations when rotating a phone, without moving under a finger.
+          const distance = Math.max(11.65, 7.4 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+          camBase.set(0, 4.25, 10.6).normalize().multiplyScalar(distance);
+          camera.position.copy(camBase); camera.lookAt(0, .55, 0);
           camera.updateProjectionMatrix();
           renderer.setSize(root.clientWidth, root.clientHeight)
         }
         window.addEventListener('resize', resize);
         if (window.ResizeObserver) new ResizeObserver(resize).observe(root);
+        resize();
 
         three = {
           scene, camera, spawnStep, awaitTool, reset: reset3D, startBake, isFormPlaced() { return formPlaced }, isBaking() { return ovenT > 0 },
