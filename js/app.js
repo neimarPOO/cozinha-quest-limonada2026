@@ -955,7 +955,6 @@ function renderResultCard(data) {
         knife.position.set(-3.35, -.09, 1.3); knife.rotation.y = 2.65; scene.add(knife);
 
         const utensilWood = mat({ color: 0xcda571, map: boardTex, roughness: .70 });
-        const brushedSteel = mat({ color: 0xb5c3c8, metalness: .72, roughness: .36 });
         let spoon = new THREE.Group();
         const spoonBowl = new THREE.LatheGeometry([
           [0, -.055], [.08, -.05], [.17, -.005], [.23, .075],
@@ -1002,22 +1001,29 @@ function renderResultCard(data) {
 
         /* ---------- Peneira ---------- */
         let sieve = new THREE.Group();
-        const sieveRing = new THREE.TorusGeometry(.5, .028, 6, 32);
-        sieveRing.rotateX(Math.PI / 2); sieveRing.translate(0, .13, 0);
-        const sieveNeck = new THREE.CylinderGeometry(.025, .025, .30, 8);
-        sieveNeck.rotateZ(Math.PI / 2); sieveNeck.translate(.59, .13, 0);
-        sieve.add(put(mergeSurfaces([sieveRing, sieveNeck]), brushedSteel));
-        // A small repeating cutout replaces hundreds of individual mesh wires.
+        const sievePlastic = mat({ color: 0x329d50, roughness: .56 });
+        const sieveRing = new THREE.LatheGeometry([[.46, -.07], [.50, -.07], [.535, .13], [.52, .18], [.475, .18], [.46, -.07]].map(p => new THREE.Vector2(...p)), 32);
+        const handleShape = new THREE.Shape();
+        handleShape.moveTo(.46, -.14); handleShape.lineTo(1.52, -.10);
+        handleShape.quadraticCurveTo(1.64, 0, 1.52, .10); handleShape.lineTo(.46, .14); handleShape.closePath();
+        [.77, 1.02, 1.27, 1.49].forEach((x, i) => {
+          const hole = new THREE.Path(); hole.absellipse(x, 0, i === 3 ? .035 : .082, .042, 0, Math.PI * 2, true);
+          handleShape.holes.push(hole);
+        });
+        const sieveHandle = new THREE.ExtrudeGeometry(handleShape, { depth: .045, bevelEnabled: true, bevelSize: .008, bevelThickness: .008, bevelSegments: 1, steps: 1, curveSegments: 8 });
+        sieveHandle.rotateX(Math.PI / 2); sieveHandle.translate(0, .16, 0);
+        const supports = [-1, 1].map(side => {
+          const tab = softBox(.19, .05, .10); tab.rotateY(side * .32); tab.translate(-.48, .14, side * .23); return tab;
+        });
+        sieve.add(put(mergeSurfaces([sieveRing, sieveHandle, ...supports]), sievePlastic));
+        // The reference's fine metal screen uses one cutout texture, not separate wires.
         const meshPattern = canvasTex((ctx, size) => {
           ctx.clearRect(0, 0, size, size); ctx.fillStyle = '#c7d2d7';
           ctx.fillRect(0, 0, 2, size); ctx.fillRect(0, 0, size, 2);
-        }, 32, 12, 12);
+        }, 32, 18, 18);
         const meshMaterial = mat({ map: meshPattern, alphaTest: .45, side: THREE.DoubleSide, metalness: .50, roughness: .45 });
-        const basket = new THREE.LatheGeometry([[0, -.02], [.16, 0], [.32, .05], [.48, .13]].map(p => new THREE.Vector2(...p)), 24);
+        const basket = new THREE.LatheGeometry([[0, -.09], [.32, -.08], [.43, -.04], [.475, .12]].map(p => new THREE.Vector2(...p)), 32);
         sieve.add(put(basket, meshMaterial));
-        const sieveGrip = new THREE.CapsuleGeometry(.053, .48, 4, 10);
-        sieveGrip.rotateZ(Math.PI / 2); sieveGrip.translate(.96, .13, 0);
-        sieve.add(put(sieveGrip, utensilWood));
         sieve.userData.refinedUtensil = 'sieve';
         sieve.position.set(2.5, -.3, 1.35); sieve.rotation.y = -.4; scene.add(sieve);
 
@@ -1398,7 +1404,26 @@ function renderResultCard(data) {
         }
 
         /* ---------- Fábrica de modelos fiéis dos ingredientes ---------- */
+        let foodStates = {};
+        function makeHalfLemon() {
+          const half = new THREE.Group(); half.userData.preparation = 'half-lemon';
+          const peel = new THREE.SphereGeometry(.34, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+          peel.scale(1.12, .9, 1.12); peel.translate(0, .306, 0);
+          half.add(put(peel, ingredientMaterial('Limão', { color: 0xe9cb34, roughness: .55 })));
+          const pith = new THREE.CylinderGeometry(.377, .377, .014, 32); pith.translate(0, .307, 0);
+          half.add(put(pith, ingredientMaterial('Limão', { color: 0xfff4cf, roughness: .65 })));
+          const flesh = [];
+          for (let i = 0; i < 10; i++) {
+            const wedge = new THREE.CircleGeometry(.337, 5, i * Math.PI / 5 + .025, Math.PI / 5 - .05);
+            wedge.rotateX(-Math.PI / 2); wedge.translate(0, .316, 0); flesh.push(wedge);
+          }
+          half.add(put(mergeSurfaces(flesh), ingredientMaterial('Limão', { color: 0xf4d969, roughness: .34 })));
+          const core = new THREE.CylinderGeometry(.045, .035, .008, 12); core.translate(0, .32, 0);
+          half.add(put(core, ingredientMaterial('Limão', { color: 0xfff4cf, roughness: .65 })));
+          return half;
+        }
         function makeFood(name) {
+          if (name === 'Limão' && foodStates[name] === 'cut') return makeHalfLemon();
           if (name === 'Cookies') {
             const batch = new THREE.Group();
             for (let i = 0; i < 6; i++) {
@@ -1667,7 +1692,7 @@ function renderResultCard(data) {
           kneadBlob.visible = false; doughHit.visible = false;
           let recipe = current && current.recipe;
           let all = recipe ? tableRecipeNames(recipe) : [correct, ...decoys];
-          if (content === 0) { cand.forEach(c => scene.remove(c.o)); cand = []; pantry = {}; tableLayout = null; resize() }
+          if (content === 0) { foodStates = {}; cand.forEach(c => scene.remove(c.o)); cand = []; pantry = {}; tableLayout = null; resize() }
           if (action === 'Modelar' || action === 'Sovar') {
             kneadBlob.visible = true; kneadBlob.position.set(bowlPos.x, .30, bowlPos.z); kneadBlob.scale.set(.34, .22, .34); kneadBlob.rotation.set(0, 0, 0);
             doughHit.visible = true; showZone([bowlPos.x, bowlPos.z, 1.05]);
@@ -1727,28 +1752,19 @@ function renderResultCard(data) {
           showZone({ spoon: [0, .05, 1.3], sieve: [0, .05, 1.3], knife: [-3.1, 1.5, 1.7], pan: [3.9, .65, 1], form: [4.7, -2.3, 1.35] }[kind]);
           let t = tools.find(x => x.kind === kind); if (t) { t.glow = 1.6; t.back = false }
         }
+        const chopDuration = 2.2;
+        let chopElapsed = 0;
+        const chopStart = new THREE.Vector3(), chopStartRotation = new THREE.Quaternion(), chopTargetRotation = new THREE.Quaternion(), chopCorner = new THREE.Vector3(), chopTarget = new THREE.Vector3(), chopEuler = new THREE.Euler(); let chopBladeBox = null;
         let pieces = [], chopX = -3.1, chopZ = 1.5, chopName = null;
         function chopFromLocked() {
+          chopElapsed = 0; chopStart.copy(knife.position); chopStartRotation.copy(knife.quaternion); chopBladeBox = meshBox(knife);
           let c = cand.find(x => x.locked && !x.absorb && !x.retire);
           if (c) { chopX = c.o.position.x; chopZ = c.o.position.z; chopName = c.name }
           else { chopX = -3.1; chopZ = 1.5; chopName = null }
         }
         function makePiece(name) {
           const g = new THREE.Group();
-          if (name === 'Limão') {
-            for (let i = 0; i < 3; i++) {
-              let sl = new THREE.Group();
-              sl.add(put(new THREE.CylinderGeometry(.27, .27, .055, 22), mat({ color: 0xf0d64c, roughness: .45 })));
-              sl.add(put(new THREE.CylinderGeometry(.21, .21, .062, 22), mat({ color: 0xf6eec0, roughness: .55 })));
-              for (let k = 0; k < 6; k++) {
-                let w = put(new THREE.BoxGeometry(.028, .063, .38), mat({ color: 0xfff7d6, roughness: .6 }));
-                let ph = k * Math.PI / 3; w.rotation.y = ph; w.position.set(Math.sin(ph) * .13, 0, Math.cos(ph) * .13); sl.add(w)
-              }
-              sl.position.set((i - 1) * .26, .015, (i % 2) * .16 - .08);
-              sl.rotation.x = Math.PI / 2 + (random() - .5) * .35; sl.rotation.z = random() * 6;
-              g.add(sl)
-            }
-          }
+          if (name === 'Limão') return makeHalfLemon();
           else if (name === 'Chocolate') {
             for (let i = 0; i < 3; i++) {
               let b = put(new THREE.BoxGeometry(.2 + random() * .12, .09, .17 + random() * .1), mat({ color: 0x4a2c18, roughness: .35 }));
@@ -1771,6 +1787,7 @@ function renderResultCard(data) {
           return g
         }
         function doSplit(name, x, z) {
+          if (name === 'Limão') { foodStates[name] = 'cut'; return }
           let p = makePiece(name);
           p.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true } });
           p.position.set(x, -.11, z); p.rotation.y = (random() - .5) * .9;
@@ -1803,6 +1820,7 @@ function renderResultCard(data) {
           }
         }
         function reset3D() {
+          foodStates = {}; chopT = 0; chopElapsed = 0; chopName = null;
           cand.forEach(c => scene.remove(c.o)); cand = []; pantry = {}; tableLayout = null; pieces.forEach(p => scene.remove(p.o)); pieces = []; ring.visible = false; phase = 'idle'; required = null;
           formItems.forEach(o => { if (o.parent) o.parent.remove(o) }); formItems = []; ovenT = 0; bakeDuration = 0; doorTarget = 0; ovenDoorT = 0; bakedTinted = false; ovenLight.intensity = 0; ovenOutT = 0; slideT = 0; formPlaced = false; bakeEl = 0; pour = null; stream.visible = false;
           toolMeta('form').noPick = false; formG.position.set(2.2, -.25, -2.05);
@@ -1969,7 +1987,7 @@ function renderResultCard(data) {
             if (d.kind === 'form') doorTarget = 1;
             let verdict = sceneHooks ? sceneHooks.onTool(d.kind) : 'none';
             if (verdict === 'ok') {
-              if (d.kind === 'spoon') stirT = 2.2; if (d.kind === 'knife') chopT = 2.2;
+              if (d.kind === 'spoon') stirT = 2.2; if (d.kind === 'knife') chopT = chopDuration;
               if (d.kind === 'sieve') sieveT = 1.4; if (d.kind === 'pan') bakeT = 2.6;
               if (d.kind === 'form') {
                 slideT = .95; formPlaced = true; toolMeta('form').noPick = true;
@@ -2142,13 +2160,29 @@ function renderResultCard(data) {
             if (stirT <= 0) { toolMeta('spoon').back = true; finishTool() }
           }
           else if (chopT > 0) {
-            chopT -= dt;
-            knife.position.x += (chopX - knife.position.x) * Math.min(1, dt * 8);
-            knife.position.z += (chopZ - knife.position.z) * Math.min(1, dt * 8);
-            knife.position.y += ((1.22 + Math.abs(Math.sin(T * 13)) * .24) - knife.position.y) * Math.min(1, dt * 10);
-            knife.rotation.x += (0 - knife.rotation.x) * Math.min(1, dt * 8);
-            knife.rotation.y += (0 - knife.rotation.y) * Math.min(1, dt * 8);
-            knife.rotation.z += (-Math.PI / 2 - knife.rotation.z) * Math.min(1, dt * 8);
+            chopElapsed += elapsed; chopT = Math.max(0, chopDuration - chopElapsed);
+            const approach = THREE.MathUtils.smoothstep(chopElapsed, 0, .35);
+            const progress = THREE.MathUtils.clamp((chopElapsed - .35) / (chopDuration - .35), 0, 1);
+            // One deliberate slice for a lemon; short rocking chops for chocolate/herbs.
+            const cycles = chopName === 'Limão' ? 1 : 3;
+            const cycle = Math.min(.9999, progress) * cycles % 1;
+            const down = THREE.MathUtils.smoothstep(cycle, .12, .62);
+            const up = THREE.MathUtils.smoothstep(cycle, .74, 1);
+            const stroke = down * (1 - up);
+            chopTargetRotation.setFromEuler(chopEuler.set(Math.PI / 2, 0, -.08 - stroke * .12));
+            knife.quaternion.slerpQuaternions(chopStartRotation, chopTargetRotation, approach);
+            // Correct the blade's lowest point so it meets, never penetrates, the board.
+            let lowest = 0;
+            if (chopBladeBox) {
+              lowest = Infinity;
+              for (let i = 0; i < 8; i++) {
+                chopCorner.set(i & 1 ? chopBladeBox.max.x : chopBladeBox.min.x, i & 2 ? chopBladeBox.max.y : chopBladeBox.min.y, i & 4 ? chopBladeBox.max.z : chopBladeBox.min.z).applyQuaternion(knife.quaternion);
+                lowest = Math.min(lowest, chopCorner.y);
+              }
+            }
+            chopTarget.set(chopX - .15 + stroke * .20, -.11 - lowest + .025 + (1 - stroke) * .55, chopZ);
+            knife.position.lerpVectors(chopStart, chopTarget, approach);
+            knife.userData.cuttingStroke = stroke;
             if (chopT <= 0) {
               if (chopName) doSplit(chopName, chopX, chopZ);
               let c = cand.find(y => y.locked && !y.retire); if (c) { scene.remove(c.o); cand = cand.filter(y => y !== c) }
