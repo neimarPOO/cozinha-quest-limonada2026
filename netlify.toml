@@ -16,39 +16,40 @@
 [[headers]]
   for = "/*"
   [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-# Cache otimizado para arquivos estáticos na pasta public/
+# Arquivos sem hash no nome: validar a versão a cada acesso (ETag/304).
 [[headers]]
   for = "/public/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 # Tipos MIME e cache para modelos 3D (.glb)
 [[headers]]
   for = "/*.glb"
   [headers.values]
     Content-Type = "model/gltf-binary"
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/public/*.glb"
   [headers.values]
     Content-Type = "model/gltf-binary"
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 # Tipos MIME e cache para CSS e JS
 [[headers]]
   for = "/css/*"
   [headers.values]
     Content-Type = "text/css; charset=utf-8"
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/js/*"
   [headers.values]
     Content-Type = "application/javascript; charset=utf-8"
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=0, must-revalidate"
