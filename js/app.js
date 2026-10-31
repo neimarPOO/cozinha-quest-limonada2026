@@ -954,12 +954,20 @@ function renderResultCard(data) {
         knife.add(blade, spine, hilt, handle);
         knife.position.set(-3.35, -.09, 1.3); knife.rotation.y = 2.65; scene.add(knife);
 
+        const utensilWood = mat({ color: 0xcda571, map: boardTex, roughness: .70 });
+        const brushedSteel = mat({ color: 0xb5c3c8, metalness: .72, roughness: .36 });
         let spoon = new THREE.Group();
-        let sbowl = put(new THREE.SphereGeometry(.23, 20, 14), mat({ color: 0xc08c4f, roughness: .42 }));
-        sbowl.scale.set(1, .5, 1.35); sbowl.position.z = .6;
-        let shaft = put(new THREE.CylinderGeometry(.05, .068, 1.15, 14), mat({ color: 0xc08c4f, roughness: .42 }));
-        shaft.rotation.x = Math.PI / 2; shaft.position.z = -.05;
-        spoon.add(sbowl, shaft);
+        const spoonBowl = new THREE.LatheGeometry([
+          [0, -.055], [.08, -.05], [.17, -.005], [.23, .075],
+          [.218, .085], [.16, .02], [.07, -.025], [0, -.03]
+        ].map(p => new THREE.Vector2(...p)), 24);
+        spoonBowl.scale(1, 1, 1.35); spoonBowl.translate(0, 0, .6);
+        const spoonHandle = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(
+          new THREE.Vector3(0, .025, -.67), new THREE.Vector3(0, .075, -.1), new THREE.Vector3(0, .04, .37)
+        ), 12, .048, 8, false);
+        const spoonEnd = new THREE.SphereGeometry(.048, 10, 6); spoonEnd.translate(0, .025, -.67);
+        spoon.add(put(mergeSurfaces([spoonBowl, spoonHandle, spoonEnd]), utensilWood));
+        spoon.userData.refinedUtensil = 'spoon';
         spoon.position.set(1.85, -.13, 1.2); spoon.rotation.y = -.6; scene.add(spoon);
 
         /* ---------- Pia grande (para Lavar) com água corrente ---------- */
@@ -994,87 +1002,143 @@ function renderResultCard(data) {
 
         /* ---------- Peneira ---------- */
         let sieve = new THREE.Group();
-        let sring = put(new THREE.TorusGeometry(.5, .045, 10, 36), mat({ color: 0xc08c4f, roughness: .45 }));
-        sring.rotation.x = Math.PI / 2; sring.position.y = .05;
-        let smesh = put(new THREE.CylinderGeometry(.5, .5, .02, 24), mat({ color: 0xf5f2e8, roughness: .5, wireframe: true }));
-        smesh.position.y = .05;
-        let sgd = put(new THREE.BoxGeometry(.7, .05, .09), mat({ color: 0xc08c4f, roughness: .45 }));
-        sgd.position.set(.75, .05, 0);
-        sieve.add(sring, smesh, sgd);
+        const sieveRing = new THREE.TorusGeometry(.5, .028, 6, 32);
+        sieveRing.rotateX(Math.PI / 2); sieveRing.translate(0, .13, 0);
+        const sieveNeck = new THREE.CylinderGeometry(.025, .025, .30, 8);
+        sieveNeck.rotateZ(Math.PI / 2); sieveNeck.translate(.59, .13, 0);
+        sieve.add(put(mergeSurfaces([sieveRing, sieveNeck]), brushedSteel));
+        // A small repeating cutout replaces hundreds of individual mesh wires.
+        const meshPattern = canvasTex((ctx, size) => {
+          ctx.clearRect(0, 0, size, size); ctx.fillStyle = '#c7d2d7';
+          ctx.fillRect(0, 0, 2, size); ctx.fillRect(0, 0, size, 2);
+        }, 32, 12, 12);
+        const meshMaterial = mat({ map: meshPattern, alphaTest: .45, side: THREE.DoubleSide, metalness: .50, roughness: .45 });
+        const basket = new THREE.LatheGeometry([[0, -.02], [.16, 0], [.32, .05], [.48, .13]].map(p => new THREE.Vector2(...p)), 24);
+        sieve.add(put(basket, meshMaterial));
+        const sieveGrip = new THREE.CapsuleGeometry(.053, .48, 4, 10);
+        sieveGrip.rotateZ(Math.PI / 2); sieveGrip.translate(.96, .13, 0);
+        sieve.add(put(sieveGrip, utensilWood));
+        sieve.userData.refinedUtensil = 'sieve';
         sieve.position.set(2.5, -.3, 1.35); sieve.rotation.y = -.4; scene.add(sieve);
 
-        /* ---------- Mão 3D do cursor (rig inspirado no modelo two+hands.skp) ---------- */
-        let skinMat = mat({ color: 0xd5ab86, roughness: .62, metalness: .02, emissive: 0x000000, emissiveIntensity: 0 });
+        /* ---------- Mão 3D contínua com esqueleto leve ---------- */
+        let skinMat = mat({ color: 0xd9af8f, roughness: .80, metalness: 0, emissive: 0x000000, emissiveIntensity: 0 });
         let nailMat = mat({ color: 0xf0d9c4, roughness: .34, metalness: .03 });
         let sleeveMat = mat({ color: 0xb9cdb4, roughness: .9 });
         function addPart(parent, geo, m) { let x = new THREE.Mesh(geo, m); x.castShadow = false; x.receiveShadow = false; parent.add(x); return x }
+        // Merge static surfaces once: smoother silhouettes without extra draw calls.
+        function mergeSurfaces(parts, skinned = false) {
+          const positions = [], normals = [], uvs = [], indices = [], joints = [], weights = [];
+          let offset = 0;
+          parts.forEach(geo => {
+            const p = geo.attributes.position, n = geo.attributes.normal, uv = geo.attributes.uv;
+            positions.push(...p.array); normals.push(...n.array);
+            if (uv) uvs.push(...uv.array); else for (let i = 0; i < p.count; i++) uvs.push(0, 0);
+            if (skinned) {
+              joints.push(...geo.attributes.skinIndex.array); weights.push(...geo.attributes.skinWeight.array);
+            }
+            if (geo.index) for (const index of geo.index.array) indices.push(index + offset);
+            else for (let i = 0; i < p.count; i++) indices.push(i + offset);
+            offset += p.count; geo.dispose();
+          });
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+          geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+          geo.setIndex(indices);
+          if (skinned) {
+            geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(joints, 4));
+            geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
+          }
+          return geo;
+        }
         function buildHand(side) {
           side = side || 1;
-          let g = new THREE.Group(), rig = { group: g, fingers: [], thumb: [], side };
-          /* Palma: corpo, base do punho e almofada do polegar */
-          let palm = addPart(g, new THREE.SphereGeometry(.5, 32, 24), skinMat);
-          palm.scale.set(.166, .071, .146); palm.position.set(0, .002, .068);
-          let heel = addPart(g, new THREE.SphereGeometry(.5, 28, 20), skinMat);
-          heel.scale.set(.150, .063, .096); heel.position.set(0, .004, .006);
-          let thenar = addPart(g, new THREE.SphereGeometry(.5, 24, 18), skinMat);
-          thenar.scale.set(.058, .041, .092); thenar.position.set(side * .056, .010, .066);
-          thenar.rotation.set(-.16, 0, side * .24);
-          /* Arco dos nós dos dedos */
-          let ridge = addPart(g, new THREE.CapsuleGeometry(.033, .100, 8, 18), skinMat);
-          ridge.rotation.z = Math.PI / 2; ridge.position.set(0, .016, .138);
-          /* Punho e antebraço */
-          let wrist = addPart(g, new THREE.CapsuleGeometry(.050, .032, 6, 20), skinMat);
-          wrist.rotation.x = Math.PI / 2; wrist.position.set(0, .002, -.006);
-          let fore = addPart(g, new THREE.CylinderGeometry(.061, .052, .150, 24, 1), skinMat);
-          fore.rotation.x = Math.PI / 2; fore.position.set(0, .003, -.118);
-          let bulk = addPart(g, new THREE.SphereGeometry(.5, 22, 16), skinMat);
-          bulk.scale.set(.060, .051, .086); bulk.position.set(0, .004, -.104);
-          /* Manga */
-          let cuff = addPart(g, new THREE.TorusGeometry(.063, .011, 12, 30), sleeveMat);
-          cuff.rotation.x = Math.PI / 2; cuff.position.set(0, .003, -.192);
-          let cuff2 = addPart(g, new THREE.TorusGeometry(.067, .006, 8, 28), sleeveMat);
-          cuff2.rotation.x = Math.PI / 2; cuff2.position.set(0, .003, -.204);
-          let sleeve = addPart(g, new THREE.CylinderGeometry(.070, .059, .148, 24, 1), sleeveMat);
-          sleeve.rotation.x = Math.PI / 2; sleeve.position.set(0, .003, -.272);
-          /* Dedos: três falanges capsulares + unha */
-          [[-.062, .130, .0215, -.07], [-.021, .148, .0225, -.02], [.021, .138, .0215, .03], [.062, .115, .020, .08]].forEach(fd => {
-            let x = fd[0] * side, len = fd[1], r = fd[2], spread = fd[3] * side;
-            let root = new THREE.Group(); root.position.set(x, .006, .145); root.rotation.y = spread; g.add(root);
-            let bump = addPart(root, new THREE.SphereGeometry(r * 1.16, 16, 12), skinMat);
-            bump.scale.set(1, .9, .92); bump.position.set(0, .006, .006);
-            let segs = [], parent0 = root;
-            let segLen = [len * .44, len * .32, len * .24], segR = [r, r * .93, r * .84];
-            for (let k = 0; k < 3; k++) {
-              let j = new THREE.Group(); j.position.z = k === 0 ? 0 : segLen[k - 1];
-              let knuckle = addPart(j, new THREE.SphereGeometry(segR[k] * 1.05, 16, 12), skinMat);
-              knuckle.scale.set(1, .94, 1);
-              let shaft = addPart(j, new THREE.CapsuleGeometry(segR[k] * (k ? 0.90 : 0.96), Math.max(.004, segLen[k] - segR[k] * 2.0), 6, 16), skinMat);
-              shaft.rotation.x = Math.PI / 2; shaft.position.z = segLen[k] / 2;
-              parent0.add(j); segs.push(j); parent0 = j
+          const g = new THREE.Group(), rig = { group: g, fingers: [], thumb: [], side };
+          const base = new THREE.Bone(), bones = [base], surfaces = [];
+          g.add(base);
+          function skin(geo, joint = 0) {
+            const ids = [], weights = [];
+            for (let i = 0; i < geo.attributes.position.count; i++) { ids.push(joint, 0, 0, 0); weights.push(1, 0, 0, 0) }
+            geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(ids, 4));
+            geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
+            surfaces.push(geo); return geo;
+          }
+          // One continuous palm, tapering into a shorter wrist and forearm.
+          const palmPositions = [], palmUV = [], palmIndices = [];
+          const profile = [[-.193, .055, .037], [-.14, .052, .033], [-.065, .048, .029],
+            [0, .057, .031], [.045, .078, .034], [.095, .080, .031], [.135, .067, .024], [.158, .038, .012], [.165, 0, 0]];
+          const palmSides = 24;
+          profile.forEach(([z, width, depth], ring) => {
+            for (let j = 0; j <= palmSides; j++) {
+              const a = j / palmSides * Math.PI * 2;
+              palmPositions.push(Math.cos(a) * width, Math.sin(a) * depth + .002, z);
+              palmUV.push(j / palmSides, ring / (profile.length - 1));
+              if (ring < profile.length - 1 && j < palmSides) {
+                const a = ring * (palmSides + 1) + j, b = a + palmSides + 1;
+                palmIndices.push(a, a + 1, b, a + 1, b + 1, b);
+              }
             }
-            let nail = addPart(parent0, new THREE.SphereGeometry(1, 16, 12), nailMat);
-            nail.scale.set(segR[2] * .70, segR[2] * .30, segR[2] * .92);
-            nail.position.set(0, segR[2] * .64, segLen[2] * .58);
-            rig.fingers.push(segs)
           });
-          /* Polegar: duas falanges com polpa */
-          let troot = new THREE.Group(); troot.position.set(side * .070, -.012, .055);
-          troot.rotation.set(-.18, side * .85, -side * .30);
-          let tp = troot;
-          [.070, .055].forEach((tl, k) => {
-            let j = new THREE.Group(); j.position.z = k === 0 ? 0 : .070;
-            let tr = k === 0 ? .028 : .023;
-            let kn = addPart(j, new THREE.SphereGeometry(tr * 1.06, 16, 12), skinMat); kn.scale.set(1, .93, 1);
-            let sh = addPart(j, new THREE.CapsuleGeometry(tr * (k ? .86 : .94), Math.max(.004, tl - tr * 2.0), 6, 16), skinMat);
-            sh.rotation.x = Math.PI / 2; sh.position.z = tl / 2;
-            tp.add(j); rig.thumb.push(j); tp = j
+          const palm = new THREE.BufferGeometry();
+          palm.setAttribute('position', new THREE.Float32BufferAttribute(palmPositions, 3));
+          palm.setAttribute('uv', new THREE.Float32BufferAttribute(palmUV, 2));
+          palm.setIndex(palmIndices); palm.computeVertexNormals(); skin(palm);
+          const cuff = addPart(g, new THREE.CylinderGeometry(.060, .064, .090, 24, 1), sleeveMat);
+          cuff.rotation.x = Math.PI / 2; cuff.position.set(0, .002, -.215);
+          const cuffRim = addPart(g, new THREE.TorusGeometry(.060, .006, 6, 20), sleeveMat);
+          cuffRim.position.set(0, .002, -.170);
+          // A finger is a closed continuous surface; skin weights blend through joints.
+          function finger(x, z, length, radius, lengths, rotation, thumb = false) {
+            const root = new THREE.Bone(); root.position.set(x, thumb ? -.010 : .004, z);
+            if (rotation) root.rotation.set(...rotation);
+            base.add(root);
+            const chain = [root], ids = [bones.length]; bones.push(root);
+            for (let j = 1; j < lengths.length; j++) {
+              const bone = new THREE.Bone(); bone.position.z = lengths[j - 1];
+              chain[j - 1].add(bone); chain.push(bone); ids.push(bones.length); bones.push(bone);
+            }
+            g.updateMatrixWorld(true);
+            const vertices = [], uv = [], index = [], skinIds = [], skinWeights = [];
+            const rings = 18, sides = 12;
+            for (let j = 0; j <= rings; j++) {
+              const t = j / rings, localZ = -.010 + t * (length + .010);
+              const tip = Math.min(1, (1 - t) / .16), start = Math.min(1, t / .06);
+              const r = radius * (1 - .23 * t) * Math.sqrt(Math.max(0, tip * (2 - tip))) * Math.sqrt(start);
+              let bone = 0, at = localZ;
+              while (bone < lengths.length - 1 && at > lengths[bone]) { at -= lengths[bone]; bone++ }
+              const blend = bone < lengths.length - 1 ? THREE.MathUtils.smoothstep(at / lengths[bone], .55, 1) : 0;
+              for (let k = 0; k <= sides; k++) {
+                const angle = k / sides * Math.PI * 2;
+                const v = new THREE.Vector3(Math.cos(angle) * r, Math.sin(angle) * r * .88, localZ).applyMatrix4(root.matrixWorld);
+                vertices.push(v.x, v.y, v.z); uv.push(k / sides, t);
+                skinIds.push(ids[bone], ids[Math.min(bone + 1, ids.length - 1)], 0, 0);
+                skinWeights.push(1 - blend, blend, 0, 0);
+                if (j < rings && k < sides) {
+                  const a = j * (sides + 1) + k, b = a + sides + 1;
+                  index.push(a, a + 1, b, a + 1, b + 1, b);
+                }
+              }
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)); geo.setIndex(index);
+            geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.computeVertexNormals();
+            geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIds, 4));
+            geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4)); surfaces.push(geo);
+            const nail = addPart(chain[chain.length - 1], new THREE.SphereGeometry(1, 10, 6), nailMat);
+            nail.scale.set(radius * .54, .003, lengths[lengths.length - 1] * .32);
+            nail.position.set(0, radius * .67, lengths[lengths.length - 1] * .55);
+            return chain;
+          }
+          [[-.058, .129, .130, .020], [-.019, .140, .148, .021], [.020, .135, .138, .020], [.057, .120, .112, .018]].forEach(([x, z, len, r]) => {
+            rig.fingers.push(finger(x * side, z, len, r, [len * .44, len * .32, len * .24]));
           });
-          let tpad = addPart(tp, new THREE.SphereGeometry(1, 18, 14), skinMat);
-          tpad.scale.set(.021, .016, .026); tpad.position.set(0, -.008, .045);
-          let tn = addPart(tp, new THREE.SphereGeometry(1, 14, 10), nailMat);
-          tn.scale.set(.015, .007, .020); tn.position.set(0, .013, .032);
-          g.add(troot);
-          return rig
+          rig.thumb = finger(side * .060, .054, .105, .025, [.060, .045], [-.15, side * .85, -side * .22], true);
+          const mesh = new THREE.SkinnedMesh(mergeSurfaces(surfaces, true), skinMat);
+          g.add(mesh); g.updateMatrixWorld(true); mesh.bind(new THREE.Skeleton(bones));
+          // The small hand moves beyond its rest bounds when kneading.
+          mesh.frustumCulled = false; mesh.userData.continuousHand = true;
+          return rig;
         }
         const HAND_POSES = {
           open: { f: [[.06, .10, .06], [.05, .12, .08], [.06, .14, .09], [.08, .16, .10]], spread: [-.10, -.03, .04, .11], t: [.25, .12] },
@@ -1278,6 +1342,61 @@ function renderResultCard(data) {
           Cookies: { name: 'cookie', fit: { w: .62, h: .5, d: .62, rot: [0, 0, 0] } }
         };
 
+        const ingredientMaterials = new Map(), ingredientGrains = new Map();
+        const organicFoods = new Set(['Manteiga', 'Ovo', 'Massa', 'Limão', 'Focaccia', 'Morango']);
+        function ingredientMaterial(name, options) {
+          const key = name + JSON.stringify(options);
+          if (ingredientMaterials.has(key)) return ingredientMaterials.get(key);
+          const material = mat(options);
+          if (!options.transparent && !options.metalness && options.roughness >= .35) {
+            const grainKey = organicFoods.has(name) ? 'organic' : 'paper';
+            let texture = ingredientGrains.get(grainKey);
+            if (!texture) texture = canvasTex((ctx, size) => {
+              ctx.fillStyle = '#f7f4ed'; ctx.fillRect(0, 0, size, size);
+              let seed = 73;
+              for (let i = 0; i < 1600; i++) {
+                seed = (seed * 1664525 + 1013904223) >>> 0; const x = seed % size;
+                seed = (seed * 1664525 + 1013904223) >>> 0; const y = seed % size;
+                ctx.fillStyle = `rgba(75,52,24,${organicFoods.has(name) ? .08 : .035})`;
+                ctx.fillRect(x, y, 1, 1);
+              }
+            }, 128);
+            ingredientGrains.set(grainKey, texture);
+            material.map = texture;
+            if (organicFoods.has(name)) { material.bumpMap = texture; material.bumpScale = name === 'Limão' ? .012 : .004 }
+          }
+          ingredientMaterials.set(key, material); return material;
+        }
+        const ingredientLabels = new Map();
+        function ingredientLabel(name, color) {
+          if (ingredientLabels.has(name)) return ingredientLabels.get(name);
+          const texture = canvasTex((ctx, size) => {
+            ctx.fillStyle = color; ctx.fillRect(0, 0, size, size);
+            ctx.fillStyle = '#f7f3e5'; ctx.fillRect(0, size * .12, size, size * .045);
+            ctx.fillRect(0, size * .82, size, size * .045);
+            ctx.textAlign = 'center'; ctx.fillStyle = '#203326';
+            ctx.font = 'bold 38px system-ui'; ctx.fillText(name.toUpperCase(), size / 2, size * .60, size * .90);
+            ctx.font = '17px system-ui'; ctx.fillText('COZINHA QUEST', size / 2, size * .34);
+          }, 256);
+          const material = mat({ map: texture, roughness: .85 });
+          ingredientLabels.set(name, material); return material;
+        }
+        function softBox(w, h, d) {
+          const radius = Math.min(w, h, d) * .12;
+          const geometry = new THREE.BoxGeometry(w, h, d, 4, 4, 4);
+          const p = geometry.attributes.position, n = geometry.attributes.normal;
+          for (let i = 0; i < p.count; i++) {
+            const v = new THREE.Vector3().fromBufferAttribute(p, i);
+            const center = new THREE.Vector3(
+              THREE.MathUtils.clamp(v.x, -w / 2 + radius, w / 2 - radius),
+              THREE.MathUtils.clamp(v.y, -h / 2 + radius, h / 2 - radius),
+              THREE.MathUtils.clamp(v.z, -d / 2 + radius, d / 2 - radius));
+            const normal = v.clone().sub(center).normalize();
+            v.copy(center).addScaledVector(normal, radius); p.setXYZ(i, v.x, v.y, v.z); n.setXYZ(i, normal.x, normal.y, normal.z);
+          }
+          return geometry;
+        }
+
         /* ---------- Fábrica de modelos fiéis dos ingredientes ---------- */
         function makeFood(name) {
           if (name === 'Cookies') {
@@ -1297,126 +1416,135 @@ function renderResultCard(data) {
           const add = m => { g.add(m); return m };
           switch (name) {
             case 'Manteiga': {
-              let b = add(put(new THREE.BoxGeometry(.56, .3, .42), mat({ color: 0xf6d67e, roughness: .42 }))); b.position.y = .15;
-              add(put(new THREE.BoxGeometry(.66, .05, .52), mat({ color: 0xe8e0c8, roughness: .85 }))).position.y = .025;
-              let t = add(put(new THREE.BoxGeometry(.3, .04, .2), mat({ color: 0xffe9a8, roughness: .35 }))); t.position.set(.06, .32, .04); t.rotation.y = .3; break
+              let b = add(put(softBox(.56, .3, .42), ingredientMaterial(name, { color: 0xf6d67e, roughness: .42 }))); b.position.y = .15;
+              add(put(softBox(.66, .05, .52), ingredientMaterial(name, { color: 0xe8e0c8, roughness: .85 }))).position.y = .025;
+              let t = add(put(softBox(.3, .04, .2), ingredientMaterial(name, { color: 0xffe9a8, roughness: .35 }))); t.position.set(.06, .32, .04); t.rotation.y = .3; break
             }
             case 'Açúcar': {
-              let b = add(put(new THREE.BoxGeometry(.5, .6, .3), mat({ color: 0xf5f2e8, roughness: .9 }))); b.position.y = .3;
-              add(put(new THREE.BoxGeometry(.54, .1, .34), mat({ color: 0xdcd7c6, roughness: .9 }))).position.y = .62;
-              let l = add(put(new THREE.BoxGeometry(.34, .2, .02), mat({ color: 0x9fc969, roughness: .8 }))); l.position.set(0, .34, .16); break
+              let b = add(put(softBox(.5, .6, .3), ingredientMaterial(name, { color: 0xf5f2e8, roughness: .9 }))); b.position.y = .3;
+              add(put(softBox(.54, .1, .34), ingredientMaterial(name, { color: 0xdcd7c6, roughness: .9 }))).position.y = .62;
+              let l = add(put(softBox(.34, .2, .02), ingredientLabel(name, '#c3d499'))); l.position.set(0, .34, .16); break
             }
             case 'Ovo': {
-              let e = add(put(new THREE.SphereGeometry(.24, 24, 18), mat({ color: 0xf7f1e3, roughness: .35 })));
+              let e = add(put(new THREE.SphereGeometry(.24, 24, 18), ingredientMaterial(name, { color: 0xf7f1e3, roughness: .35 })));
               e.scale.set(.85, 1.15, .85); e.position.y = .26; break
             }
             case 'Farinha': {
-              let b = add(put(new THREE.CylinderGeometry(.32, .36, .7, 14), mat({ color: 0xead9b8, roughness: .95 }))); b.position.y = .35;
-              add(put(new THREE.CylinderGeometry(.36, .32, .14, 14), mat({ color: 0xdcc9a4, roughness: .95 }))).position.y = .72;
-              let l = add(put(new THREE.BoxGeometry(.4, .22, .02), mat({ color: 0xc06a4a, roughness: .8 }))); l.position.set(0, .4, .33); break
+              let b = add(put(new THREE.CylinderGeometry(.32, .36, .7, 14), ingredientMaterial(name, { color: 0xead9b8, roughness: .95 }))); b.position.y = .35;
+              add(put(new THREE.CylinderGeometry(.36, .32, .14, 14), ingredientMaterial(name, { color: 0xdcc9a4, roughness: .95 }))).position.y = .72;
+              let l = add(put(softBox(.4, .22, .02), ingredientLabel(name, '#d8a37c'))); l.position.set(0, .4, .33); break
             }
             case 'Chocolate': {
               for (let i = 0; i < 8; i++) {
-                let c = add(put(new THREE.BoxGeometry(.3, .08, .3), mat({ color: 0x452816, roughness: .32, metalness: .06 })));
+                let c = add(put(softBox(.3, .08, .3), ingredientMaterial(name, { color: 0x452816, roughness: .32, metalness: .06 })));
                 c.position.set((i % 4) * .32 - .48, .04, Math.floor(i / 4) * .32 - .16)
               } break
             }
             case 'Massa': {
-              let d = add(put(new THREE.SphereGeometry(.4, 28, 20), mat({ color: 0xe8cf9a, roughness: .85 })));
+              let d = add(put(new THREE.SphereGeometry(.4, 28, 20), ingredientMaterial(name, { color: 0xe8cf9a, roughness: .85 })));
               d.scale.y = .8; d.position.y = .3;
               for (let i = 0; i < 5; i++) {
-                let f = add(put(new THREE.SphereGeometry(.05, 8, 6), mat({ color: 0xd9bd82, roughness: .9 })));
+                let f = add(put(new THREE.SphereGeometry(.05, 8, 6), ingredientMaterial(name, { color: 0xd9bd82, roughness: .9 })));
                 f.position.set(Math.cos(i * 1.9) * .28, .55, Math.sin(i * 1.9) * .22)
               } break
             }
             case 'Cookies': {
               let cookieCoords = [[-.45, -.19], [0, -.19], [.45, -.19], [-.45, .19], [0, .19], [.45, .19]];
               cookieCoords.forEach(([cx, cz]) => {
-                let c = add(put(new THREE.CylinderGeometry(.18, .16, .1, 20), mat({ color: 0xc89656, roughness: .72 })));
+                let c = add(put(new THREE.CylinderGeometry(.18, .16, .1, 20), ingredientMaterial(name, { color: 0xc89656, roughness: .72 })));
                 c.position.set(cx, .05, cz);
                 for (let i = 0; i < 5; i++) {
-                  let chip = add(put(new THREE.SphereGeometry(.042, 6, 6), mat({ color: 0x361f12, roughness: .4 })));
+                  let chip = add(put(new THREE.SphereGeometry(.042, 6, 6), ingredientMaterial(name, { color: 0x361f12, roughness: .4 })));
                   let a = i * 1.25; chip.position.set(cx + Math.cos(a) * .11, .11, cz + Math.sin(a) * .11)
                 }
               }); break
             }
             case 'Limão': {
-              let l = add(put(new THREE.SphereGeometry(.34, 28, 20), mat({ color: 0xf0d64c, roughness: .45 })));
+              let l = add(put(new THREE.SphereGeometry(.34, 28, 20), ingredientMaterial(name, { color: 0xf0d64c, roughness: .45 })));
               l.scale.set(1.15, .92, 1.15); l.position.y = .3;
-              let tip = add(put(new THREE.SphereGeometry(.07, 10, 8), mat({ color: 0xe3c63e, roughness: .5 }))); tip.position.set(0, .3, .42);
-              let leaf = add(put(new THREE.SphereGeometry(.12, 10, 8), mat({ color: 0x5d8a3c, roughness: .6 })));
+              let tip = add(put(new THREE.SphereGeometry(.07, 10, 8), ingredientMaterial(name, { color: 0xe3c63e, roughness: .5 }))); tip.position.set(0, .3, .42);
+              let leaf = add(put(new THREE.SphereGeometry(.12, 10, 8), ingredientMaterial(name, { color: 0x5d8a3c, roughness: .6 })));
               leaf.scale.set(1.6, .25, .8); leaf.position.set(.1, .5, .1); leaf.rotation.y = .6; break
             }
             case 'Água': {
-              let gl = new THREE.Mesh(new THREE.CylinderGeometry(.24, .2, .6, 20), mat({ color: 0xd7ecf2, roughness: .05, transparent: true, opacity: .3 }));
+              let gl = new THREE.Mesh(new THREE.CylinderGeometry(.24, .2, .6, 20), ingredientMaterial(name, { color: 0xd7ecf2, roughness: .05, transparent: true, opacity: .3 }));
               gl.position.y = .3; g.add(gl);
-              let w = add(put(new THREE.CylinderGeometry(.21, .18, .44, 20), mat({ color: 0x9fd4e8, roughness: .08, transparent: true, opacity: .55 })));
+              let w = add(put(new THREE.CylinderGeometry(.21, .18, .44, 20), ingredientMaterial(name, { color: 0x9fd4e8, roughness: .08, transparent: true, opacity: .55 })));
               w.position.y = .26; break
             }
             case 'Gelo': {
               for (let i = 0; i < 3; i++) {
-                let c = add(put(new THREE.BoxGeometry(.26, .26, .26), mat({ color: 0xcfeef7, roughness: .06, metalness: .1, transparent: true, opacity: .62 })));
+                let c = add(put(softBox(.26, .26, .26), ingredientMaterial(name, { color: 0xcfeef7, roughness: .06, metalness: .1, transparent: true, opacity: .62 })));
                 c.position.set((i % 2) * .3 - .15, .14, Math.floor(i / 2) * .3 - .15); c.rotation.y = i * .6
               } break
             }
             case 'Fermento': {
-              let p = add(put(new THREE.BoxGeometry(.42, .28, .06), mat({ color: 0xd9a441, roughness: .7 })));
+              let p = add(put(softBox(.42, .28, .06), ingredientLabel(name, '#e5b96d')));
               p.position.y = .14; p.rotation.y = -.4;
-              let st = add(put(new THREE.BoxGeometry(.44, .07, .065), mat({ color: 0x7a4b31, roughness: .7 })));
+              let st = add(put(softBox(.44, .07, .065), ingredientMaterial(name, { color: 0x7a4b31, roughness: .7 })));
               st.position.set(0, .2, .002); st.rotation.y = -.4; break
             }
             case 'Azeite': {
-              let b = add(put(new THREE.CylinderGeometry(.2, .22, .55, 18), mat({ color: 0x6f8f3d, roughness: .15, transparent: true, opacity: .85 })));
+              let b = add(put(new THREE.CylinderGeometry(.2, .22, .55, 18), ingredientMaterial(name, { color: 0x6f8f3d, roughness: .15, transparent: true, opacity: .85 })));
               b.position.y = .28;
-              let n = add(put(new THREE.CylinderGeometry(.07, .09, .28, 14), mat({ color: 0x6f8f3d, roughness: .15, transparent: true, opacity: .85 })));
+              let n = add(put(new THREE.CylinderGeometry(.07, .09, .28, 14), ingredientMaterial(name, { color: 0x6f8f3d, roughness: .15, transparent: true, opacity: .85 })));
               n.position.y = .68;
-              add(put(new THREE.CylinderGeometry(.085, .085, .12, 14), mat({ color: 0x8a6a3a, roughness: .4 }))).position.y = .86;
-              add(put(new THREE.CylinderGeometry(.21, .21, .16, 18, 1, true), mat({ color: 0xf5f2e8, roughness: .7, side: THREE.DoubleSide }))).position.y = .3; break
+              add(put(new THREE.CylinderGeometry(.085, .085, .12, 14), ingredientMaterial(name, { color: 0x8a6a3a, roughness: .4 }))).position.y = .86;
+              add(put(new THREE.CylinderGeometry(.21, .21, .16, 18, 1, true), ingredientMaterial(name, { color: 0xf5f2e8, roughness: .7, side: THREE.DoubleSide }))).position.y = .3; break
             }
             case 'Alecrim': {
               for (let i = 0; i < 3; i++) {
-                let spr = add(put(new THREE.CylinderGeometry(.02, .02, .7, 6), mat({ color: 0x4a6b2f, roughness: .7 })));
+                let spr = add(put(new THREE.CylinderGeometry(.02, .02, .7, 6), ingredientMaterial(name, { color: 0x4a6b2f, roughness: .7 })));
                 spr.position.set((i - 1) * .16, .05, (i - 1) * .08); spr.rotation.z = (i - 1) * .35;
                 for (let k = 0; k < 7; k++) {
-                  let n = add(put(new THREE.CylinderGeometry(.008, .008, .1, 4), mat({ color: 0x5d8a3c, roughness: .6 })));
+                  let n = add(put(new THREE.CylinderGeometry(.008, .008, .1, 4), ingredientMaterial(name, { color: 0x5d8a3c, roughness: .6 })));
                   n.rotation.z = (i - 1) * .35 - .9; n.position.set((i - 1) * .16 + Math.sin((i - 1) * .35) * .03, .05 - .3 + k * .08, (i - 1) * .08)
                 }
               } break
             }
             case 'Focaccia': {
-              let f = add(put(new THREE.CylinderGeometry(.42, .38, .14, 30), mat({ color: 0xdcae6a, roughness: .8 }))); f.position.y = .07;
+              let f = add(put(new THREE.CylinderGeometry(.42, .38, .14, 30), ingredientMaterial(name, { color: 0xdcae6a, roughness: .8 }))); f.position.y = .07;
               for (let i = 0; i < 10; i++) {
                 let a = i * .63, r = .22 + (i % 3) * .07;
-                let dim = add(put(new THREE.SphereGeometry(.035, 8, 6), mat({ color: 0xb9894a, roughness: .9 })));
+                let dim = add(put(new THREE.SphereGeometry(.035, 8, 6), ingredientMaterial(name, { color: 0xb9894a, roughness: .9 })));
                 dim.position.set(Math.cos(a) * r, .145, Math.sin(a) * r);
                 if (i % 2 === 0) {
-                  let ro = add(put(new THREE.CylinderGeometry(.012, .012, .14, 4), mat({ color: 0x4a6b2f, roughness: .7 })));
+                  let ro = add(put(new THREE.CylinderGeometry(.012, .012, .14, 4), ingredientMaterial(name, { color: 0x4a6b2f, roughness: .7 })));
                   ro.rotation.x = Math.PI / 2; ro.position.set(Math.cos(a) * r, .15, Math.sin(a) * r)
                 }
               } break
             }
             case 'Leite': {
-              let b = add(put(new THREE.BoxGeometry(.34, .62, .34), mat({ color: 0xf7f5ee, roughness: .55 }))); b.position.y = .31;
-              add(put(new THREE.BoxGeometry(.36, .12, .36), mat({ color: 0xeee9dc, roughness: .55 }))).position.y = .66;
-              let sp = add(put(new THREE.CylinderGeometry(.05, .05, .14, 10), mat({ color: 0xdcd7c6, roughness: .5 }))); sp.position.set(.1, .68, 0);
-              add(put(new THREE.BoxGeometry(.35, .16, .35), mat({ color: 0x9fc969, roughness: .6 }))).position.y = .3; break
+              let b = add(put(softBox(.34, .62, .34), ingredientMaterial(name, { color: 0xf7f5ee, roughness: .55 }))); b.position.y = .31;
+              add(put(softBox(.36, .12, .36), ingredientMaterial(name, { color: 0xeee9dc, roughness: .55 }))).position.y = .66;
+              let sp = add(put(new THREE.CylinderGeometry(.05, .05, .14, 10), ingredientMaterial(name, { color: 0xdcd7c6, roughness: .5 }))); sp.position.set(.1, .68, 0);
+              add(put(softBox(.35, .16, .35), ingredientLabel(name, '#c3d499'))).position.y = .3; break
             }
             case 'Sal': {
-              let sh = add(put(new THREE.CylinderGeometry(.16, .2, .42, 16), mat({ color: 0xf7f5ee, roughness: .35 }))); sh.position.y = .21;
-              add(put(new THREE.CylinderGeometry(.17, .17, .12, 16), mat({ color: 0xbfc9c9, roughness: .3, metalness: .5 }))).position.y = .48; break
+              let sh = add(put(new THREE.CylinderGeometry(.16, .2, .42, 16), ingredientMaterial(name, { color: 0xf7f5ee, roughness: .35 }))); sh.position.y = .21;
+              add(put(new THREE.CylinderGeometry(.17, .17, .12, 16), ingredientMaterial(name, { color: 0xbfc9c9, roughness: .3, metalness: .5 }))).position.y = .48; break
             }
             case 'Morango': {
-              let b = add(put(new THREE.SphereGeometry(.26, 20, 16), mat({ color: 0xd8443c, roughness: .4 })));
+              let b = add(put(new THREE.SphereGeometry(.26, 20, 16), ingredientMaterial(name, { color: 0xd8443c, roughness: .4 })));
               b.scale.set(.9, 1.1, .9); b.position.y = .26;
               for (let i = 0; i < 8; i++) {
-                let s = add(put(new THREE.SphereGeometry(.018, 6, 4), mat({ color: 0xf6e6a0, roughness: .5 })));
+                let s = add(put(new THREE.SphereGeometry(.018, 6, 4), ingredientMaterial(name, { color: 0xf6e6a0, roughness: .5 })));
                 let a = i * .8; s.position.set(Math.cos(a) * .18, .2 + (i % 4) * .08, Math.sin(a) * .18)
               }
-              let cr = add(put(new THREE.ConeGeometry(.14, .12, 6), mat({ color: 0x5d8a3c, roughness: .6 })));
+              let cr = add(put(new THREE.ConeGeometry(.14, .12, 6), ingredientMaterial(name, { color: 0x5d8a3c, roughness: .6 })));
               cr.position.y = .48; cr.rotation.x = Math.PI; break
             }
-            default: { let s = add(put(new THREE.SphereGeometry(.3, 20, 14), mat({ color: 0xd8d2c2, roughness: .5 }))); s.position.y = .3 }
+            default: { let s = add(put(new THREE.SphereGeometry(.3, 20, 14), ingredientMaterial(name, { color: 0xd8d2c2, roughness: .5 }))); s.position.y = .3 }
           }
+          // Collapse repeated seeds, leaves and crumbs into one surface per material.
+          const surfaces = new Map();
+          g.children.forEach(mesh => {
+            mesh.updateMatrix(); mesh.geometry.applyMatrix4(mesh.matrix);
+            if (!surfaces.has(mesh.material)) surfaces.set(mesh.material, []);
+            surfaces.get(mesh.material).push(mesh.geometry);
+          });
+          g.clear();
+          surfaces.forEach((parts, material) => g.add(put(mergeSurfaces(parts), material)));
           return g
         }
 
