@@ -1139,28 +1139,42 @@ function renderResultCard(data) {
           [[-.058, .129, .130, .020], [-.019, .140, .148, .021], [.020, .135, .138, .020], [.057, .120, .112, .018]].forEach(([x, z, len, r]) => {
             rig.fingers.push(finger(x * side, z, len, r, [len * .44, len * .32, len * .24]));
           });
-          rig.thumb = finger(side * .060, .054, .105, .025, [.060, .045], [-.15, side * .85, -side * .22], true);
+          // Index is fingers[0] on -X: the right thumb belongs on that same side.
+          // CMC, MCP and IP get independent controls; opposition starts at the CMC.
+          rig.thumb = finger(-side * .063, .060, .115, .025, [.045, .040, .030], [.12, -side * .70, side * .12], true);
           const mesh = new THREE.SkinnedMesh(mergeSurfaces(surfaces, true), skinMat);
           g.add(mesh); g.updateMatrixWorld(true); mesh.bind(new THREE.Skeleton(bones));
           // The small hand moves beyond its rest bounds when kneading.
           mesh.frustumCulled = false; mesh.userData.continuousHand = true;
           return rig;
         }
+        // Local +Y is dorsal (nails); positive X flexion curls toward the palm (-Y).
+        // CMC yaw brings the thumb across the palm while roll turns its pad inward.
+        // References: OpenStax Anatomy & Physiology 2e, Types of Body Movements
+        // and Muscles of the Pectoral Girdle and Upper Limbs (opposition/thenar muscles).
         const HAND_POSES = {
-          open: { f: [[.06, .10, .06], [.05, .12, .08], [.06, .14, .09], [.08, .16, .10]], spread: [-.10, -.03, .04, .11], t: [.25, .12] },
-          grab: { f: [[1.15, 1.05, .55], [1.25, 1.10, .60], [1.20, 1.12, .62], [1.15, 1.05, .58]], spread: [-.14, -.04, .05, .15], t: [.80, 1.05] },
-          pinch: { f: [[.55, .75, .45], [.50, .70, .40], [.55, .80, .50], [.70, .90, .55]], spread: [-.07, 0, .03, .08], t: [.90, 1.10] },
-          press: { f: [[.35, .22, .14], [.32, .20, .12], [.35, .22, .14], [.40, .26, .16]], spread: [-.09, -.02, .03, .10], t: [.50, .35] },
-          knead: { f: [[.86, .64, .42], [.86, .64, .42], [.86, .64, .42], [.90, .68, .44]], spread: [-.12, -.02, .02, .12], t: [.80, .70] }
+          open: { f: [[.10, .12, .08], [.08, .14, .09], [.12, .18, .12], [.16, .23, .15]], spread: [-.08, -.02, .035, .085], thumb: { cmc: [.12, -.70, .12], mcp: .12, ip: .10 } },
+          grab: { f: [[1.05, 1.05, .65], [1.13, 1.10, .70], [1.20, 1.15, .74], [1.26, 1.18, .76]], spread: [-.035, -.01, .015, .035], thumb: { cmc: [.80, .65, -1.10], mcp: .28, ip: .32 } },
+          pinch: { f: [[.88, .82, .50], [.45, .55, .34], [.56, .64, .40], [.68, .78, .48]], spread: [.025, -.01, .035, .07], thumb: { cmc: [.78, .40, -1.20], mcp: .04, ip: .04 } },
+          press: { f: [[.16, .14, .09], [.14, .14, .09], [.18, .17, .11], [.22, .20, .13]], spread: [-.045, -.015, .02, .055], thumb: { cmc: [.23, -.40, -.12], mcp: .15, ip: .10 } },
+          knead: { f: [[.70, .55, .36], [.74, .58, .38], [.80, .64, .42], [.88, .70, .46]], spread: [-.035, -.01, .02, .05], thumb: { cmc: [.60, .30, -.85], mcp: .18, ip: .20 } }
         };
         function poseHand(rig, name, k) {
-          let P = HAND_POSES[name] || HAND_POSES.open, a = Math.min(1, k);
+          const P = HAND_POSES[name] || HAND_POSES.open, a = THREE.MathUtils.clamp(k, 0, 1);
           for (let i = 0; i < 4; i++) {
-            let f = rig.fingers[i], t = P.f[i] || P.f[0];
-            for (let j = 0; j < 3; j++)f[j].rotation.x += (t[j] - f[j].rotation.x) * a;
-            f[0].rotation.y += (((P.spread ? P.spread[i] : 0) * rig.side) - f[0].rotation.y) * a
+            const finger = rig.fingers[i], target = P.f[i];
+            for (let j = 0; j < 3; j++) {
+              const angle = THREE.MathUtils.clamp(target[j], 0, j === 2 ? 1.25 : 1.55);
+              finger[j].rotation.x += (angle - finger[j].rotation.x) * a;
+            }
+            finger[0].rotation.y += (P.spread[i] * rig.side - finger[0].rotation.y) * a;
           }
-          for (let j = 0; j < 2; j++)rig.thumb[j].rotation.x += (P.t[j] - rig.thumb[j].rotation.x) * a
+          const cmc = rig.thumb[0], target = P.thumb;
+          cmc.rotation.x += (target.cmc[0] - cmc.rotation.x) * a;
+          cmc.rotation.y += (target.cmc[1] * rig.side - cmc.rotation.y) * a;
+          cmc.rotation.z += (target.cmc[2] * rig.side - cmc.rotation.z) * a;
+          rig.thumb[1].rotation.x += (target.mcp - rig.thumb[1].rotation.x) * a;
+          rig.thumb[2].rotation.x += (target.ip - rig.thumb[2].rotation.x) * a;
         }
         let handRig = buildHand(1), cursorHand = handRig.group;
         cursorHand.visible = false; cursorHand.scale.setScalar(1.16); cursorHand.renderOrder = 999; scene.add(cursorHand);
