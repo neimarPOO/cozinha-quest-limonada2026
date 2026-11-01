@@ -1,0 +1,437 @@
+/* Interface da partida: vidro escuro, lima, âmbar e turquesa. */
+#game .layout {
+  gap: 20px;
+  grid-template-columns: minmax(0, 2.5fr) minmax(300px, 1fr);
+}
+#game .game-workbench {
+  padding: 16px;
+  border-color: #5edec650;
+  border-top-color: #a7ee4a90;
+}
+.workbench-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 1px 4px 15px;
+}
+.workbench-heading .eyebrow {
+  color: #c7f754;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.workbench-label {
+  color: #b8cac6;
+  font-size: 12px;
+}
+.workbench-live {
+  margin-left: auto;
+  color: #68dabc;
+  background: #39d4b210;
+  border: 1px solid #56d9bd35;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+#game .scene {
+  border: 1px solid #72dabd50;
+  border-radius: 14px 5px 14px 5px;
+  box-shadow:
+    0 0 0 4px #040b1140,
+    0 0 30px #41cdb20a;
+}
+#game .scene-overlay {
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  gap: 7px;
+  align-items: flex-start;
+}
+#game .scene-overlay .pill {
+  background: #080f1bec;
+  border: 1px solid #b1d8ca40;
+  border-radius: 8px 3px;
+  color: #f1f5e8;
+  font-size: 11px;
+  padding: 8px 11px;
+  box-shadow: 0 4px 14px #0005;
+}
+#game #recipeName {
+  color: #d4f77e;
+  border-color: #b6f04465;
+  font-weight: 800;
+}
+#game #sceneHint {
+  color: #d6e8e3;
+  max-width: min(100%, 400px);
+}
+#game .scene-overlay #timer {
+  margin-left: auto;
+  min-width: 85px;
+  text-align: center;
+  font-size: 24px;
+  line-height: 1.2;
+  border-color: #ffcb6366;
+  color: #ffdc81;
+  text-shadow: 0 0 13px #ffc34c50;
+  background: #18150eef;
+  animation: none;
+}
+.game-scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 15px;
+  padding: 12px 15px;
+  background: #070f17;
+  border: 1px solid #b1d09e25;
+  border-radius: 10px 3px;
+}
+.game-scoreboard > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.game-scoreboard > div:last-child {
+  text-align: right;
+}
+.game-scoreboard .eyebrow {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #93aaa2;
+}
+#game #score {
+  font-size: 25px;
+  font-weight: 900;
+  font-style: italic;
+  color: #c9f65a;
+  line-height: 1.2;
+}
+#game #stepCount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e6efda;
+}
+#game .progress {
+  height: 6px;
+  margin: 12px 2px 1px;
+  background: #060e15;
+  border: 1px solid #ffffff10;
+  border-radius: 5px;
+  overflow: hidden;
+}
+#game #progressBar {
+  background: linear-gradient(90deg, #41cfa6, #c3f444);
+  box-shadow: 0 0 12px #aff53e60;
+}
+#game .game-mission {
+  border-color: #c1df7340;
+  border-top-color: #c6f45f;
+  padding: 22px;
+}
+.game-mission > .eyebrow {
+  color: #bddf79;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+#game #stepTitle {
+  color: #f5f5e9;
+  font-size: 27px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  margin: 12px 0;
+}
+#game #stepHint {
+  color: #c2cfc5;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+#game #feedback {
+  border: 1px solid #55d5b95c;
+  border-left: 3px solid #67dabb;
+  background: linear-gradient(110deg, #143c3455, #0a171c);
+  color: #def7eb;
+  border-radius: 4px 12px 4px 12px;
+  padding: 13px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+#game #dragHint {
+  font-size: 11px;
+  color: #a2b5ab;
+  line-height: 1.8;
+  padding: 13px 0;
+}
+#game #dragHint b {
+  color: #d9e8cb;
+}
+.recipe-roadmap-heading {
+  color: #afc49f;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding-top: 8px;
+  margin: 16px 0 12px;
+}
+#game .steps {
+  gap: 7px;
+}
+#game .step {
+  background: #0a1219;
+  border: 1px solid #89b39d22;
+  border-radius: 8px 3px;
+  padding: 10px;
+  color: #94a79f;
+  font-size: 11px;
+  animation: none;
+}
+#game .step.current {
+  color: #e9f8c5;
+  border-color: #b5eb4b90;
+  background: linear-gradient(100deg, #b7eb4420, #122021);
+  box-shadow:
+    inset 3px 0 #b9ed4b,
+    0 0 15px #b7eb4408;
+  font-weight: 700;
+  animation: none;
+}
+#game .step.current::before {
+  background: #c5f65a;
+  box-shadow: 0 0 10px #bded4d70;
+}
+#game .step.done {
+  color: #79d1b6;
+  border-color: #55d5af40;
+  background: #12312b40;
+}
+#game .step.done::before {
+  background: #65cfb1;
+  box-shadow: none;
+}
+#game .btn {
+  border-radius: 9px 3px;
+  font-weight: 700;
+}
+#game .btn.primary {
+  background: linear-gradient(#d7ff78, #a5df32);
+  color: #142000;
+  border-color: #c5ef62;
+  box-shadow: 0 4px 18px #9adf2020;
+}
+#game #quitBtn {
+  color: #efb69b;
+  background: #ff96640a;
+  border-color: #e29e773d;
+  font-size: 12px;
+  min-height: 44px;
+}
+#game #quitBtn:hover {
+  border-color: #eeb28c;
+  background: #ff966415;
+}
+#game .scene-navigation {
+  background: #0b1820;
+  border: 1px solid #5aceb34a;
+  border-radius: 10px 3px;
+  padding: 10px;
+}
+#game #sceneInteraction {
+  border-color: #97da5770;
+  color: #c8ef82;
+  font-size: 11px;
+}
+#game #sceneInteraction[aria-pressed="true"] {
+  color: #142000;
+  background: #c6f35a;
+}
+#game .choice {
+  background: #0a151d;
+  border-color: #86b09b35;
+  border-radius: 8px 3px;
+  color: #d2e2d4;
+  font-size: 12px;
+}
+#game .choice.selected {
+  color: #d8f78f;
+  background: #b7ed4418;
+  border-color: #c1ee60;
+  box-shadow: inset 0 0 0 1px #b4e74f50;
+}
+#game .fallback-info-card {
+  background: #0b171eef;
+  border-color: #aacd5460;
+}
+/* O forno preserva os dígitos LED vermelhos e os alertas de temperatura. */
+#game .oven-modal-overlay {
+  background: #040810d9;
+}
+#game .oven-modal-card {
+  background:
+    radial-gradient(ellipse at 0 0, #8fb83f14, transparent 65%),
+    linear-gradient(145deg, #1c2827, #10181e);
+  border: 1px solid #b9ed4b70;
+  border-radius: 24px 7px;
+  box-shadow:
+    0 24px 70px #000b,
+    0 0 40px #b9ed4b15;
+}
+#game .oven-modal-title {
+  font-size: 22px;
+  font-style: italic;
+}
+#game .oven-modal-icon {
+  color: #ffce70;
+  border-color: #ffcc6550;
+  background: #ffb84012;
+  border-radius: 12px 4px;
+}
+#game .oven-modal-sub {
+  color: #a6bbb0;
+  font-size: 11px;
+}
+#game .oven-target-banner {
+  background: #ffcc630c;
+  border-color: #ffcc633f;
+  border-radius: 10px 3px;
+}
+#game .target-badge {
+  background: #ffcd6c;
+  color: #352407;
+}
+#game .control-box {
+  background: #080f17;
+  border-color: #79a49040;
+  border-radius: 12px 4px;
+}
+#game .control-val-badge {
+  color: #d3f382;
+  background: #b4e74f13;
+  border-color: #b4e74f40;
+}
+#game .btn-quick {
+  color: #d2e4d6;
+  border-color: #7aa98c40;
+  background: #142323;
+  border-radius: 7px 2px;
+  min-height: 40px;
+}
+#game .btn-quick.preset {
+  color: #c9ed85;
+  border-color: #acd64e60;
+  background: #b5e34b10;
+}
+#game .btn-quick:hover {
+  border-color: #c4ed70;
+}
+#game .oven-modal-close {
+  border-radius: 8px 3px;
+  min-width: 36px;
+  min-height: 36px;
+  border-color: #91b19e40;
+}
+@media (max-width: 900px) {
+  #game .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  #game .game-workbench {
+    padding: 12px;
+  }
+  #game .game-mission {
+    padding: 20px;
+  }
+  .workbench-heading {
+    gap: 8px;
+  }
+  .workbench-label {
+    font-size: 11px;
+  }
+  #game .scene-overlay .pill {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+  #game .scene-overlay #timer {
+    font-size: 20px;
+    min-width: 72px;
+  }
+}
+@media (max-width: 500px) {
+  .workbench-heading .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .workbench-live {
+    font-size: 7px;
+  }
+  .workbench-label {
+    flex-basis: 100%;
+    order: 3;
+  }
+  #game .scene-overlay {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+  #game #sceneHint {
+    order: 3;
+    width: 100%;
+    font-size: 10px;
+  }
+  .game-scoreboard {
+    padding: 11px;
+    gap: 10px;
+  }
+  .game-scoreboard .eyebrow {
+    font-size: 7px;
+    letter-spacing: 0.6px;
+  }
+  #game #score {
+    font-size: 22px;
+  }
+  #game #stepCount {
+    font-size: 12px;
+  }
+  #game .oven-modal-card {
+    padding: 15px;
+  }
+  #game .oven-modal-title {
+    font-size: 18px;
+  }
+  #game .oven-modal-title-group {
+    gap: 8px;
+    min-width: 0;
+  }
+  #game .oven-modal-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    font-size: 21px;
+  }
+  #game .led-panel-bezel {
+    padding: 10px 6px;
+  }
+  #game .led-panel-inner {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  #game .led-digits-row {
+    padding: 6px;
+  }
+  #game .seg7 {
+    width: 27px;
+    height: 46px;
+  }
+  #game .led-panel-divider {
+    display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) and (min-width: 701px) and (max-width: 1000px) {
+  #game .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 32%);
+  }
+}

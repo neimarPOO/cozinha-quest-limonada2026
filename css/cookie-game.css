@@ -1,0 +1,305 @@
+/* Receita de cookies: estações 3D e controles equivalentes por teclado/toque. */
+[hidden] {
+  display: none !important;
+}
+#cookieScene {
+  position: absolute;
+  inset: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+#cookieScene canvas {
+  display: block;
+  max-width: none;
+}
+#game.cookie-mode .scene {
+  flex: none;
+  height: clamp(360px, 42vw, 610px);
+  min-height: 0;
+}
+.cookie-mode #sceneHint {
+  max-width: 320px;
+}
+.cookie-controls {
+  margin-top: 18px;
+}
+.cookie-learning-note {
+  color: #a9c6ba;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 10px 12px;
+  background: #54cbb210;
+  border: 1px solid #54cbb229;
+  border-radius: 8px 3px;
+}
+.cookie-controls details {
+  border-top: 1px solid #8ec3a72c;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.cookie-controls summary {
+  cursor: pointer;
+  color: #d3ecb5;
+  font-size: 11px;
+  font-weight: 800;
+  padding-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+.cookie-inventory,
+.cookie-stations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 7px;
+}
+.cookie-item {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  column-gap: 6px;
+  text-align: left;
+  min-height: 64px;
+  padding: 10px 8px;
+  border: 1px solid #7caa9440;
+  border-radius: 8px 3px;
+  background: #0a151d;
+  color: #d7e7d8;
+}
+.cookie-item > span {
+  grid-row: span 2;
+  font-size: 20px;
+  align-self: center;
+}
+.cookie-item b {
+  font-size: 10px;
+  line-height: 1.3;
+}
+.cookie-item small {
+  color: #9eb6a7;
+  font-size: 9px;
+}
+.cookie-item.is-next {
+  border-color: #c1ef62;
+  background: #b7ec4215;
+  box-shadow: inset 2px 0 #c1ef62;
+}
+.cookie-item:hover {
+  border-color: #c3e48b;
+}
+.cookie-task {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #a6d65365;
+  border-radius: 12px 4px;
+  background: #080f18;
+}
+#cookieTaskInstruction {
+  color: #e3f4ca;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin-top: 0;
+}
+#cookieTaskAction {
+  width: 100%;
+  font-size: 12px;
+}
+#cookieRealTime,
+#cookieBuff,
+#cookiePortioning p {
+  font-size: 11px;
+  color: #a8c5b4;
+  line-height: 1.7;
+}
+#cookieBuff {
+  border-top: 1px solid #8fbd6c30;
+  padding-top: 10px;
+  margin-bottom: 0;
+  color: #c8e58c;
+}
+#cookieActivityProgress {
+  width: 100%;
+  height: 15px;
+  accent-color: #baf34b;
+}
+#cookieActivityText {
+  font-size: 12px;
+  color: #d8efaf;
+}
+#cookieBakeState {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffd57d;
+  line-height: 1.7;
+}
+#cookieBaking .btn {
+  width: 100%;
+  margin-top: 8px;
+}
+#cookieTray {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 15px;
+  border: 5px solid #637778;
+  border-radius: 10px;
+  background: #d2bc8f;
+  padding: 8px;
+}
+.cookie-tray-slot {
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 30px;
+  border: 1px dashed #6e6247;
+  background: #fff0c52e;
+  color: #4a412e;
+  border-radius: 50%;
+  font-size: 17px;
+  padding: 0;
+}
+.cookie-tray-slot:disabled {
+  opacity: 1;
+  background: #ad783a33;
+}
+.cookie-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #030912de;
+  backdrop-filter: blur(8px);
+  padding: 16px;
+}
+.cookie-modal-card {
+  width: min(510px, 100%);
+  max-height: 90svh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid #b8ed4f88;
+  border-radius: 22px 6px;
+  background: linear-gradient(140deg, #20302a, #0d161e);
+  box-shadow: 0 24px 65px #0009;
+}
+.cookie-modal-heading {
+  display: flex;
+  gap: 15px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cookie-modal-heading h2 {
+  margin: 8px 0 15px;
+  color: #f3f7e5;
+  font-size: 25px;
+  line-height: 1.15;
+  font-style: italic;
+}
+.cookie-modal-heading .eyebrow {
+  font-size: 9px;
+}
+.cookie-modal-heading button {
+  padding: 6px 12px;
+  min-height: 40px;
+}
+#cookieActionDescription {
+  color: #c9d8cc;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.cookie-modal label {
+  margin-top: 14px;
+  color: #c9d9bc;
+}
+.cookie-modal input,
+.cookie-modal select {
+  background: #07121c;
+  color: #e5efdc;
+  min-height: 46px;
+  border-color: #8aad744f;
+}
+.cookie-modal select {
+  font-size: 13px;
+}
+.cookie-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.cookie-modal-actions .btn {
+  font-size: 12px;
+}
+#cookieModalError {
+  color: #ffb99a;
+  font-size: 12px;
+  min-height: 18px;
+}
+#game.cookie-mode .game-mission {
+  overflow: visible;
+}
+@media (max-width: 900px) {
+  #game.cookie-mode .scene {
+    height: 420px;
+  }
+  .cookie-inventory,
+  .cookie-stations {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 500px) {
+  .cookie-inventory,
+  .cookie-stations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #game.cookie-mode .scene {
+    height: 350px;
+  }
+  .cookie-modal-card {
+    padding: 18px;
+  }
+  .cookie-modal-heading h2 {
+    font-size: 22px;
+  }
+  .cookie-task {
+    padding: 12px;
+  }
+}
+#game.cookie-mode .scene-overlay {
+  z-index: 3;
+}
+#cookieScene {
+  z-index: 1;
+}
+.cookie-mode #timer::after {
+  content: " TEMPO DE AÇÃO";
+  display: block;
+  font:
+    7px/1.4 system-ui,
+    sans-serif;
+  letter-spacing: 0.7px;
+  color: #c8bf9d;
+  text-shadow: none;
+}
+.cookie-touch-mode,
+.cookie-touch-hint {
+  display: none;
+}
+@media (pointer: coarse), (max-width: 900px) {
+  .cookie-touch-mode {
+    display: block;
+    width: 100%;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .cookie-touch-mode[aria-pressed="true"] {
+    background: #c1ef62;
+    color: #142000;
+  }
+  .cookie-touch-hint {
+    display: block;
+    font-size: 11px;
+    color: #aec5b7;
+  }
+}

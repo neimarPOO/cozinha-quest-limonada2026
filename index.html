@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=87f4cac7350c">
   <link rel="stylesheet" href="css/arcade.css?v=2">
+  <link rel="stylesheet" href="css/game-arcade.css?v=1">
+  <link rel="stylesheet" href="css/cookie-game.css?v=1">
 </head>
 
 <body>
@@ -72,7 +74,8 @@
       </div>
       <div id="game" class="hidden">
         <div class="layout">
-          <div class="panel">
+          <div class="panel game-workbench">
+            <div class="workbench-heading"><span class="eyebrow">COZINHA QUEST</span><span class="workbench-label">Sua bancada de preparo</span><span class="workbench-live">● AO VIVO</span></div>
             <div class="scene-navigation" id="sceneNavigation" hidden>
               <p id="sceneNavigationHint">Deslize para os lados para explorar a cozinha e para cima para rolar a página.</p>
               <button type="button" class="btn" id="sceneInteraction" aria-pressed="false" aria-controls="threeRoot">Mover ingredientes</button>
@@ -96,6 +99,34 @@
               <div class="scene-overlay"><span class="pill" id="recipeName">Receita</span><span class="pill"
                   style="font-weight:600" id="sceneHint">🖱️ Arraste os ingredientes</span><span class="pill timer"
                   id="timer">00:00</span></div>
+
+            </div>
+            <div class="game-scoreboard"><div><span class="eyebrow">SUA PONTUAÇÃO</span><b id="score">0 pontos</b></div><div><span class="eyebrow">PROGRESSO DA RECEITA</span><span id="stepCount">Etapa 1</span></div></div>
+            <div class="progress">
+              <div id="progressBar"></div>
+            </div>
+          </div>
+          <div class="panel game-mission">
+            <span class="eyebrow">SUA MISSÃO AGORA</span>
+            <h2 id="stepTitle">Etapa</h2>
+            <p id="stepHint" class="muted"></p>
+            <div class="status" id="feedback" aria-live="polite">Escolha o ingrediente.</div>
+            <p class="muted" id="dragHint">🖱️ <b>Arraste</b> o ingrediente correto até a tigela (ou até a pia para
+              lavar). Depois <b>arraste a ferramenta destacada</b> — colher, peneira, faca ou panela — até a zona
+              iluminada. Nas etapas de massa, <b>clique na massa dentro da tigela</b>.</p>
+            <h3 class="recipe-roadmap-heading">Roteiro da receita</h3>
+            <div class="steps" id="stepList"></div>
+            <div id="manual" class="hidden">
+              <h3>1. Escolha o ingrediente</h3>
+              <div class="ingredient-grid" id="ingredientChoices"></div>
+              <h3 style="margin-top:18px">2. Faça o preparo</h3>
+              <div class="action-grid" id="actionChoices"></div><button class="btn primary" id="addBtn"
+                style="width:100%;margin-top:12px">Adicionar à receita →</button>
+              <p class="foot">Modo sem 3D: jogue com os botões.</p>
+            </div>
+            <div class="divider"></div><button class="btn" id="quitBtn" style="width:100%">Encerrar tentativa</button>
+          </div>
+        </div>
               <div id="ovenModal" class="oven-modal-overlay hidden" role="dialog" aria-modal="true"
                 aria-labelledby="ovenModalTitle">
                 <div class="oven-modal-card">
@@ -217,32 +248,6 @@
                       id="ovenFire" class="btn primary btn-fire">🔥 Acionar Forno</button></div>
                 </div>
               </div>
-            </div>
-            <div class="flex between" style="margin-top:12px"><b id="score">0 pontos</b><span class="muted"
-                id="stepCount">Etapa 1</span></div>
-            <div class="progress">
-              <div id="progressBar"></div>
-            </div>
-          </div>
-          <div class="panel">
-            <h2 id="stepTitle">Etapa</h2>
-            <p id="stepHint" class="muted"></p>
-            <div class="status" id="feedback" aria-live="polite">Escolha o ingrediente.</div>
-            <p class="muted" id="dragHint">🖱️ <b>Arraste</b> o ingrediente correto até a tigela (ou até a pia para
-              lavar). Depois <b>arraste a ferramenta destacada</b> — colher, peneira, faca ou panela — até a zona
-              iluminada. Nas etapas de massa, <b>clique na massa dentro da tigela</b>.</p>
-            <div class="steps" id="stepList"></div>
-            <div id="manual" class="hidden">
-              <h3>1. Escolha o ingrediente</h3>
-              <div class="ingredient-grid" id="ingredientChoices"></div>
-              <h3 style="margin-top:18px">2. Faça o preparo</h3>
-              <div class="action-grid" id="actionChoices"></div><button class="btn primary" id="addBtn"
-                style="width:100%;margin-top:12px">Adicionar à receita →</button>
-              <p class="foot">Modo sem 3D: jogue com os botões.</p>
-            </div>
-            <div class="divider"></div><button class="btn" id="quitBtn" style="width:100%">Encerrar tentativa</button>
-          </div>
-        </div>
       </div>
       <div id="end" class="result-card-stage hidden">
         <div class="result-card">
@@ -404,7 +409,10 @@
   </div>
   <script src="public/three.min.js?v=3b3a1c97de3c"></script>
   <script src="public/models.js?v=b792297364ba"></script>
-  <script src="js/app.js?v=arcade-1"></script>
+  <script src="js/app.js?v=cookies-2"></script>
+  <script src="js/cookie-recipe.js?v=1"></script>
+  <script src="js/cookie-scene.js?v=1"></script>
+  <script src="js/cookie-game.js?v=1"></script>
   <script src="js/interface.js?v=1"></script>
 </body>
 
