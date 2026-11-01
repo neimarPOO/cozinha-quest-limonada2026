@@ -9,16 +9,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=87f4cac7350c">
+  <link rel="stylesheet" href="css/arcade.css?v=2">
 </head>
 
 <body>
   <div class="shell">
     <header class="top">
       <div>
-        <div class="logo">🍋 LIMONADA <span>COZINHA QUEST</span></div>
-        <div class="sub">SUMMIT • Arcade gastronômico • Um computador • 21 dias</div>
+        <div class="logo"><span class="brand-lemon" aria-hidden="true">🍋</span><div>LIMONADA <span>COZINHA QUEST</span></div></div>
+        <div class="sub">SUMMIT · ARCADE GASTRONÔMICO</div>
       </div>
-      <div class="flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge">Dados
+      <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge">Dados
           locais</span></div>
     </header>
     <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">🎮 Jogar</button><button
@@ -30,17 +31,44 @@
         type="button" title="Sair da Área Administrativa">🚪 Sair do Admin</button></nav>
     <section class="view active" id="play">
       <div id="intro" class="panel">
+        <div class="lobby-mobile-art" aria-hidden="true"></div>
+        <div class="intro-heading"><span class="eyebrow">SUA PRÓXIMA CONQUISTA COMEÇA NA COZINHA</span>
         <h1>Prepare. Acerte. <span class="accent">Conquiste.</span></h1>
         <p class="muted">Escolha uma receita e arraste os ingredientes até a tigela, lave na pia, corte na tábua e asse
           no fogão. Ao alcançar a pontuação mínima do evento, a roleta de recompensas é liberada!</p>
-        <div class="recipe-list" id="recipeList"></div>
-        <div class="howto">
+        </div>
+        <div class="lobby-grid">
+          <div class="recipe-list" id="recipeList"></div>
+          <aside class="quest-progress" aria-label="Progresso do evento">
+            <div class="eyebrow">SEU DIÁRIO DE CHEF</div>
+            <h2>Seu progresso</h2>
+            <div class="quest-metric">
+              <span aria-hidden="true">⭐</span>
+              <div><small>Pontuação do evento</small><strong id="questScore">0 <em>pts</em></strong></div>
+            </div>
+            <div class="quest-metric">
+              <span aria-hidden="true">✓</span>
+              <div><small>Receitas concluídas</small><strong id="questRecipes">0 / 3</strong></div>
+            </div>
+            <div class="quest-metric">
+              <span aria-hidden="true">🎁</span>
+              <div><small>Meta da roleta por partida</small><strong id="questGoal">500 pts</strong></div>
+            </div>
+            <p class="quest-note">Cada receita é uma nova chance de conquistar.</p>
+          </aside>
+        </div>
+        <div class="howto" id="howToPlay">
           <div>🖱️<b>Arraste</b><span>o ingrediente correto até a tigela</span></div>
           <div>🧼<b>Lave</b><span>na pia, quando a etapa pedir</span></div>
           <div>🔪<b>Prepare</b><span>faca na tábua • colher e peneira na tigela</span></div>
           <div>🔥<b>Asse</b><span>cookie/focaccia na assadeira → forno</span></div>
         </div>
-        <p class="foot">Cada senha permite uma tentativa. O monitor deve conferir a senha física antes de iniciar.</p>
+        <div class="lobby-invitation">
+          <span class="invitation-line" aria-hidden="true"></span>
+          <p>ESCOLHA SUA RECEITA <b aria-hidden="true">↑</b><small>O próximo grande chef pode ser você.</small></p>
+          <span class="invitation-line" aria-hidden="true"></span>
+        </div>
+        <p class="foot">ⓘ Cada senha permite uma tentativa. O monitor deve conferir a senha física antes de iniciar.</p>
       </div>
       <div id="game" class="hidden">
         <div class="layout">
@@ -259,13 +287,13 @@
     </section>
     <section class="view" id="dashboard">
       <div class="panel">
-        <h2>Painel dos 21 dias</h2>
+        <h2>Painel do evento</h2>
         <p class="muted">Estatísticas acumuladas e por dia; não requer internet.</p>
         <div class="formrow">
           <div><label>Visualizar</label><select id="dayFilter">
               <option value="all">Todos os dias</option>
             </select></div>
-          <div><label>Dia atual do evento (1 a 21)</label><input id="currentDay" type="number" min="1" max="21"></div>
+          <div><label>Dia atual do evento</label><input id="currentDay" type="number" min="1" max="21"></div>
         </div>
         <div class="stats" id="stats"></div>
         <div class="divider"></div>
@@ -298,7 +326,7 @@
         <p class="muted">Cadastre vagas por dia e horário. A duração é informada no ingresso. Reserve previamente os
           lugares de convidados.</p>
         <div class="formrow">
-          <div><label>Dia (1–21)</label><input id="sessionDay" type="number" min="1" max="21" value="1"></div>
+          <div><label>Dia da sessão</label><input id="sessionDay" type="number" min="1" max="21" value="1"></div>
           <div><label>Horário</label><input id="sessionTime" type="time" value="14:00"></div>
           <div><label>Vagas públicas</label><input id="sessionSeats" type="number" min="1" value="8"></div>
           <div><label>Duração (minutos)</label><input id="sessionDuration" type="number" min="10" value="30"></div>
@@ -376,7 +404,8 @@
   </div>
   <script src="public/three.min.js?v=3b3a1c97de3c"></script>
   <script src="public/models.js?v=b792297364ba"></script>
-  <script src="js/app.js?v=229ee1a4f3c1"></script>
+  <script src="js/app.js?v=arcade-1"></script>
+  <script src="js/interface.js?v=1"></script>
 </body>
 
 </html>
