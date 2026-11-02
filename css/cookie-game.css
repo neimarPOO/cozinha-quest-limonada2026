@@ -637,3 +637,59 @@ body.cookie-immersive {
     min-height: 40px;
   }
 }
+#game.cookie-mode #stepHint {
+  padding: 12px;
+  border: 1px solid #bce75e60;
+  border-left: 4px solid #bce75e;
+  border-radius: 6px 12px;
+  background: #bce75e0c;
+  color: #e8f5d1;
+  font-weight: 700;
+  line-height: 1.65;
+}
+.recipe-status-attention {
+  animation: recipeStatusAttention 0.9s ease-in-out 3;
+}
+@keyframes recipeStatusAttention {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 #c7f25b00;
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px #c7f25b35,
+      0 0 20px #c7f25b25;
+    background: #bce75e20;
+  }
+}
+#timer::after {
+  content: "TEMPO DE JOGO" !important;
+}
+#timer[data-paused="true"]::after {
+  content: "PAUSADO · AÇÃO EM CURSO" !important;
+}
+#recipeRepeatButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+#recipeRepeatButtons .btn {
+  font-size: 11px;
+  min-height: 44px;
+  padding: 8px;
+}
+#recipeRepeatCount {
+  font-size: 12px;
+  color: #dbefb6;
+}
+#recipeAdvance {
+  margin-block: 10px;
+  width: 100%;
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .recipe-status-attention {
+    animation: none;
+    outline: 2px solid #bce75e80;
+  }
+}

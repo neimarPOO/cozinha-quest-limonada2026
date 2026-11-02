@@ -364,6 +364,7 @@ window.CookieScene = class CookieScene {
         x: e.clientX,
         y: e.clientY,
         home: hit.g.position.clone(),
+        contact: hit.point?.clone(),
       };
       canvas.setPointerCapture(e.pointerId);
       this.updateHand(e);
@@ -431,7 +432,8 @@ window.CookieScene = class CookieScene {
           const local = this.tray.worldToLocal(v);
           this.place((local.x + 1.5) / 3, (local.z + 1) / 2, true);
         }
-      } else this.interact(d.id, d.moved ? target?.id : null);
+      } else
+        this.interact(d.id, d.moved ? target?.id : null, "scene", d.contact);
       this.updateHand(e);
     };
     this.cancel = () => {
@@ -845,8 +847,8 @@ window.CookieScene = class CookieScene {
       let g = h.object;
       if (g.isSprite) continue;
       while (g && !g.userData.entity) g = g.parent;
-      if (g && g.userData.entity !== ignore)
-        return { id: g.userData.entity, g };
+      if (g && g.visible && g.userData.entity !== ignore)
+        return { id: g.userData.entity, g, point: h.point };
     }
     return null;
   }
@@ -859,10 +861,18 @@ window.CookieScene = class CookieScene {
       if (target)
         this.ring.position.set(target.position.x, 0.04, target.position.z);
     }
-    this.dryMix.visible = state.index > 1;
-    this.wetMix.visible = state.index > 7;
+    const done = (item) =>
+      state.history?.some((h) => h.item === item && !h.skipped);
+    const taskIndex = (item, predicate = () => true) =>
+      state.tasks.findIndex((t) => t.item === item && predicate(t));
+    this.dryMix.visible = done("flour");
+    this.wetMix.visible = done("butter");
     this.wetMix.material.color.set(
-      state.index > 14 ? 0xcba16c : state.index > 10 ? 0xd0b184 : 0x82532e,
+      state.index > taskIndex("dry", (t) => t.target === "wet")
+        ? 0xcba16c
+        : done("mixer")
+          ? 0xd0b184
+          : 0x82532e,
     );
     if (state.status === "running" && t.phase === 1) {
       this.wetMix.material.color.lerp(
@@ -870,21 +880,18 @@ window.CookieScene = class CookieScene {
         Math.min(1, state.elapsed / state.target),
       );
     }
-    for (const chip of this.doughChips) chip.visible = state.index > 16;
-    this.dry.visible = state.index < 15;
-    this.paperMesh.visible = state.index > 19;
+    for (const chip of this.doughChips) chip.visible = done("chips");
+    this.dry.visible = !done("dry");
+    this.paperMesh.visible = done("paper");
     if (this.drag?.id !== "wet") this.wet.position.set(0.6, 0, -1.35);
     if (t?.item === "mixer" && state.status === "running")
       this.wet.position.set(2.05, 0, -2.2);
     if (t?.kind === "chill" && state.status === "running")
       this.wet.position.set(-5.5, 1, -2.1);
-    this.ovenDoor.rotation.x = state.index === 22 ? -0.7 : 0;
+    this.ovenDoor.rotation.x =
+      t.item === "tray" && t.target === "oven" ? -0.7 : 0;
     this.ovenLight.material.color.set(
-      state.status === "baking"
-        ? 0xff8e22
-        : state.index > 21
-          ? 0xc66825
-          : 0x3d2f1b,
+      state.status === "baking" ? 0xff8e22 : done("oven") ? 0xc66825 : 0x3d2f1b,
     );
     for (const id of [
       "flour",
@@ -898,12 +905,12 @@ window.CookieScene = class CookieScene {
       "vanilla",
       "chips",
     ]) {
-      const addedAt = CookieRecipe.tasks.findIndex((task) => task.item === id);
+      const addedAt = state.tasks.findIndex((task) => task.item === id);
       this.objects.get(id).visible = state.index <= addedAt;
     }
     if (this.drag?.id !== "tray") this.tray.position.set(4, 0, 1);
-    if (state.index === 23) this.tray.position.set(5, 0.35, -2.1);
-    else if (state.index >= 24) this.tray.position.set(0.1, 0.1, 1.8);
+    if (t.kind === "bake") this.tray.position.set(5, 0.35, -2.1);
+    else if (state.bakeQuality) this.tray.position.set(0.1, 0.1, 1.8);
     while (this.cookies.length < state.portions.length) {
       const mesh = this.sphere(this.tray, 0xc69762, 0.16, [0, 0.4, 0]);
       for (let c = 0; c < 5; c++) {

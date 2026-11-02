@@ -75,7 +75,6 @@
     procedure = "Adicionar a quantidade da receita",
   ) => task(phase, item, procedure, { quantity, unit, target });
   const tasks = [
-    task(0, "dry", "Selecionar a tigela média"),
     add(0, "flour", 450, "g", "dry"),
     add(0, "soda", 5, "g", "dry"),
     add(0, "powder", 5, "g", "dry"),
@@ -85,7 +84,6 @@
       target: "dry",
       note: "Misture os pós por 3 s no jogo, até distribuir os fermentos e o sal.",
     }),
-    task(1, "wet", "Selecionar a tigela grande"),
     add(1, "butter", 200, "g", "wet", "Adicionar amaciada, em ponto de pomada"),
     add(1, "brown", 200, "g", "wet"),
     add(1, "white", 100, "g", "wet"),
@@ -148,7 +146,30 @@
     task(7, "plate", "Transferir com cuidado e servir"),
   ];
   class Session {
-    constructor() {
+    constructor(definition = null) {
+      this.definition = definition || {
+        id: "cookie",
+        name: "Cookies de chocolate",
+        phases,
+        items,
+        tasks,
+        bake: { min: 8, max: 10, burn: 15 },
+        ingredientIds: [
+          "flour",
+          "soda",
+          "powder",
+          "salt",
+          "butter",
+          "brown",
+          "white",
+          "egg",
+          "vanilla",
+          "chips",
+        ],
+      };
+      this.tasks = this.definition.tasks;
+      this.history = [];
+      this.repetitions = [];
       this.index = 0;
       this.status = "ready";
       this.elapsed = 0;
@@ -162,21 +183,26 @@
       this.holding = false;
     }
     get task() {
-      return tasks[this.index];
+      return this.tasks[this.index];
     }
     get score() {
       return Math.max(
         0,
         this.completed
           ? 800 +
-              (this.bakeQuality === "ideal" ? 100 : 50) +
+              (!this.definition.bake || this.bakeQuality === "ideal"
+                ? 100
+                : 50) +
               this.aesthetics -
               this.penalties
-          : Math.floor((this.index / tasks.length) * 800) - this.penalties,
+          : Math.floor((this.index / this.tasks.length) * 800) - this.penalties,
       );
     }
     get aesthetics() {
-      return Math.round(100 * (this.rested ? 1.1 : 1));
+      const garnish = this.definition.bonusItems?.every((id) =>
+        this.history.some((h) => h.item === id && !h.skipped),
+      );
+      return Math.round(100 * (this.rested || garnish ? 1.1 : 1));
     }
     reject(message) {
       this.penalties += 5;
@@ -188,13 +214,31 @@
       const t = this.task;
       if (values.procedure !== t.procedure)
         return this.reject("Confira o procedimento desta etapa.");
-      if (t.quantity && Number(values.quantity) !== t.quantity)
-        return this.reject(`A receita pede ${t.quantity} ${t.unit}.`);
-      if (t.temperature && Number(values.temperature) !== 180)
-        return this.reject("Pré-aqueça a 180 °C.");
+      if (t.quantity) {
+        const quantity = Number(values.quantity),
+          range = t.quantityRange || [t.quantity, t.quantity];
+        if (
+          !Number.isFinite(quantity) ||
+          quantity < range[0] ||
+          quantity > range[1] ||
+          (t.integer !== false && !Number.isInteger(quantity))
+        )
+          return this.reject(
+            `A receita pede ${range[0] === range[1] ? range[0] : range.join(" a ")} ${t.unit}.`,
+          );
+      }
+      if (t.temperature && Number(values.temperature) !== t.temperature)
+        return this.reject(`Pré-aqueça a ${t.temperature} °C.`);
       let duration = Number(values.duration);
-      if (t.duration && duration !== t.duration)
-        return this.reject(`Nesta adaptação, use ${t.duration} segundos.`);
+      if (
+        t.duration &&
+        (!Number.isFinite(duration) ||
+          duration < (t.durationRange?.[0] || t.duration) ||
+          duration > (t.durationRange?.[1] || t.duration))
+      )
+        return this.reject(
+          `Nesta adaptação, use ${t.durationRange ? t.durationRange.join(" a ") : t.duration} segundos.`,
+        );
       if (
         t.kind === "chill" &&
         (!Number.isInteger(duration) || duration < 10 || duration > 15)
@@ -202,9 +246,24 @@
         return this.reject("Escolha de 10 a 15 segundos para o descanso.");
       if (
         t.kind === "bake" &&
-        (!Number.isInteger(duration) || duration < 8 || duration > 10)
+        (!Number.isInteger(duration) ||
+          duration < this.definition.bake.min ||
+          duration > this.definition.bake.max)
       )
-        return this.reject("Escolha de 8 a 10 segundos para o assamento.");
+        return this.reject(
+          `Escolha de ${this.definition.bake.min} a ${this.definition.bake.max} segundos para o assamento.`,
+        );
+      this.pending = {
+        item: t.item,
+        quantity: t.quantity ? Number(values.quantity) : undefined,
+        duration,
+        procedure: t.procedure,
+      };
+      if (t.kind === "repeat") {
+        this.status = "repeat";
+        this.repetitions = [];
+        return { ok: true };
+      }
       if (t.kind === "portion") {
         const n = Number(values.portions);
         if (!Number.isInteger(n) || n < 4 || n > 20)
@@ -230,19 +289,49 @@
     }
     skipChill() {
       if (this.task?.kind !== "chill" || this.status !== "ready") return false;
+      this.pending = { item: this.task.item, skipped: true };
       this.advance();
       return true;
     }
+    skipOptional() {
+      if (
+        this.status !== "ready" ||
+        (!this.task?.optional && this.task?.kind !== "chill")
+      )
+        return false;
+      this.pending = { item: this.task.item, skipped: true };
+      this.advance();
+      return true;
+    }
+    advanceTime() {
+      if (this.status !== "running" || !this.task?.allowSkip) return false;
+      this.tick(this.target - this.elapsed, true);
+      return true;
+    }
+    repeat(position) {
+      if (this.status !== "repeat") return { ok: false };
+      if (this.repetitions.includes(position))
+        return this.reject("Use outro ponto.");
+      this.repetitions.push(position);
+      if (this.repetitions.length >= this.task.count) this.advance();
+      return { ok: true };
+    }
     advance() {
+      this.history.push({
+        ...this.pending,
+        item: this.task?.item,
+        phase: this.task?.phase,
+      });
+      this.pending = null;
       this.index++;
       this.elapsed = 0;
-      this.status = this.index === tasks.length ? "complete" : "ready";
+      this.status = this.index === this.tasks.length ? "complete" : "ready";
       this.completed = this.status === "complete";
     }
     get requiresStir() {
       return (
         this.status === "running" &&
-        ["spoon", "spatula"].includes(this.task?.item)
+        (this.task?.hold || ["spoon", "spatula"].includes(this.task?.item))
       );
     }
     tick(seconds, working = false) {
@@ -251,7 +340,7 @@
       if (this.requiresStir && !working) return;
       this.elapsed += seconds;
       if (this.status === "baking") {
-        if (this.elapsed > 15) {
+        if (this.elapsed > this.definition.bake.burn) {
           this.status = "burnt";
           this.bakeQuality = "burnt";
         }
@@ -303,19 +392,25 @@
           ok: false,
           message: "Equipe as luvas térmicas antes de retirar.",
         };
-      if (this.elapsed < 8)
+      if (this.elapsed < this.definition.bake.min)
         return {
           ok: false,
-          message: "Ainda está cru. Aguarde pelo menos 8 segundos.",
+          message: `Ainda está cru. Aguarde pelo menos ${this.definition.bake.min} segundos.`,
         };
-      this.bakeQuality = this.elapsed <= 10 ? "ideal" : "dry";
+      this.bakeQuality =
+        this.elapsed <= this.definition.bake.max ? "ideal" : "dry";
       this.advance();
       return { ok: true };
     }
     report() {
       return {
         version: 1,
-        phases: phases.length,
+        recipeId: this.definition.id,
+        recipeName: this.definition.name,
+        phases: this.definition.phases.length,
+        ingredients: this.history
+          .filter((h) => h.quantity)
+          .map((h) => ({ item: h.item, quantity: h.quantity })),
         portions: this.portions.length,
         rested: this.rested,
         aesthetics: this.aesthetics,
@@ -325,6 +420,41 @@
     }
   }
   const requiresBowlDrop = (task) =>
-    Boolean(task?.quantity || (task?.item === "dry" && task?.target === "wet"));
-  return { phases, items, tasks, Session, requiresBowlDrop };
+    Boolean(
+      task?.quantity ||
+        task?.delivery ||
+        (task?.item === "dry" && task?.target === "wet"),
+    );
+  const shouldPauseClock = (session) =>
+    session.status === "running" || session.status === "baking";
+  const cookie = {
+    id: "cookie",
+    name: "Cookies de chocolate",
+    emoji: "🍪",
+    phases,
+    items,
+    tasks,
+    ingredientIds: [
+      "flour",
+      "soda",
+      "powder",
+      "salt",
+      "butter",
+      "brown",
+      "white",
+      "egg",
+      "vanilla",
+      "chips",
+    ],
+    bake: { min: 8, max: 10, burn: 15 },
+  };
+  return {
+    phases,
+    items,
+    tasks,
+    Session,
+    requiresBowlDrop,
+    shouldPauseClock,
+    cookie,
+  };
 });

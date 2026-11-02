@@ -1,0 +1,109 @@
+1. Inventário de Ingredientes (Items / Assets)
+Trigo (Farinha de Trigo — 500g)
+
+Água (Água morna — 350ml)
+
+Fermento (Fermento biológico seco — 7g)
+
+Açúcar (1 colher de chá)
+
+Sal (2 colheres de chá)
+
+Azeite (Azeite de oliva extra virgem — 60ml)
+
+Alecrim (Ramos frescos — 15g)
+
+Sal Grosso (1 colher de sopa)
+
+2. Utensílios & Estações de Trabalho (Interactables / Workstations)
+Tigela Grande (Recipiente para mistura e primeira fermentação)
+
+Copo Medidor (Para líquidos)
+
+Colher de Pau / Espátula (Para misturar)
+
+Assadeira Retangular 20x30cm (Superfície de assamento)
+
+Pano de Prato (Para cobrir durante a fermentação)
+
+Forno Elétrico/Gás (Com controle de temperatura)
+
+Temporizador / Timer de Jogo
+
+3. Passo a Passo do Jogo (Game Loops & Timers)
+Fase 1: Ativação do Fermento (Pre-mix)
+[Interação] Na estante, pegue o Copo Medidor e preencha com Água (350ml).
+
+[Interação] Na bancada, adicione à água o Fermento (7g) e o Açúcar (1 colher).
+
+[Ação] Selecione a Colher de Pau e execute o minigame de Misturar até a barra de progresso completar (5 segundos).
+
+[Timer de Jogo] Deixe descansar na bancada.
+
+Timer: 10 minutos (No jogo: 10 segundos em tempo acelerado).
+
+Visual Feedback: A superfície da mistura ganha uma leve espuma amarelada.
+
+Fase 2: Preparo da Massa (Mixing)
+[Interação] Pegue a Tigela Grande e posicione-a na bancada central.
+
+[Interação] Adicione o Trigo (500g) e o Sal (2 colheres de chá) na tigela.
+
+[Interação] Despeje a mistura de fermento ativado e Azeite (20ml) na tigela.
+
+[Ação] Execute a mecânica de Mistura Suave com a espátula até formar uma massa pegajosa e homogênea (sem necessidade de sovar pesado).
+
+Fase 3: Primeira Fermentação (Proofing 1)
+[Interação] Cubra a Tigela Grande arrastando o Pano de Prato sobre ela.
+
+[Timer de Jogo] Mova a tigela para um local aquecido da bancada.
+
+[Mecânica de Espera]
+
+Timer: 1 hora (No jogo: 30 segundos ou botão "Avançar Tempo").
+
+Visual Feedback: A massa duplica de tamanho dentro da tigela.
+
+Fase 4: Modelagem na Forma (Shaping)
+[Interação] Pegue a Assadeira Retangular e aplique Azeite (20ml) no fundo.
+
+[Interação] Transfira a massa crescida da tigela para a assadeira.
+
+[Ação] Esfregue suavemente a massa com as mãos para espalhá-la até cobrir os cantos da assadeira.
+
+[Interação] Cubra novamente com o Pano de Prato.
+
+[Timer de Jogo]
+
+Timer: 30 minutos (No jogo: 15 segundos).
+
+Visual Feedback: A massa relaxa e preenche totalmente a forma.
+
+Fase 5: Texturização e Cobertura (Dimpling & Topping)
+[Ação - Minigame de Pressionar] Com as mãos limpas e untadas de azeite, clique/pressione sobre a massa em vários pontos usando os dedos.
+
+Visual Feedback: Surgem cavidades/buracos característicos da focaccia na superfície da massa.
+
+[Interação] Regue o restante do Azeite (20ml) por cima, garantindo que entre nas cavidades.
+
+[Interação] Salpique as folhas de Alecrim e o Sal Grosso sobre a superfície.
+
+Fase 6: Assamento (Baking)
+[Interação] Ligue o Forno e ajuste a temperatura para 220°C.
+
+[Interação] Abra o forno e insira a Assadeira.
+
+[Timer de Jogo & Riscos]
+
+Timer de Assamento Ideal: 20 a 25 minutos (No jogo: 20 a 25 segundos).
+
+Mecânica de Alerta: Se ultrapassar 30 segundos, a focaccia queima.
+
+Visual Feedback: A massa muda progressivamente do branco/bege para um dourado crosta vibrante.
+
+Fase 7: Finalização e Servir (Plating)
+[Interação] Com luvas térmicas, remova a assadeira do forno.
+
+[Timer de Jogo] Aguarde esfriar por 5 minutos (5 segundos no jogo) para desformar.
+
+[Ação] Corte em fatias retangulares usando uma faca de pão para finalizar a missão/prato.

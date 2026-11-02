@@ -1,0 +1,70 @@
+1. Inventário de Ingredientes (Items / Assets)
+Limões Frescos (4 unidades — Limão Taiti ou Siciliano)
+
+Água Gelada (1 Litro)
+
+Açúcar (4 a 6 colheres de sopa / ~100g)
+
+Gelo (8 a 10 cubos)
+
+Hortelã (Ramos frescos — Opcional/Garnish)
+
+2. Utensílios & Estações de Trabalho (Interactables / Workstations)
+Tábua de Corte + Faca de Cozinha
+
+Espremedor Manual / Extrator de Suco
+
+Jarra de Vidro Grande (1.5L)
+
+Colher Comprida de Mistura (Bailarina / Espátula alta)
+
+Copo Servidor
+
+Temporizador / Timer de Jogo
+
+3. Passo a Passo do Jogo (Game Loops & Timers)
+Fase 1: Preparo das Frutas (Cutting)
+[Interação] Pegue os Limões no inventário/geladeira e posicione-os na Tábua de Corte.
+
+[Ação - Minigame de Corte] Selecione a Faca de Cozinha e execute cortes transversais no centro de cada limão.
+
+Visual Feedback: Cada limão se divide em 2 metades (total de 8 metades de limão).
+
+Fase 2: Extração do Suco (Juicing)
+[Interação] Posicione o Espremedor Manual na bancada.
+
+[Ação - Minigame de Extração] Arraste cada metade de limão até o espremedor e execute o movimento de rotação/pressão até extrair todo o suco.
+
+Visual Feedback: O indicador de líquido no reservatório do espremedor sobe gradativamente até acumular ~150ml de suco concentrado.
+
+Fase 3: Montagem da Base na Jarra (Mixing Base)
+[Interação] Posicione a Jarra de Vidro Grande na bancada central.
+
+[Interação] Despeje o suco espremido dos limões para dentro da jarra.
+
+[Interação] Adicione a Água Gelada (1 Litro) e o Açúcar (4 a 6 colheres de sopa).
+
+Fase 4: Emulsão e Dissolução (Stirring)
+[Interação] Equipe a Colher Comprida de Mistura.
+
+[Ação - Minigame de Agitação] Execute o movimento circular continuo até dissolver totalmente os cristais de açúcar.
+
+Timer de Ação: 5 a 8 segundos.
+
+Visual Feedback: O líquido turvo no fundo se torna homogêneo com tom amarelo/esverdeado translúcido.
+
+Fase 5: Gelamento e Texturização (Chilling)
+[Interação] Pegue o balde de Gelo e adicione 8 a 10 cubos diretamente na jarra.
+
+[Timer de Jogo & Buff]
+
+Timer: 5 segundos para gelar a jarra.
+
+Visual Feedback: Gotículas de condensação (suor) aparecem na superfície externa de vidro da jarra, indicando temperatura ideal.
+
+Fase 6: Empratamento / Servir (Plating & Garnish)
+[Interação] Pegue um Copo Servidor limpo e coloque 2 cubos de gelo extras no fundo.
+
+[Ação] Arraste a Jarra de Vidro inclinando-a sobre o copo até preencher 90% do volume.
+
+[Interação - Decoração Opcional] Adicione uma fatia fina de limão na borda do copo e 1 ramo de Hortelã no topo (+10% de bônus na pontuação de apresentação).

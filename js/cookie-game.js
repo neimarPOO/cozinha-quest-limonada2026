@@ -1,8 +1,17 @@
-/* Controlador da receita detalhada; limonada e focaccia mantêm o fluxo original. */
+/* Controlador compartilhado das três receitas detalhadas. */
 (() => {
   "use strict";
-  const { phases, items, Session } = CookieRecipe;
-  const recipe = RECIPES.find((r) => r.id === "cookie");
+  const { Session } = CookieRecipe;
+  let definition = RecipeCatalog.cookie,
+    { phases, items } = definition;
+  let recipe = RECIPES.find((r) => r.id === "cookie");
+  for (const entry of RECIPES) {
+    const d = RecipeCatalog[entry.id];
+    if (d) {
+      entry.steps = d.phases.map(([name, hint]) => [name, "Preparar", hint]);
+      entry.desc = `${d.phases.length} fases: quantidades, procedimentos e tempos de preparo.`;
+    }
+  }
   recipe.desc =
     "Dos ingredientes ao prato: prepare cookies em oito fases, com tempos e procedimentos.";
   recipe.steps = phases.map(([name, hint]) => [name, "Preparar", hint]);
@@ -14,34 +23,33 @@
   const controls = document.createElement("details");
   controls.className = "cookie-controls";
   controls.hidden = true;
-  controls.setAttribute("aria-label", "Ingredientes e estações de cookies");
+  controls.setAttribute("aria-label", "Ingredientes e estações da receita");
   controls.innerHTML =
-    '<summary class="cookie-fallback-tab">⚠ Modo sem WebGL · abra somente se a visualização 3D falhar</summary><p class="cookie-learning-note">Estes controles alternativos permitem jogar quando o WebGL não está disponível.</p><p class="cookie-learning-note">⏱ O cronômetro pausa para ler e configurar. Durante o assamento, o forno continua contando, inclusive com o modal aberto.</p><button type="button" class="btn cookie-touch-mode" id="cookieMoveMode" aria-pressed="false">Ativar arraste de objetos</button><p class="cookie-touch-hint">Deslize a cena para os lados. Ative o arraste para mover objetos ou use os botões abaixo.</p><details open><summary>Ingredientes · quantidades da receita</summary><div class="cookie-inventory"></div></details><details open><summary>Utensílios e estações</summary><div class="cookie-stations"></div></details>';
+    '<summary class="cookie-fallback-tab">⚠ Modo sem WebGL · abra somente se a visualização 3D falhar</summary><p class="cookie-learning-note">Estes controles alternativos permitem jogar quando o WebGL não está disponível.</p><p class="cookie-learning-note">⏱ O cronômetro conta durante leitura, configuração e movimentação. Pausa apenas nas ações temporizadas; o forno continua seu próprio tempo, mesmo com modal aberto.</p><button type="button" class="btn cookie-touch-mode" id="cookieMoveMode" aria-pressed="false">Ativar arraste de objetos</button><p class="cookie-touch-hint">Deslize a cena para os lados. Ative o arraste para mover objetos ou use os botões abaixo.</p><details open><summary>Ingredientes · quantidades da receita</summary><div class="cookie-inventory"></div></details><details open><summary>Utensílios e estações</summary><div class="cookie-stations"></div></details>';
   document.querySelector(".game-workbench").append(controls);
-  const ingredientIds = [
-    "flour",
-    "soda",
-    "powder",
-    "salt",
-    "butter",
-    "brown",
-    "white",
-    "egg",
-    "vanilla",
-    "chips",
-  ];
-  for (const [id, [name, quantity, emoji]] of Object.entries(items)) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "cookie-item";
-    b.dataset.cookieItem = id;
-    b.innerHTML = `<span aria-hidden="true">${emoji}</span><b>${name}</b><small>${quantity}</small>`;
-    b.addEventListener("click", () => interact(id, null, "manual"));
-    controls
-      .querySelector(
-        ingredientIds.includes(id) ? ".cookie-inventory" : ".cookie-stations",
-      )
-      .append(b);
+  let ingredientIds = definition.ingredientIds;
+  function buildInventory() {
+    controls.querySelector(".cookie-inventory").replaceChildren();
+    controls.querySelector(".cookie-stations").replaceChildren();
+    for (const [id, [name, quantity, emoji]] of Object.entries(items)) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cookie-item";
+      b.dataset.cookieItem = id;
+      const icon = document.createElement("span"),
+        title = document.createElement("b"),
+        note = document.createElement("small");
+      icon.textContent = emoji;
+      title.textContent = name;
+      note.textContent = quantity;
+      b.append(icon, title, note);
+      b.addEventListener("click", () => interact(id, null, "manual"));
+      controls
+        .querySelector(
+          ingredientIds.includes(id) ? ".cookie-inventory" : ".cookie-stations",
+        )
+        .append(b);
+    }
   }
   const viewportTools = document.createElement("div");
   viewportTools.className = "cookie-viewport-tools";
@@ -53,7 +61,7 @@
   taskPanel.className = "cookie-task";
   taskPanel.hidden = true;
   taskPanel.innerHTML =
-    '<p id="cookieTaskInstruction"></p><button type="button" class="btn primary" id="cookieTaskAction">Configurar ação</button><p id="cookieRealTime"></p><div id="cookieActivity" hidden><progress id="cookieActivityProgress" max="1" value="0"></progress><p id="cookieActivityText" role="status"></p><button type="button" class="btn primary" id="cookieStir" aria-pressed="false">Segure para misturar · ou mantenha Espaço pressionado</button></div><div id="cookieBaking" hidden><p id="cookieBakeState" role="status"></p><button type="button" class="btn" id="cookieGloves">Equipar luvas</button><button type="button" class="btn primary" id="cookieRemove">Retirar assadeira</button></div><div id="cookiePortioning" hidden><p id="cookiePortionCount"></p><button type="button" class="btn" id="cookieCollect">Coletar uma porção</button><div id="cookieTray" role="group" aria-label="Posições na assadeira"></div><p>Posições com distância mínima. Bolinhas próximas são recusadas.</p></div><p id="cookieBuff"></p>';
+    '<p id="cookieTaskInstruction"></p><button type="button" class="btn primary" id="cookieTaskAction">Configurar ação</button><p id="cookieRealTime"></p><div id="cookieActivity" hidden><progress id="cookieActivityProgress" max="1" value="0"></progress><p id="cookieActivityText" role="status"></p><button type="button" class="btn primary" id="cookieStir" aria-pressed="false">Segure para misturar · ou mantenha Espaço pressionado</button></div><button type="button" class="btn" id="recipeAdvance" hidden>Avançar tempo de fermentação</button><div id="recipeRepeat" hidden><p id="recipeRepeatCount"></p><div id="recipeRepeatButtons"></div></div><div id="cookieBaking" hidden><p id="cookieBakeState" role="status"></p><button type="button" class="btn" id="cookieGloves">Equipar luvas</button><button type="button" class="btn primary" id="cookieRemove">Retirar assadeira</button></div><div id="cookiePortioning" hidden><p id="cookiePortionCount"></p><button type="button" class="btn" id="cookieCollect">Coletar uma porção</button><div id="cookieTray" role="group" aria-label="Posições na assadeira"></div><p>Posições com distância mínima. Bolinhas próximas são recusadas.</p></div><p id="cookieBuff"></p>';
   document
     .querySelector(".game-mission")
     .insertBefore(taskPanel, document.querySelector(".recipe-roadmap-heading"));
@@ -249,16 +257,16 @@
     }
     if (!gloves) {
       if (t.quantity)
-        numberField("quantity", `Quantidade (${t.unit})`, 1, 1000, t.quantity);
+        numberField("quantity", `Quantidade (${t.unit})`, 1, 2000);
       if (t.temperature)
-        numberField("temperature", "Temperatura (°C)", 100, 250, 180);
+        numberField("temperature", "Temperatura (°C)", 100, 250);
       if (t.duration || t.kind === "chill" || t.kind === "bake")
         numberField(
           "duration",
           t.kind === "chill"
             ? "Descanso: 10–15 s no jogo (12–24 h reais)"
             : t.kind === "bake"
-              ? "Meta: 8–10 s no jogo (8–10 min reais)"
+              ? `Meta: ${definition.bake.min}–${definition.bake.max} s no jogo (${definition.bake.min}–${definition.bake.max} min reais)`
               : `Tempo de ação no jogo (${t.duration} s)`,
           1,
           60,
@@ -272,7 +280,9 @@
           8,
         );
     }
-    $("cookieSkip").hidden = gloves || t.kind !== "chill";
+    $("cookieSkip").hidden = gloves || (!t.optional && t.kind !== "chill");
+    $("cookieSkip").textContent =
+      t.kind === "chill" ? "Pular descanso" : "Pular decoração";
     $("cookieModalError").textContent = "";
     modal.hidden = false;
     if (scene)
@@ -282,15 +292,32 @@
     positionModal();
     procedure.focus({ preventScroll: true });
   }
-  function interact(id, target, source = "scene") {
+  function interact(id, target, source = "scene", contact = null) {
     if (!active || !state.task) return;
     if (state.status === "baking") {
       if (id === "gloves") openModal("gloves");
       else if (id === "oven" || id === "tray") removeTray();
       else
         tell(
-          "Observe o forno. Equipe as luvas e retire entre 8 e 10 segundos.",
+          "Observe o forno. Equipe as luvas e retire no intervalo indicado no status.",
         );
+      return;
+    }
+    if (state.status === "repeat") {
+      const fruitCut =
+        recipe.id === "lemonade" &&
+        state.task.item === "knife" &&
+        id === "lemon";
+      if (id === state.task.item || id === state.task.target || fruitCut) {
+        const result = state.repeat(
+          contact && scene?.repeatPosition
+            ? scene.repeatPosition(contact, state.task)
+            : state.repetitions.length,
+        );
+        tell(result.ok ? "Procedimento executado." : result.message);
+        scene?.press?.();
+        render();
+      } else tell("Use o objeto indicado no status da receita.");
       return;
     }
     if (state.status === "portion") {
@@ -394,16 +421,18 @@
       state.status === "running"
         ? "Ação iniciada. Observe a transformação da mistura."
         : state.status === "baking"
-          ? "Forno ligado! Equipe as luvas e retire entre 8 e 10 segundos."
+          ? "Forno ligado! Equipe as luvas e retire no intervalo indicado no status."
           : "Procedimento correto. Continue a receita.",
     );
     render();
   });
   $("cookieModalClose").onclick = closeModal;
   $("cookieSkip").onclick = () => {
-    if (state?.skipChill()) {
+    if (state?.skipOptional()) {
       closeModal();
-      tell("Descanso pulado. Você pode concluir, sem o bônus de estética.");
+      tell(
+        "Etapa opcional pulada. A receita continua sem esse bônus de apresentação.",
+      );
       render();
     }
   };
@@ -411,6 +440,12 @@
     interact(state.task.item, null, controls.open ? "manual" : "scene");
   $("cookieGloves").onclick = () => openModal("gloves");
   $("cookieRemove").onclick = removeTray;
+  $("recipeAdvance").onclick = () => {
+    if (state.advanceTime()) {
+      tell("Fermentação concluída: a massa dobrou de volume.");
+      render();
+    }
+  };
   const stirButton = $("cookieStir");
   const endStir = () => {
     stirring = false;
@@ -477,8 +512,7 @@
   function render(allowComplete = true) {
     if (!active) return;
     if (state.status === "burnt") {
-      stopReason =
-        "Os cookies passaram de 15 segundos no forno e queimaram. Na próxima rodada, retire entre 8 e 10 segundos.";
+      stopReason = `${definition.name} passou de ${definition.bake.burn} segundos no forno e queimou. Retire entre ${definition.bake.min} e ${definition.bake.max} segundos.`;
       finish(false);
       return;
     }
@@ -492,14 +526,32 @@
     current.step = t.phase;
     current.score = state.score;
     $("stepTitle").textContent = `Fase ${t.phase + 1}: ${phases[t.phase][0]}`;
-    $("stepHint").textContent = phases[t.phase][1];
-    $("recipeName").textContent = "🍪 Cookies · receita completa";
+    const quantityHint = t.quantity
+      ? `${t.quantityRange ? t.quantityRange.join(" a ") : t.quantity} ${t.unit}`
+      : "";
+    const instruction = `${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""}: ${t.procedure}${t.duration ? " · " + (t.durationRange ? t.durationRange.join("–") : t.duration) + " segundos de ação" : ""}.`;
+    if ($("stepHint").textContent !== instruction)
+      $("stepHint").textContent = instruction;
+    const statusKey = recipe.id + ":" + state.index;
+    if (taskPanel.dataset.stepKey !== statusKey) {
+      taskPanel.dataset.stepKey = statusKey;
+      const status = $("stepHint");
+      status.classList.remove("recipe-status-attention");
+      void status.offsetWidth;
+      status.classList.add("recipe-status-attention");
+    }
+    $("stepHint").setAttribute("aria-live", "polite");
+    $("cookieStir").textContent = t.item.startsWith("half")
+      ? "Segure para pressionar e girar"
+      : "Segure para misturar · ou mantenha Espaço pressionado";
+    $("recipeName").textContent =
+      `${definition.emoji} ${definition.name} · receita completa`;
     $("sceneHint").textContent =
       `${items[t.item][2]} ${items[t.item][0]}${t.target ? " → " + items[t.target][0] : ""}`;
     $("score").textContent = `${current.score} pontos`;
-    $("stepCount").textContent = `${t.phase + 1} de 8`;
+    $("stepCount").textContent = `${t.phase + 1} de ${phases.length}`;
     $("progressBar").style.width =
-      `${(state.index / CookieRecipe.tasks.length) * 100}%`;
+      `${(state.index / state.tasks.length) * 100}%`;
     $("stepList").innerHTML = phases
       .map(
         ([name], i) =>
@@ -518,12 +570,38 @@
     $("cookieTaskAction").hidden = state.status !== "ready" || requiresDrop;
     if (requiresDrop)
       $("cookieTaskInstruction").textContent =
-        `Arraste ${items[t.item][0]} até ${items[t.target][0]}. O modal abrirá somente após a entrega correta.`;
+        `Arraste ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""} até ${items[t.target][0]}. O modal abrirá somente após a entrega correta.`;
     $("cookieTaskAction").textContent = `Configurar ${items[t.item][0]}`;
     $("cookieActivity").hidden = state.status !== "running";
     $("cookieStir").hidden = !state.requiresStir;
     $("cookieBaking").hidden = state.status !== "baking";
     $("cookiePortioning").hidden = state.status !== "portion";
+    $("recipeAdvance").hidden = state.status !== "running" || !t.allowSkip;
+    $("recipeRepeat").hidden = state.status !== "repeat";
+    if (state.status === "repeat") {
+      $("recipeRepeatCount").textContent =
+        `${state.repetitions.length} / ${t.count} · ${t.actionLabel}`;
+      if ($("recipeRepeatButtons").dataset.task !== statusKey) {
+        $("recipeRepeatButtons").dataset.task = statusKey;
+        $("recipeRepeatButtons").replaceChildren();
+        for (let i = 0; i < t.count; i++) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "btn";
+          button.textContent = `${t.actionLabel} ${i + 1}`;
+          button.onclick = () => {
+            const result = state.repeat(i);
+            tell(result.ok ? "Procedimento correto." : result.message);
+            scene?.press?.();
+            render();
+          };
+          $("recipeRepeatButtons").append(button);
+        }
+      }
+      [...$("recipeRepeatButtons").children].forEach(
+        (button, i) => (button.disabled = state.repetitions.includes(i)),
+      );
+    }
     if (state.status === "running") {
       $("cookieActivityProgress").value = Math.min(
         1,
@@ -534,12 +612,13 @@
     }
     if (state.status === "baking") {
       $("cookieBakeState").textContent =
-        `${state.elapsed.toFixed(1)} s no forno · meta escolhida: ${state.target} s · ${state.elapsed < 8 ? "assando" : state.elapsed <= 10 ? "RETIRE AGORA: bordas douradas" : "perdendo maciez — retire antes de 15 s!"}`;
+        `${state.elapsed.toFixed(1)} s no forno · meta escolhida: ${state.target} s · ${state.elapsed < definition.bake.min ? "assando" : state.elapsed <= definition.bake.max ? "RETIRE AGORA: ponto ideal" : "retire antes de " + definition.bake.burn + " s!"}`;
       $("cookieGloves").textContent = state.gloves
         ? "✓ Luvas equipadas"
         : "Equipar luvas";
       $("cookieGloves").disabled = state.gloves;
-      $("cookieRemove").disabled = !state.gloves || state.elapsed < 8;
+      $("cookieRemove").disabled =
+        !state.gloves || state.elapsed < definition.bake.min;
     }
     if (state.status === "portion") {
       $("cookiePortionCount").textContent =
@@ -554,17 +633,21 @@
         b.textContent = used ? "🍪" : "+";
       }
     }
-    $("cookieBuff").textContent = state.rested
-      ? "❄ Formato Perfeito: +10% na estética (100 → 110 pontos)."
-      : "Estética base: 100 pontos. O descanso opcional pode acrescentar 10 pontos.";
+    $("cookieBuff").hidden = recipe.id === "focaccia";
+    $("cookieBuff").textContent =
+      recipe.id === "lemonade"
+        ? "Decoração opcional: fatia de limão + hortelã = +10% na apresentação."
+        : state.rested
+          ? "❄ Formato Perfeito: +10% na estética (100 → 110 pontos)."
+          : "Estética base: 100 pontos. O descanso opcional pode acrescentar 10 pontos.";
     for (const b of controls.querySelectorAll("[data-cookie-item]")) {
       const id = b.dataset.cookieItem;
       b.classList.toggle("is-next", id === t.item);
       b.setAttribute("aria-pressed", String(id === t.item));
       if (ingredientIds.includes(id)) {
-        const added =
-          state.index >
-          CookieRecipe.tasks.findIndex((task) => task.item === id);
+        const added = !state.tasks.some(
+          (task, index) => index >= state.index && task.item === id,
+        );
         b.disabled = added;
         b.classList.toggle("is-used", added);
         b.querySelector("small").textContent =
@@ -578,20 +661,19 @@
     const now = performance.now(),
       dt = (now - lastTime) / 1000;
     lastTime = now;
-    const running =
-      ["running", "baking", "portion"].includes(state.status) &&
-      (!state.requiresStir || stirring);
+    const paused = CookieRecipe.shouldPauseClock(state);
     state.working = stirring;
-    if (running) {
+    state.tick(dt, stirring);
+    if (!paused) {
       remainingTime = Math.max(0, remainingTime - dt);
       current.remaining = Math.ceil(remainingTime);
-      state.tick(dt, stirring);
     }
+    $("timer").dataset.paused = String(paused);
     renderTimer();
     render();
     if (active && current.remaining <= 0) {
       stopReason =
-        "O tempo de ação acabou. Ler e configurar não consome o cronômetro; praticar ajuda a preparar com mais agilidade.";
+        "O tempo de jogo acabou. O relógio conta na leitura, nos modais e na movimentação; pausa apenas durante ações temporizadas.";
       finish(false);
     }
   }
@@ -599,10 +681,15 @@
     get active() {
       return active;
     },
-    start() {
+    start(id = "cookie") {
       if (active) api.stop();
       clearInterval(timerId);
-      state = new Session();
+      definition = RecipeCatalog[id] || RecipeCatalog.cookie;
+      ({ phases, items } = definition);
+      ingredientIds = definition.ingredientIds;
+      recipe = RECIPES.find((r) => r.id === definition.id);
+      buildInventory();
+      state = new Session(definition);
       active = true;
       stopReason = "";
       sceneHooks = null;
@@ -636,10 +723,21 @@
       $("cookieMoveMode").setAttribute("aria-pressed", "false");
       $("cookieMoveMode").textContent = "Ativar arraste de objetos";
       try {
-        scene = new CookieScene(sceneRoot, interact, place, tell, useFallback);
+        scene =
+          recipe.id === "cookie"
+            ? new CookieScene(sceneRoot, interact, place, tell, useFallback)
+            : new RecipeScene(
+                sceneRoot,
+                interact,
+                place,
+                tell,
+                useFallback,
+                definition,
+              );
         scene.onViewChange = positionModal;
         viewportTools.hidden = false;
-        $("engine").textContent = "Cookies 3D · procedimentos e tempos";
+        $("engine").textContent =
+          definition.name + " 3D · procedimentos e tempos";
       } catch (error) {
         scene?.dispose();
         scene = null;
@@ -648,7 +746,7 @@
         useFallback();
       }
       tell(
-        "Selecione a Tigela Secos para começar. Os modais explicam as quantidades e os tempos adaptados.",
+        "As estações já estão preparadas. Consulte a quantidade no status e arraste o primeiro ingrediente ao destino indicado.",
       );
       render();
       lastTime = performance.now();

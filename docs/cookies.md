@@ -1,6 +1,6 @@
 # Cookies: receita interativa
 
-A receita de cookies usa oito fases e um controlador próprio. Limonada e focaccia continuam no controlador anterior. Os assets novos são gerados localmente com Three.js; não há downloads de modelos ou dependências novas.
+As três receitas usam o mesmo controlador de quantidades, procedimentos, painéis contextuais e cronômetro. Cookies têm oito fases, limonada seis e focaccia sete. As tigelas e estações já estão preparadas; selecionar as tigelas não é uma tarefa. Os assets novos são gerados localmente com Three.js; não há downloads de modelos ou dependências novas.
 
 ## Jogar
 
@@ -12,7 +12,7 @@ A cena usa a mesma mão articulada e as mesmas poses das outras receitas, com ma
 
 Ao misturar com colher ou espátula, mantenha o botão de mistura pressionado (toque, mouse, Espaço ou Enter) até completar a barra. Batedeira, descanso e resfriamento contam automaticamente após a configuração.
 
-Cada modal exige o procedimento e, quando pertinente, quantidade, duração ou temperatura. Uma configuração incorreta não avança a receita e desconta 5 pontos. Os modais mantêm o foco e podem ser fechados com Escape sem executar a ação.
+A quantidade correta aparece no status destacado da receita, que pulsa ao mudar de procedimento e respeita a preferência por movimento reduzido. O campo de quantidade começa vazio: o jogador precisa preenchê-lo. Cada modal exige o procedimento e, quando pertinente, quantidade, duração ou temperatura. Uma configuração incorreta não avança a receita e desconta 5 pontos. Os modais mantêm o foco e podem ser fechados com Escape sem executar a ação.
 
 As quantidades são as reais: 450 g de farinha, 5 g de bicarbonato, 5 g de fermento, 5 g de sal, 200 g de manteiga em ponto de pomada, 200 g de açúcar mascavo, 100 g de açúcar branco, um ovo, uma colher de chá de baunilha e 350 g de gotas de chocolate.
 
@@ -29,7 +29,7 @@ As quantidades são as reais: 450 g de farinha, 5 g de bicarbonato, 5 g de ferme
 
 Os tempos de cremejar (4 s), incorporar (3 s) e misturar chocolate (2 s) são adaptações para o arcade. Na cozinha, o ponto visual importa; não são tempos universais de preparo.
 
-O cronômetro geral consome apenas tempo de ações, porcionamento e assamento; leitura e configuração pausam esse cronômetro. O forno **não pausa** com modal aberto, troca de aba ou navegador em segundo plano. Use luvas e retire entre 8 e 10 s para bordas douradas e centro macio. Retirar de 10 a 15 s resulta em cookies menos macios. Acima de 15 s, a tentativa termina com cookies queimados. Não é possível retirar antes de 8 s ou servir antes do resfriamento.
+O cronômetro geral conta durante leitura, configuração de modais, movimentação, cortes, porcionamento e ações por cliques. Ele pausa somente durante ações temporizadas em execução (misturar, fermentar, gelar, assar e resfriar), retomando automaticamente ao fim de cada uma. O forno **não pausa** com modal aberto, troca de aba ou navegador em segundo plano. Use luvas e retire entre 8 e 10 s para bordas douradas e centro macio. Retirar de 10 a 15 s resulta em cookies menos macios. Acima de 15 s, a tentativa termina com cookies queimados. Não é possível retirar antes de 8 s ou servir antes do resfriamento.
 
 ## Pontuação e registros
 
@@ -37,10 +37,21 @@ A conclusão concede 800 pontos de preparo, 100 por assamento ideal (50 se passo
 
 O resultado mantém a integração com a roleta e com o histórico existente. `cookieDetails` registra versão, oito fases, porções, descanso, estética, qualidade de assamento e penalidades. Dados antigos não precisam de migração.
 
+## Receitas dos anexos
+
+As especificações originais estão em `docs/recipes/limonada.txt` e `docs/recipes/focaccia.txt`. `js/recipe-catalog.js` preserva ingredientes, quantidades, fases, intervalos e bônus desses documentos.
+
+- Limonada: quatro limões, quatro cortes e oito metades espremidas individualmente; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de sopa de açúcar, mistura de 5–8 s, 8–10 cubos de gelo e espera de 5 s. Copo com dois cubos extras e preenchimento de 90%. Fatia e hortelã são opcionais; o bônus de apresentação de 10% exige ambas. Extração de cada metade (1 s) e animação de servir (2 s) são adaptações explícitas.
+- Focaccia: 350 ml de água morna, 7 g de fermento biológico e uma colher de chá de açúcar; mistura de 5 s e ativação de 10 s. Massa com 500 g de farinha, duas colheres de chá de sal e três adições distintas de 20 ml de azeite (60 ml ao todo). Primeira fermentação de 30 s, com Avançar Tempo, e segunda de 15 s. Cavidades, 15 g de alecrim, uma colher de sopa de sal grosso; forno a 220 °C por 20–25 s, queimando acima de 30 s. Luvas, resfriamento de 5 s e cortes retangulares. A mistura suave de 4 s é uma adaptação do jogo.
+
+As ações de corte/espalhamento/cavidades têm botões equivalentes por teclado e toque. A aba sem WebGL continua recolhida, com abertura automática se a visualização falhar. O histórico registra `recipeDetails` para todas as receitas e preserva `cookieDetails` para compatibilidade com cookies.
+
 ## Arquivos e validação
 
 - `js/cookie-recipe.js`: dados e máquina de estados independentes do navegador.
-- `js/cookie-scene.js`: modelos procedurais, estados visuais, seleção e arraste.
+- `js/cookie-scene.js`: bancada compartilhada, modelos de cookies, seleção e arraste.
+- `js/recipe-scene.js`: assets e estados específicos de limonada e focaccia.
+- `js/recipe-catalog.js`: dados das três receitas.
 - `js/cookie-game.js`: modais, comandos acessíveis, timers e integração com histórico.
 - `css/cookie-game.css`: estilos exclusivos da nova receita.
 - `npm test`: testes de quantidades, sequência, escolhas inválidas, descanso, porcionamento, proteção térmica, ponto do forno e resfriamento.
