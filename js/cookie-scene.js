@@ -1,6 +1,6 @@
 /* Assets procedurais locais, sem downloads ou dependências adicionais. */
 window.CookieScene = class CookieScene {
-  constructor(root, interact, place, announce) {
+  constructor(root, interact, place, announce, onFailure) {
     this.root = root;
     this.interact = interact;
     this.place = place;
@@ -8,27 +8,53 @@ window.CookieScene = class CookieScene {
     this.objects = new Map();
     this.disposed = false;
     this.time = 0;
+    this.labels = [];
+    this.zoom = 1;
+    this.viewTarget = new THREE.Vector3(0, 0.45, 0);
+    this.mobile = matchMedia("(pointer: coarse)").matches || innerWidth < 700;
+    this.onFailure = onFailure;
+    this.labelLayer = document.createElement("div");
+    this.labelLayer.className = "cookie-world-labels";
+    root.append(this.labelLayer);
     const T = THREE;
     this.T = T;
     this.renderer = new T.WebGLRenderer({
-      antialias: false,
-      powerPreference: "low-power",
+      antialias: !this.mobile,
+      powerPreference: this.mobile ? "low-power" : "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+    this.renderer.setPixelRatio(
+      Math.min(devicePixelRatio, this.mobile ? 1.25 : 1.75),
+    );
+    this.renderer.shadowMap.enabled = !this.mobile;
+    this.renderer.shadowMap.type = T.PCFSoftShadowMap;
+    this.renderer.toneMapping = T.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.06;
     this.renderer.outputColorSpace = T.SRGBColorSpace;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "Bancada 3D de cookies. Use também os botões de ingredientes e estações.",
+      "Bancada 3D. Arraste ingredientes até a tigela indicada; use o scroll para zoom.",
     );
     root.append(this.renderer.domElement);
     this.scene = new T.Scene();
-    this.scene.background = new T.Color("#121e28");
-    this.camera = new T.PerspectiveCamera(43, 1, 0.1, 100);
-    this.camera.position.set(0, 10.5, 12.8);
+    this.scene.background = new T.Color("#233629");
+    this.camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
+    this.camera.position.set(0, 6.8, 12.8);
     this.camera.lookAt(0, 0.2, -0.3);
-    this.scene.add(new T.HemisphereLight(0xe9ffe3, 0x26344a, 2));
-    const light = new T.DirectionalLight(0xffe4b3, 2.8);
+    this.scene.add(new T.HemisphereLight(0xe9ffe3, 0x29362a, 1.3));
+    const light = new T.DirectionalLight(0xffe4b3, 3);
     light.position.set(-4, 9, 5);
+    light.castShadow = !this.mobile;
+    light.shadow.mapSize.set(2048, 2048);
+    Object.assign(light.shadow.camera, {
+      left: -10,
+      right: 10,
+      top: 9,
+      bottom: -9,
+      near: 0.5,
+      far: 30,
+    });
+    light.shadow.bias = -0.00025;
+    light.shadow.normalBias = 0.025;
     this.scene.add(light);
     const blue = new T.PointLight(0x53d9df, 25, 18);
     blue.position.set(6, 4, -3);
@@ -51,7 +77,11 @@ window.CookieScene = class CookieScene {
     }
     const woodMap = new T.CanvasTexture(wood);
     woodMap.colorSpace = T.SRGBColorSpace;
+    woodMap.anisotropy = this.mobile ? 2 : 8;
     desk.material.map = woodMap;
+    desk.material.bumpMap = woodMap;
+    desk.material.bumpScale = 0.025;
+    desk.material.roughness = 0.72;
     desk.material.color.set(0xffffff);
     this.box(this.scene, 0x203b3b, [15, 0.1, 0.12], [0, 1.05, -3.85]);
     for (const x of [-4, 4]) {
@@ -65,6 +95,29 @@ window.CookieScene = class CookieScene {
       this.box(this.scene, 0x395650, [0.025, 5, 0.03], [x, 2, -3.96]);
     for (let y = 0; y < 5; y++)
       this.box(this.scene, 0x395650, [15, 0.025, 0.03], [0, y, -3.96]);
+    for (const x of [-5, -2, 1, 4]) {
+      this.box(this.scene, 0x233c32, [2.9, 2.4, 7.5], [x, -1.7, 0]);
+      for (const z of [3.82]) {
+        this.box(this.scene, 0x345443, [2.7, 1.9, 0.12], [x, -1.5, z]);
+        this.box(this.scene, 0xb4b9a2, [0.7, 0.07, 0.08], [x, -0.8, z + 0.1]);
+      }
+    }
+    this.box(this.scene, 0x715132, [8, 0.16, 0.8], [0, 2.7, -3.5]);
+    for (let n = 0; n < 6; n++) {
+      this.cylinder(
+        this.scene,
+        [0xe9dfc3, 0xb88b45, 0xddd5ac][n % 3],
+        0.22,
+        0.22,
+        0.5,
+        [-3 + n * 1.2, 3, -3.5],
+      );
+      this.cylinder(this.scene, 0x8c754c, 0.24, 0.24, 0.08, [
+        -3 + n * 1.2,
+        3.29,
+        -3.5,
+      ]);
+    }
     const specs = [
       ["flour", -6, 1.1, 0xf0e4c8],
       ["soda", -4.8, 1.1, 0xe6ebdf],
@@ -116,7 +169,22 @@ window.CookieScene = class CookieScene {
             ]);
           }
       }
-      this.label(g, CookieRecipe.items[id][0], 1.04, 1.35);
+      g.traverse((o) => {
+        if (o.isMesh && o.material?.isMeshStandardMaterial) {
+          o.material.roughness = 0.65;
+          if (!["egg", "vanilla"].includes(id)) {
+            const texture = this.grainTexture();
+            o.material.bumpMap = texture;
+            o.material.bumpScale = 0.012;
+          }
+        }
+      });
+      this.label(
+        g,
+        CookieRecipe.items[id][0],
+        id === "flour" ? 1.35 : 1.04,
+        1.35,
+      );
     }
     this.dry = this.bowl("dry", -1.7, -1.45, 0.78, 0x66bfb8);
     this.wet = this.bowl("wet", 0.6, -1.35, 1.02, 0xf0e3be);
@@ -254,8 +322,27 @@ window.CookieScene = class CookieScene {
     );
     this.ring.rotation.x = -Math.PI / 2;
     this.scene.add(this.ring);
+    this.hand =
+      typeof three !== "undefined" && three?.createHand
+        ? three.createHand()
+        : null;
+    if (this.hand) {
+      this.scene.add(this.hand.group);
+      this.hand.group.visible = false;
+      this.hand.group.scale.setScalar(2.2);
+      this.hand.group.rotation.set(-1.2, Math.PI, 0);
+    }
     const canvas = this.renderer.domElement;
     this.down = (e) => {
+      if (e.button === 2) {
+        this.pan = {
+          x: e.clientX,
+          y: e.clientY,
+          target: this.viewTarget.clone(),
+        };
+        canvas.setPointerCapture(e.pointerId);
+        return;
+      }
       if (e.button !== 0) return;
       const hit = this.hit(e);
       if (!hit) return;
@@ -267,18 +354,49 @@ window.CookieScene = class CookieScene {
         home: hit.g.position.clone(),
       };
       canvas.setPointerCapture(e.pointerId);
+      this.updateHand(e);
     };
     this.move = (e) => {
+      if (this.pan) {
+        this.viewTarget.x = THREE.MathUtils.clamp(
+          this.pan.target.x - ((e.clientX - this.pan.x) * 0.012) / this.zoom,
+          -6,
+          6,
+        );
+        this.viewTarget.z = THREE.MathUtils.clamp(
+          this.pan.target.z - ((e.clientY - this.pan.y) * 0.018) / this.zoom,
+          -3,
+          3,
+        );
+        this.updateCamera();
+        return;
+      }
+      this.hovered = this.hit(e)?.id;
+      this.updateHand(e);
       if (!this.drag) return;
       const d = this.drag;
       if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
       d.moved = true;
       this.setRay(e);
       const v = new T.Vector3();
-      this.ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), -0.6), v);
-      if (v) d.g.position.set(v.x, 0.6, v.z);
+      if (
+        this.ray.ray.intersectPlane(
+          new T.Plane(new T.Vector3(0, 1, 0), -0.8),
+          v,
+        )
+      ) {
+        d.g.position.set(
+          THREE.MathUtils.clamp(v.x, -7, 7),
+          0.8,
+          THREE.MathUtils.clamp(v.z, -3.5, 3.8),
+        );
+      }
     };
     this.up = (e) => {
+      if (this.pan) {
+        this.pan = null;
+        return;
+      }
       if (!this.drag) return;
       const d = this.drag;
       d.g.position.copy(d.home);
@@ -292,31 +410,57 @@ window.CookieScene = class CookieScene {
       ) {
         this.setRay(e);
         const v = new T.Vector3();
-        this.ray.ray.intersectPlane(
-          new T.Plane(new T.Vector3(0, 1, 0), -0.25),
-          v,
-        );
-        const local = this.tray.worldToLocal(v);
-        this.place((local.x + 1.5) / 3, (local.z + 1) / 2, true);
+        if (
+          this.ray.ray.intersectPlane(
+            new T.Plane(new T.Vector3(0, 1, 0), -0.25),
+            v,
+          )
+        ) {
+          const local = this.tray.worldToLocal(v);
+          this.place((local.x + 1.5) / 3, (local.z + 1) / 2, true);
+        }
       } else this.interact(d.id, d.moved ? target?.id : null);
+      this.updateHand(e);
     };
     this.cancel = () => {
       if (this.drag) this.drag.g.position.copy(this.drag.home);
       this.drag = null;
+      this.pan = null;
+      if (this.hand) this.hand.group.visible = false;
     };
+    this.leave = () => {
+      if (!this.drag && this.hand) this.hand.group.visible = false;
+      this.hovered = null;
+    };
+    this.wheel = (e) => {
+      e.preventDefault();
+      if (this.drag) return;
+      this.setZoom(
+        this.zoom *
+          Math.exp(-THREE.MathUtils.clamp(e.deltaY, -150, 150) * 0.0025),
+      );
+    };
+    this.contextMenu = (e) => e.preventDefault();
     canvas.addEventListener("pointerdown", this.down);
     canvas.addEventListener("pointermove", this.move);
     canvas.addEventListener("pointerup", this.up);
     canvas.addEventListener("pointercancel", this.cancel);
-    canvas.addEventListener("webglcontextlost", (e) => {
+    canvas.addEventListener("pointerleave", this.leave);
+    canvas.addEventListener("wheel", this.wheel, { passive: false });
+    canvas.addEventListener("contextmenu", this.contextMenu);
+    this.contextLost = (e) => {
       e.preventDefault();
+      this.cancel();
       this.announce(
-        "A visualização 3D está indisponível. Continue com os botões abaixo.",
+        "O WebGL falhou. Os controles alternativos estão disponíveis na aba Modo sem WebGL.",
       );
-    });
+      this.onFailure?.();
+    };
+    canvas.addEventListener("webglcontextlost", this.contextLost);
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(root);
     this.resize();
+    this.setZoom(1);
     this.last = performance.now();
     this.frame = (t) => {
       if (this.disposed) return;
@@ -334,7 +478,22 @@ window.CookieScene = class CookieScene {
         this.wetMix.scale.setScalar(1 + Math.sin(t / 100) * 0.015);
         this.whisk.rotation.y += 0.3;
       }
+      if (this.hand && this.state?.working && this.state?.requiresStir) {
+        const bowl = this.state.task.target === "dry" ? this.dry : this.wet;
+        this.hand.group.visible = true;
+        this.hand.group.position
+          .copy(bowl.position)
+          .add(
+            new T.Vector3(
+              Math.sin(t / 220) * 0.3,
+              0.9,
+              Math.cos(t / 220) * 0.2,
+            ),
+          );
+        this.hand.pose("grab", 0.15);
+      }
       this.renderer.render(this.scene, this.camera);
+      this.updateLabels();
     };
     this.raf = requestAnimationFrame(this.frame);
   }
@@ -346,19 +505,20 @@ window.CookieScene = class CookieScene {
     });
   }
   box(parent, color, size, pos) {
-    const m = new THREE.Mesh(
-      new THREE.BoxGeometry(...size),
-      this.material(color),
-    );
+    const m = new THREE.Mesh(this.softBox(...size), this.material(color));
+    m.castShadow = true;
+    m.receiveShadow = true;
     m.position.set(...pos);
     parent.add(m);
     return m;
   }
   sphere(parent, color, r, pos) {
     const m = new THREE.Mesh(
-      new THREE.SphereGeometry(r, 12, 8),
+      new THREE.SphereGeometry(r, 24, 16),
       this.material(color),
     );
+    m.castShadow = true;
+    m.receiveShadow = true;
     m.position.set(...pos);
     parent.add(m);
     return m;
@@ -368,6 +528,8 @@ window.CookieScene = class CookieScene {
       new THREE.CylinderGeometry(rt, rb, h, 24),
       this.material(color),
     );
+    m.castShadow = true;
+    m.receiveShadow = true;
     m.position.set(...pos);
     parent.add(m);
     return m;
@@ -394,16 +556,25 @@ window.CookieScene = class CookieScene {
   }
   bowl(id, x, z, r, color) {
     const g = this.entity(id, x, z);
-    const points = [
-      new THREE.Vector2(0.1, 0),
-      new THREE.Vector2(r * 0.6, 0.06),
-      new THREE.Vector2(r * 0.9, 0.4),
-      new THREE.Vector2(r, 0.65),
-      new THREE.Vector2(r - 0.06, 0.65),
-      new THREE.Vector2(r * 0.82, 0.4),
-      new THREE.Vector2(r * 0.55, 0.15),
-      new THREE.Vector2(0.1, 0.12),
-    ];
+    const points = [];
+    for (let n = 0; n <= 24; n++) {
+      const a = ((n / 24) * Math.PI) / 2;
+      points.push(
+        new THREE.Vector2(
+          0.2 * r + 0.8 * r * Math.sin(a),
+          0.06 + 0.6 * (1 - Math.cos(a)),
+        ),
+      );
+    }
+    for (let n = 24; n >= 0; n--) {
+      const a = ((n / 24) * Math.PI) / 2;
+      points.push(
+        new THREE.Vector2(
+          Math.max(0.05, 0.2 * r + 0.8 * r * Math.sin(a) - 0.06),
+          0.12 + 0.54 * (1 - Math.cos(a)),
+        ),
+      );
+    }
     const m = new THREE.Mesh(
       new THREE.LatheGeometry(points, 32),
       new THREE.MeshStandardMaterial({
@@ -412,41 +583,200 @@ window.CookieScene = class CookieScene {
         roughness: 0.32,
       }),
     );
+    m.castShadow = true;
+    m.receiveShadow = true;
     g.add(m);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(r - 0.025, 0.045, 12, 64),
+      this.material(color),
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.66;
+    g.add(rim);
     this.label(g, CookieRecipe.items[id][0], 1.2, 1.8);
     return g;
   }
-  label(parent, text, y, width) {
+  grainTexture() {
+    if (this.grain) return this.grain;
     const c = document.createElement("canvas");
-    c.width = 512;
-    c.height = 96;
+    c.width = c.height = 128;
     const ctx = c.getContext("2d");
-    ctx.fillStyle = "#0b171e";
-    ctx.fillRect(0, 0, 512, 96);
-    ctx.strokeStyle = "#85ba69";
-    ctx.lineWidth = 5;
-    ctx.strokeRect(2, 2, 508, 92);
-    ctx.fillStyle = "#eaf5da";
-    ctx.font = "bold 32px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, 256, 48, 490);
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const sp = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: tex, depthTest: false }),
+    ctx.fillStyle = "#c2b99e";
+    ctx.fillRect(0, 0, 128, 128);
+    for (let n = 0; n < 1600; n++) {
+      const x = (n * 37.7) % 128,
+        y = (n * 61.3) % 128;
+      ctx.fillStyle = n % 2 ? "#e9e0cb" : "#8f856f";
+      ctx.fillRect(x, y, 1.2, 1.2);
+    }
+    this.grain = new THREE.CanvasTexture(c);
+    this.grain.wrapS = this.grain.wrapT = THREE.RepeatWrapping;
+    this.grain.repeat.set(3, 3);
+    return this.grain;
+  }
+  softBox(w, h, d) {
+    const r = Math.min(0.055, w / 8, h / 8, d / 8);
+    if (r < 0.015) return new THREE.BoxGeometry(w, h, d);
+    const s = new THREE.Shape(),
+      x = -w / 2 + r,
+      y = -h / 2 + r,
+      W = w - 2 * r,
+      H = h - 2 * r;
+    s.moveTo(x + r, y);
+    s.lineTo(x + W - r, y);
+    s.quadraticCurveTo(x + W, y, x + W, y + r);
+    s.lineTo(x + W, y + H - r);
+    s.quadraticCurveTo(x + W, y + H, x + W - r, y + H);
+    s.lineTo(x + r, y + H);
+    s.quadraticCurveTo(x, y + H, x, y + H - r);
+    s.lineTo(x, y + r);
+    s.quadraticCurveTo(x, y, x + r, y);
+    const g = new THREE.ExtrudeGeometry(s, {
+      depth: d - 2 * r,
+      bevelEnabled: true,
+      bevelThickness: r,
+      bevelSize: r,
+      bevelSegments: 3,
+      steps: 1,
+      curveSegments: 6,
+    });
+    g.translate(0, 0, -d / 2 + r);
+    return g;
+  }
+  label(parent, text, y, width) {
+    const anchor = new THREE.Object3D();
+    anchor.position.set(0, y, 0);
+    parent.add(anchor);
+    const label = document.createElement("div");
+    label.className = "cookie-world-label";
+    label.textContent = text;
+    label.title = text;
+    this.labelLayer.append(label);
+    this.labels.push({ anchor, label, id: parent.userData.entity });
+  }
+  updateLabels() {
+    const placed = [];
+    const priority = (id) =>
+      id === this.state?.task?.item
+        ? 2
+        : id === this.state?.task?.target
+          ? 1
+          : 0;
+    const entries = [...this.labels].sort(
+      (a, b) => priority(b.id) - priority(a.id),
     );
-    sp.position.set(0, y, 0);
-    sp.scale.set(width, (width * 96) / 512, 1);
-    sp.renderOrder = 2;
-    parent.add(sp);
+    for (const entry of entries) {
+      const { anchor, label, id } = entry;
+      const group = this.objects.get(id);
+      if (!group?.visible || this.drag?.id === id) {
+        label.hidden = true;
+        continue;
+      }
+      const v = anchor
+        .getWorldPosition(new THREE.Vector3())
+        .project(this.camera);
+      label.hidden =
+        v.z > 1 || v.z < -1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1;
+      if (label.hidden) continue;
+      label.classList.toggle("is-target", priority(id) > 0);
+      label.classList.toggle("is-hovered", id === this.hovered);
+      entry.width ||= label.offsetWidth || 126;
+      entry.height ||= label.offsetHeight || 28;
+      const w = entry.width,
+        h = entry.height,
+        x = THREE.MathUtils.clamp(
+          ((v.x + 1) * this.renderWidth) / 2,
+          w / 2 + 6,
+          this.renderWidth - w / 2 - 6,
+        ),
+        anchorY = ((1 - v.y) * this.renderHeight) / 2;
+      let y = anchorY;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const hit = placed.find(
+          (r) =>
+            x - w / 2 < r.right + 4 &&
+            x + w / 2 > r.left - 4 &&
+            y > r.top - 4 &&
+            y - h < r.bottom + 4,
+        );
+        if (!hit) break;
+        y = hit.top - 6;
+      }
+      y = Math.max(h + 6, y);
+      placed.push({ left: x - w / 2, right: x + w / 2, top: y - h, bottom: y });
+      label.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+      label.style.setProperty(
+        "--label-leader",
+        `${Math.max(0, anchorY - y)}px`,
+      );
+    }
+  }
+  updateCamera() {
+    if (!this.camera) return;
+    const distance = Math.max(
+      12.8,
+      8.2 /
+        (Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) *
+          this.camera.aspect),
+    );
+    this.camera.position
+      .copy(this.viewTarget)
+      .add(
+        new THREE.Vector3(0, 0.46, 0.89)
+          .normalize()
+          .multiplyScalar(distance / this.zoom),
+      );
+    this.camera.lookAt(this.viewTarget);
+    this.camera.updateMatrixWorld();
+    this.camera.updateProjectionMatrix();
+  }
+  setZoom(value) {
+    this.zoom = THREE.MathUtils.clamp(value, 0.8, 2.5);
+    this.updateCamera();
+    const output = document.getElementById("cookieZoomLevel");
+    if (output) output.value = Math.round(this.zoom * 100) + "%";
+  }
+  resetView() {
+    this.viewTarget.set(0, 0.45, 0);
+    this.setZoom(1);
+    this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
+  }
+  focus(id) {
+    const object = this.objects.get(id);
+    if (object) {
+      this.viewTarget.copy(object.position);
+      this.viewTarget.y = 0.4;
+      this.setZoom(1.7);
+      this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
+    }
+  }
+  updateHand(e) {
+    if (!this.hand) return;
+    this.setRay(e);
+    const point = new THREE.Vector3();
+    if (
+      !this.ray.ray.intersectPlane(
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.85),
+        point,
+      )
+    )
+      return;
+    this.hand.group.visible = true;
+    this.hand.group.position.copy(point).add(new THREE.Vector3(0.2, 0.2, 0.1));
+    this.hand.pose(this.drag ? "grab" : this.hovered ? "pinch" : "open", 0.35);
   }
   resize() {
-    const w = Math.max(this.root.clientWidth, 740),
-      h = this.root.clientHeight || 420;
+    const first =
+        !this.renderWidth || this.viewportWidth !== this.root.clientWidth,
+      w = Math.max(this.root.clientWidth, 980),
+      h = this.root.clientHeight || 560;
+    this.viewportWidth = this.root.clientWidth;
+    this.renderWidth = w;
+    this.renderHeight = h;
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.updateCamera();
+    if (first) this.root.scrollLeft = (w - this.root.clientWidth) / 2;
   }
   setRay(e) {
     const r = this.renderer.domElement.getBoundingClientRect();
@@ -490,7 +820,7 @@ window.CookieScene = class CookieScene {
     for (const chip of this.doughChips) chip.visible = state.index > 16;
     this.dry.visible = state.index < 15;
     this.paperMesh.visible = state.index > 19;
-    this.wet.position.set(0.6, 0, -1.35);
+    if (this.drag?.id !== "wet") this.wet.position.set(0.6, 0, -1.35);
     if (t?.item === "mixer" && state.status === "running")
       this.wet.position.set(2.05, 0, -2.2);
     if (t?.kind === "chill" && state.status === "running")
@@ -518,7 +848,7 @@ window.CookieScene = class CookieScene {
       const addedAt = CookieRecipe.tasks.findIndex((task) => task.item === id);
       this.objects.get(id).visible = state.index <= addedAt;
     }
-    this.tray.position.set(4, 0, 1);
+    if (this.drag?.id !== "tray") this.tray.position.set(4, 0, 1);
     if (state.index === 23) this.tray.position.set(5, 0.35, -2.1);
     else if (state.index >= 24) this.tray.position.set(0.1, 0.1, 1.8);
     while (this.cookies.length < state.portions.length) {
@@ -561,6 +891,14 @@ window.CookieScene = class CookieScene {
     this.disposed = true;
     cancelAnimationFrame(this.raf);
     this.observer?.disconnect();
+    this.labelLayer?.remove();
+    this.renderer.domElement.removeEventListener("wheel", this.wheel);
+    this.renderer.domElement.removeEventListener(
+      "webglcontextlost",
+      this.contextLost,
+    );
+    if (this.hand) this.hand.group.traverse((o) => o.skeleton?.dispose());
+    this.grain?.dispose();
     this.scene.traverse((o) => {
       o.geometry?.dispose();
       if (o.material) {

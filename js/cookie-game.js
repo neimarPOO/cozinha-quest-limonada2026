@@ -11,12 +11,12 @@
   sceneRoot.id = "cookieScene";
   sceneRoot.hidden = true;
   document.querySelector("#game .scene").append(sceneRoot);
-  const controls = document.createElement("section");
+  const controls = document.createElement("details");
   controls.className = "cookie-controls";
   controls.hidden = true;
   controls.setAttribute("aria-label", "Ingredientes e estações de cookies");
   controls.innerHTML =
-    '<p class="cookie-learning-note">⏱ O cronômetro pausa para ler e configurar. Durante o assamento, o forno continua contando, inclusive com o modal aberto.</p><button type="button" class="btn cookie-touch-mode" id="cookieMoveMode" aria-pressed="false">Ativar arraste de objetos</button><p class="cookie-touch-hint">Deslize a cena para os lados. Ative o arraste para mover objetos ou use os botões abaixo.</p><details open><summary>Ingredientes · quantidades da receita</summary><div class="cookie-inventory"></div></details><details open><summary>Utensílios e estações</summary><div class="cookie-stations"></div></details>';
+    '<summary class="cookie-fallback-tab">⚠ Modo sem WebGL · abra somente se a visualização 3D falhar</summary><p class="cookie-learning-note">Estes controles alternativos permitem jogar quando o WebGL não está disponível.</p><p class="cookie-learning-note">⏱ O cronômetro pausa para ler e configurar. Durante o assamento, o forno continua contando, inclusive com o modal aberto.</p><button type="button" class="btn cookie-touch-mode" id="cookieMoveMode" aria-pressed="false">Ativar arraste de objetos</button><p class="cookie-touch-hint">Deslize a cena para os lados. Ative o arraste para mover objetos ou use os botões abaixo.</p><details open><summary>Ingredientes · quantidades da receita</summary><div class="cookie-inventory"></div></details><details open><summary>Utensílios e estações</summary><div class="cookie-stations"></div></details>';
   document.querySelector(".game-workbench").append(controls);
   const ingredientIds = [
     "flour",
@@ -36,13 +36,19 @@
     b.className = "cookie-item";
     b.dataset.cookieItem = id;
     b.innerHTML = `<span aria-hidden="true">${emoji}</span><b>${name}</b><small>${quantity}</small>`;
-    b.addEventListener("click", () => interact(id));
+    b.addEventListener("click", () => interact(id, null, "manual"));
     controls
       .querySelector(
         ingredientIds.includes(id) ? ".cookie-inventory" : ".cookie-stations",
       )
       .append(b);
   }
+  const viewportTools = document.createElement("div");
+  viewportTools.className = "cookie-viewport-tools";
+  viewportTools.hidden = true;
+  viewportTools.innerHTML =
+    '<span class="cookie-camera-hint">Scroll: zoom · botão direito: mover câmera</span><button type="button" class="btn" id="cookieZoomOut" aria-label="Diminuir zoom">−</button><output id="cookieZoomLevel" aria-label="Nível de zoom">100%</output><button type="button" class="btn" id="cookieZoomIn" aria-label="Aumentar zoom">+</button><button type="button" class="btn" id="cookieZoomReset">Visão geral</button><button type="button" class="btn" id="cookieFocus">Focar etapa</button><button type="button" class="btn" id="cookieExpand" aria-pressed="false">Ampliar bancada</button><button type="button" class="btn cookie-touch-mode" id="cookieSceneMove" aria-pressed="false">Arrastar objetos</button>';
+  document.querySelector("#game .scene").append(viewportTools);
   const taskPanel = document.createElement("section");
   taskPanel.className = "cookie-task";
   taskPanel.hidden = true;
@@ -70,6 +76,47 @@
     remainingTime = 0,
     stirring = false,
     stopReason = "";
+  function useFallback() {
+    scene?.dispose();
+    scene = null;
+    sceneRoot.textContent =
+      "A visualização WebGL falhou. Continue pela aba de controles alternativos.";
+    controls.open = true;
+    viewportTools.hidden = true;
+    setExpanded(false);
+    $("engine").textContent = "Cookies · modo alternativo sem WebGL";
+    if (active) render();
+  }
+  controls.addEventListener("toggle", () => {
+    if (active) render();
+  });
+  function setExpanded(expanded) {
+    gameRoot.classList.toggle("cookie-expanded", expanded);
+    document.body.classList.toggle("cookie-immersive", expanded);
+    $("cookieExpand").setAttribute("aria-pressed", String(expanded));
+    $("cookieExpand").textContent = expanded
+      ? "Reduzir bancada"
+      : "Ampliar bancada";
+  }
+  $("cookieZoomIn").onclick = () => scene?.setZoom(scene.zoom * 1.2);
+  $("cookieZoomOut").onclick = () => scene?.setZoom(scene.zoom / 1.2);
+  $("cookieZoomReset").onclick = () => scene?.resetView();
+  $("cookieFocus").onclick = () =>
+    scene?.focus(state.task.target || state.task.item);
+  $("cookieExpand").onclick = () =>
+    setExpanded(!gameRoot.classList.contains("cookie-expanded"));
+  $("cookieSceneMove").onclick = () => {
+    const enabled =
+      $("cookieSceneMove").getAttribute("aria-pressed") !== "true";
+    $("cookieSceneMove").setAttribute("aria-pressed", String(enabled));
+    $("cookieSceneMove").textContent = enabled
+      ? "Explorar a cena"
+      : "Arrastar objetos";
+    sceneRoot.style.touchAction = enabled ? "none" : "pan-x";
+  };
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.hidden && active) setExpanded(false);
+  });
   function tell(message) {
     $("feedback").textContent = message;
   }
@@ -166,7 +213,7 @@
     modal.hidden = false;
     procedure.focus();
   }
-  function interact(id, target) {
+  function interact(id, target, source = "scene") {
     if (!active || !state.task) return;
     if (state.status === "baking") {
       if (id === "gloves") openModal("gloves");
@@ -200,6 +247,18 @@
       tell(`Agora use ${items[t.item][0]}. ${t.procedure}.`);
       return;
     }
+    if (
+      scene &&
+      source === "scene" &&
+      CookieRecipe.requiresBowlDrop(t) &&
+      target !== t.target
+    ) {
+      tell(
+        `Arraste ${items[t.item][0]} até ${items[t.target][0]} para configurar quantidade e procedimento.`,
+      );
+      return;
+    }
+    if (source === "manual" && !controls.open) return;
     if (target && t.target && target !== t.target) {
       tell(`Destino desta etapa: ${items[t.target][0]}.`);
       return;
@@ -279,7 +338,8 @@
       render();
     }
   };
-  $("cookieTaskAction").onclick = () => interact(state.task.item);
+  $("cookieTaskAction").onclick = () =>
+    interact(state.task.item, null, controls.open ? "manual" : "scene");
   $("cookieGloves").onclick = () => openModal("gloves");
   $("cookieRemove").onclick = removeTray;
   const stirButton = $("cookieStir");
@@ -383,7 +443,12 @@
       (t.quantity
         ? `${t.quantity} ${t.unit} → ${items[t.target][0]}`
         : "Clique no objeto 3D ou use os botões da bancada.");
-    $("cookieTaskAction").hidden = state.status !== "ready";
+    const requiresDrop =
+      scene && !controls.open && CookieRecipe.requiresBowlDrop(t);
+    $("cookieTaskAction").hidden = state.status !== "ready" || requiresDrop;
+    if (requiresDrop)
+      $("cookieTaskInstruction").textContent =
+        `Arraste ${items[t.item][0]} até ${items[t.target][0]}. O modal abrirá somente após a entrega correta.`;
     $("cookieTaskAction").textContent = `Configurar ${items[t.item][0]}`;
     $("cookieActivity").hidden = state.status !== "running";
     $("cookieStir").hidden = !state.requiresStir;
@@ -491,21 +556,25 @@
       $("fallback").style.display = "none";
       $("threeRoot").style.display = "none";
       $("sceneNavigation").hidden = true;
+      controls.open = false;
       sceneRoot.hidden = false;
       controls.hidden = false;
       taskPanel.hidden = false;
       sceneRoot.style.touchAction = "pan-x";
+      $("cookieSceneMove").setAttribute("aria-pressed", "false");
+      $("cookieSceneMove").textContent = "Arrastar objetos";
       $("cookieMoveMode").setAttribute("aria-pressed", "false");
       $("cookieMoveMode").textContent = "Ativar arraste de objetos";
       try {
-        scene = new CookieScene(sceneRoot, interact, place, tell);
+        scene = new CookieScene(sceneRoot, interact, place, tell, useFallback);
+        viewportTools.hidden = false;
         $("engine").textContent = "Cookies 3D · procedimentos e tempos";
       } catch (error) {
         scene?.dispose();
         scene = null;
         sceneRoot.textContent =
           "Visualização 3D indisponível. Use os ingredientes e estações abaixo para jogar a receita completa.";
-        $("engine").textContent = "Cookies · modo acessível 2D";
+        useFallback();
       }
       tell(
         "Selecione a Tigela Secos para começar. Os modais explicam as quantidades e os tempos adaptados.",
@@ -525,6 +594,8 @@
       sceneRoot.replaceChildren();
       sceneRoot.hidden = true;
       controls.hidden = true;
+      viewportTools.hidden = true;
+      setExpanded(false);
       taskPanel.hidden = true;
       gameRoot.classList.remove("cookie-mode");
       $("threeRoot").style.display = three ? "" : "none";

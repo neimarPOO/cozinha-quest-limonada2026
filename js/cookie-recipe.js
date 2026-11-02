@@ -324,5 +324,7 @@
       };
     }
   }
-  return { phases, items, tasks, Session };
+  const requiresBowlDrop = (task) =>
+    Boolean(task?.quantity || (task?.item === "dry" && task?.target === "wet"));
+  return { phases, items, tasks, Session, requiresBowlDrop };
 });

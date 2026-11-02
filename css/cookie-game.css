@@ -303,3 +303,196 @@
     color: #aec5b7;
   }
 }
+
+/* Bancada ampliada, legendas em resolução de tela e controles de câmera. */
+body:has(#game.cookie-mode:not(.hidden)) .shell {
+  max-width: 2000px;
+  padding-inline: 24px;
+}
+#game.cookie-mode .layout {
+  grid-template-columns: minmax(0, 3.5fr) minmax(285px, 1fr);
+  align-items: start;
+}
+#game.cookie-mode .scene {
+  height: clamp(560px, 76vh, 900px);
+}
+#game.cookie-mode .game-mission {
+  padding: 18px;
+}
+#cookieScene {
+  isolation: isolate;
+}
+.cookie-world-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.cookie-world-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 126px;
+  padding: 4px 7px;
+  border: 1px solid #e3ecd3a6;
+  border-radius: 6px;
+  background: #f3ecddeb;
+  color: #253829;
+  box-shadow: 0 3px 9px #0005;
+  text-align: center;
+  font:
+    600 12px/1.25 "Outfit",
+    sans-serif;
+  text-wrap: balance;
+}
+.cookie-world-label.is-target {
+  background: #e2f3b8f7;
+  color: #173910;
+  border-color: #b7ef4f;
+  box-shadow:
+    0 0 0 2px #bbec4a35,
+    0 3px 10px #0006;
+  font-weight: 800;
+}
+.cookie-world-label.is-hovered {
+  z-index: 3;
+  background: #fff8e8;
+  outline: 2px solid #d9f390;
+}
+.cookie-viewport-tools {
+  position: absolute;
+  z-index: 6;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 7px;
+  border-radius: 10px 3px;
+  background: #0b171eee;
+  border: 1px solid #8ebd7845;
+}
+.cookie-viewport-tools .btn {
+  font-size: 11px;
+  padding: 6px 10px;
+  min-height: 34px;
+}
+.cookie-viewport-tools output {
+  color: #d7efb6;
+  font-size: 11px;
+  min-width: 36px;
+  text-align: center;
+}
+.cookie-camera-hint {
+  margin-right: auto;
+  color: #b8cec3;
+  font-size: 10px;
+}
+.cookie-controls {
+  padding: 0;
+  border: 1px solid #ffc97650;
+  border-radius: 10px 3px;
+  background: #171a17;
+}
+.cookie-controls > .cookie-fallback-tab {
+  padding: 13px 15px;
+  font-size: 12px;
+  color: #e6c98c;
+  cursor: pointer;
+}
+.cookie-controls > :not(summary) {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+.cookie-controls > :last-child {
+  padding-bottom: 12px;
+}
+.cookie-controls[open] > summary {
+  border-bottom: 1px solid #d7ac6635;
+}
+.cookie-mode .game-scoreboard {
+  margin-top: 12px;
+}
+body.cookie-immersive {
+  overflow: hidden;
+}
+#game.cookie-expanded .game-workbench {
+  position: fixed;
+  z-index: 120;
+  inset: 12px;
+  width: auto;
+  height: auto;
+  overflow: auto;
+  background: #101e1b;
+}
+#game.cookie-expanded .scene {
+  height: calc(100dvh - 92px);
+  min-height: 0;
+  flex: none;
+}
+#game.cookie-expanded .game-scoreboard,
+#game.cookie-expanded .progress,
+#game.cookie-expanded .cookie-controls {
+  display: none;
+}
+@media (max-width: 1100px) {
+  #game.cookie-mode .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #game.cookie-mode .scene {
+    height: clamp(420px, 67vh, 680px);
+  }
+  .cookie-camera-hint {
+    flex-basis: 100%;
+  }
+  #game.cookie-mode .game-mission {
+    padding: 20px;
+  }
+}
+@media (max-width: 600px) {
+  body:has(#game.cookie-mode:not(.hidden)) .shell {
+    padding-inline: 12px;
+  }
+  #game.cookie-mode .scene {
+    height: 480px;
+  }
+  .cookie-viewport-tools {
+    justify-content: center;
+  }
+  .cookie-viewport-tools .btn {
+    font-size: 10px;
+    padding: 5px 7px;
+    min-height: 36px;
+  }
+  .cookie-camera-hint {
+    text-align: center;
+    font-size: 9px;
+  }
+  .cookie-world-label {
+    font-size: 12px;
+  }
+  .cookie-viewport-tools .cookie-touch-mode {
+    display: block;
+    width: auto;
+    margin: 0;
+  }
+  #game.cookie-expanded .game-workbench {
+    inset: 4px;
+    padding: 8px;
+  }
+  #game.cookie-expanded .scene {
+    height: calc(100dvh - 96px);
+  }
+}
+.cookie-world-label::after {
+  content: "";
+  position: absolute;
+  width: 1px;
+  height: var(--label-leader, 0px);
+  left: 50%;
+  top: 100%;
+  background: #d3e2bc90;
+}

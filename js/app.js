@@ -2395,7 +2395,19 @@ function renderResultCard(data) {
         three = {
           scene, camera, spawnStep, awaitTool, reset: reset3D, startBake, isFormPlaced() { return formPlaced }, isBaking() { return ovenT > 0 },
           onEvent(event) { if (event === 'wrong') flashT = 1; if (event === 'correct') pulse = 1 },
-          bowl: bowlG
+          bowl: bowlG,
+          createHand() {
+            const rig = buildHand(1);
+            // Materiais independentes: descartar a cena de cookies não afeta as outras receitas.
+            const clones = new Map();
+            rig.group.traverse(object => {
+              if (!object.material) return;
+              if (!clones.has(object.material)) clones.set(object.material, object.material.clone());
+              object.material = clones.get(object.material);
+              object.castShadow = true;
+            });
+            return { group: rig.group, pose(name, amount) { poseHand(rig, name, amount) } };
+          }
         }; $('engine').textContent = 'Cozinha 3D • Three.js • arraste os itens';
       } catch (err) { fallback() }
     }

@@ -178,3 +178,15 @@ test("cancelled or completed sessions cannot advance or accept more portions", (
   s.tick(100);
   assert.equal(s.index, index);
 });
+
+test("3D ingredients require a bowl drop; non-ingredient actions remain selectable", () => {
+  const { requiresBowlDrop } = require("../js/cookie-recipe");
+  assert.equal(requiresBowlDrop(tasks.find((t) => t.item === "flour")), true);
+  assert.equal(requiresBowlDrop(tasks.find((t) => t.item === "butter")), true);
+  assert.equal(
+    requiresBowlDrop(tasks.find((t) => t.item === "dry" && t.target === "wet")),
+    true,
+  );
+  assert.equal(requiresBowlDrop(tasks[0]), false);
+  assert.equal(requiresBowlDrop(tasks.find((t) => t.item === "oven")), false);
+});

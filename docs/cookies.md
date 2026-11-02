@@ -4,7 +4,11 @@ A receita de cookies usa oito fases e um controlador próprio. Limonada e focacc
 
 ## Jogar
 
-Execute `npm start`, escolha **Cookies de chocolate** e siga o objeto destacado. Clique no objeto 3D ou no botão correspondente para abrir seu modal. Também é possível arrastar ingredientes para a tigela indicada e confirmar o procedimento. No celular, a cena permite exploração horizontal; o botão **Ativar arraste de objetos** alterna entre exploração e manipulação. Todos os procedimentos têm controles equivalentes por teclado/toque.
+Execute `npm start`, escolha **Cookies de chocolate** e siga o objeto destacado. No modo 3D, arraste o ingrediente correto até a tigela indicada: somente a entrega correta abre o modal de quantidade e procedimento. Clicar no ingrediente, soltar fora ou usar a tigela errada não avança nem abre o modal. A transferência da mistura seca para a tigela grande também exige arraste. Tigelas, ferramentas e estações sem ingredientes continuam selecionáveis por clique. No celular, a cena permite exploração horizontal; o botão **Arrastar objetos** alterna entre exploração e manipulação. A aba **Modo sem WebGL · abra somente se a visualização 3D falhar** mantém os controles alternativos recolhidos. Em caso de indisponibilidade ou perda do contexto WebGL, a aba abre automaticamente e preserva a etapa atual. Esses controles oferecem a receita por teclado/toque, sem exigir arraste.
+
+Use o **scroll do mouse sobre a cena** para aproximar/afastar (80–250%). Os botões +/− oferecem o mesmo controle. **Visão geral** restaura o enquadramento; **Focar etapa** aproxima o destino atual. O botão direito pressionado move a câmera, e **Ampliar bancada** usa a área da janela; Escape restaura o layout. O zoom permanece ao redimensionar a tela e não interrompe o arraste.
+
+A cena usa a mesma mão articulada e as mesmas poses das outras receitas, com materiais independentes para descarte seguro, sombras suaves no desktop, cerâmica arredondada, texturas procedurais e legendas HTML de tamanho constante durante o zoom. Em telas menores, a renderização reduz sombras e densidade de pixels para preservar o desempenho.
 
 Ao misturar com colher ou espátula, mantenha o botão de mistura pressionado (toque, mouse, Espaço ou Enter) até completar a barra. Batedeira, descanso e resfriamento contam automaticamente após a configuração.
 
