@@ -496,3 +496,144 @@ body.cookie-immersive {
   top: 100%;
   background: #d3e2bc90;
 }
+
+/* Pequeno diálogo contextual ancorado ao objeto, dentro da própria cena. */
+.cookie-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: block;
+  background: none;
+  backdrop-filter: none;
+  padding: 0;
+  pointer-events: none;
+}
+.cookie-modal-card {
+  position: absolute;
+  width: min(300px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  padding: 14px;
+  border-radius: 12px 4px;
+  border-color: #c3e78e;
+  background: linear-gradient(135deg, #23362bf7, #101d24fa);
+  box-shadow: 0 8px 25px #0009;
+}
+.cookie-modal-card::before {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  top: var(--popover-arrow, 30px);
+  left: -5px;
+  transform: rotate(45deg);
+  background: #22332c;
+  border-left: 1px solid #c3e78e;
+  border-bottom: 1px solid #c3e78e;
+}
+.cookie-modal-card[data-side="left"]::before {
+  left: auto;
+  right: -5px;
+  transform: rotate(225deg);
+}
+.cookie-modal-heading {
+  gap: 8px;
+}
+.cookie-modal-heading .eyebrow {
+  display: none;
+}
+.cookie-modal-heading h2 {
+  font-size: 18px;
+  margin: 2px 0 9px;
+  color: #eff8da;
+  line-height: 1.2;
+}
+.cookie-modal-heading button {
+  padding: 4px 9px;
+  min-height: 32px;
+  font-size: 12px;
+}
+.cookie-action-details {
+  margin-bottom: 8px;
+  color: #c5d3bd;
+}
+.cookie-action-details summary {
+  cursor: pointer;
+  color: #c3df9d;
+  font-size: 11px;
+}
+.cookie-action-details #cookieActionDescription {
+  font-size: 11px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+.cookie-action-details #cookieActionNote {
+  font-size: 11px;
+  padding: 7px;
+  margin: 6px 0;
+  line-height: 1.5;
+}
+.cookie-modal label {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  margin: 8px 0 4px;
+}
+.cookie-modal input,
+.cookie-modal select {
+  min-height: 36px;
+  padding: 7px 9px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.cookie-modal-actions {
+  gap: 7px;
+  margin-top: 12px;
+}
+.cookie-modal-actions .btn {
+  font-size: 12px;
+  padding: 8px 10px;
+  min-height: 36px;
+}
+#cookieModalError {
+  font-size: 11px;
+  margin: 7px 0 0;
+  min-height: 0;
+  line-height: 1.4;
+}
+#cookieModalError:empty {
+  display: none;
+}
+.cookie-modal.is-fallback {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #08121680;
+}
+.cookie-modal.is-fallback .cookie-modal-card {
+  position: relative;
+  left: auto !important;
+  top: auto !important;
+}
+.cookie-modal.is-fallback .cookie-modal-card::before {
+  display: none;
+}
+@media (max-width: 600px) {
+  .cookie-modal-card {
+    width: min(280px, calc(100% - 16px));
+    padding: 12px;
+  }
+  .cookie-modal-heading h2 {
+    font-size: 18px;
+  }
+  .cookie-modal input {
+    font-size: 16px;
+    min-height: 40px;
+  }
+  .cookie-modal select,
+  .cookie-modal-actions .btn {
+    min-height: 40px;
+  }
+}

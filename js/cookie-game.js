@@ -62,10 +62,10 @@
   modal.className = "cookie-modal";
   modal.hidden = true;
   modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-modal", "false");
   modal.setAttribute("aria-labelledby", "cookieActionTitle");
   modal.innerHTML =
-    '<form class="cookie-modal-card" id="cookieActionForm"><div class="cookie-modal-heading"><div><span class="eyebrow">PREPARE COM INTENÇÃO</span><h2 id="cookieActionTitle"></h2></div><button class="btn" id="cookieModalClose" type="button" aria-label="Fechar configuração">✕</button></div><p id="cookieActionDescription"></p><p id="cookieActionNote" class="cookie-learning-note"></p><label for="cookieProcedure">Procedimento</label><select id="cookieProcedure" required></select><div id="cookieFields"></div><p id="cookieModalError" role="alert"></p><div class="cookie-modal-actions"><button type="button" class="btn" id="cookieSkip">Pular descanso</button><button type="submit" class="btn primary">Confirmar e executar</button></div></form>';
+    '<form class="cookie-modal-card" id="cookieActionForm"><div class="cookie-modal-heading"><div><span class="eyebrow">PREPARE COM INTENÇÃO</span><h2 id="cookieActionTitle"></h2></div><button class="btn" id="cookieModalClose" type="button" aria-label="Fechar configuração">✕</button></div><details class="cookie-action-details"><summary>Detalhes da etapa</summary><p id="cookieActionDescription"></p><p id="cookieActionNote" class="cookie-learning-note"></p></details><label for="cookieProcedure">Procedimento</label><select id="cookieProcedure" required></select><div id="cookieFields"></div><p id="cookieModalError" role="alert"></p><div class="cookie-modal-actions"><button type="button" class="btn" id="cookieSkip">Pular descanso</button><button type="submit" class="btn primary">Confirmar e executar</button></div></form>';
   gameRoot.append(modal);
   let state = null,
     scene = null,
@@ -75,8 +75,10 @@
     lastTime = 0,
     remainingTime = 0,
     stirring = false,
-    stopReason = "";
+    stopReason = "",
+    modalAnchorId = null;
   function useFallback() {
+    closeModal();
     scene?.dispose();
     scene = null;
     sceneRoot.textContent =
@@ -120,12 +122,62 @@
   function tell(message) {
     $("feedback").textContent = message;
   }
+  function positionModal() {
+    if (modal.hidden || !scene) return;
+    const stage = document.querySelector("#game .scene"),
+      bounds = stage.getBoundingClientRect();
+    const viewport = window.visualViewport,
+      visibleTop = viewport?.offsetTop || 0,
+      visibleBottom = visibleTop + (viewport?.height || innerHeight);
+    const card = $("cookieActionForm");
+    const availableHeight = Math.max(
+      150,
+      Math.min(bounds.bottom, visibleBottom) -
+        Math.max(bounds.top, visibleTop) -
+        16,
+    );
+    card.style.maxHeight =
+      Math.min(stage.clientHeight - 16, availableHeight) + "px";
+    const w = card.offsetWidth,
+      h = card.offsetHeight;
+    const point = scene.getObjectAnchor(modalAnchorId) || {
+      x: bounds.left + bounds.width / 2,
+      y: bounds.top + bounds.height / 2,
+    };
+    const ax = point.x - bounds.left,
+      ay = point.y - bounds.top;
+    const right = stage.clientWidth - w - 8,
+      top = Math.max(8, visibleTop - bounds.top + 8),
+      bottom = Math.min(
+        stage.clientHeight - h - 8,
+        visibleBottom - bounds.top - h - 8,
+      );
+    const fitsRight = ax + 22 + w <= stage.clientWidth - 8;
+    const left = Math.max(
+      8,
+      Math.min(right, fitsRight ? ax + 22 : ax - w - 22),
+    );
+    const y = Math.max(top, Math.min(Math.max(top, bottom), ay - h / 2));
+    card.style.left = left + "px";
+    card.style.top = y + "px";
+    card.dataset.side = fitsRight ? "right" : "left";
+    card.style.setProperty(
+      "--popover-arrow",
+      Math.max(16, Math.min(h - 16, ay - y)) + "px",
+    );
+  }
+  window.addEventListener("resize", positionModal);
+  window.addEventListener("scroll", positionModal, true);
+  window.visualViewport?.addEventListener("resize", positionModal);
+  const panelSizeObserver = new ResizeObserver(positionModal);
+  panelSizeObserver.observe($("cookieActionForm"));
   function closeModal() {
     modal.hidden = true;
     modalMode = null;
+    if (scene) scene.actionObject = null;
     if (previousFocus?.isConnected) previousFocus.focus();
   }
-  function openModal(mode = "task") {
+  function openModal(mode = "task", anchorId = null) {
     if (!active) return;
     if (mode === "task" && state.status !== "ready") {
       tell("Conclua a ação em andamento.");
@@ -133,6 +185,18 @@
     }
     previousFocus = document.activeElement;
     modalMode = mode;
+    modalAnchorId =
+      anchorId || (mode === "gloves" ? "gloves" : state.task.item);
+    modal.classList.toggle("is-fallback", !scene);
+    modal.setAttribute("aria-modal", scene ? "false" : "true");
+    if (scene) {
+      document.querySelector("#game .scene").append(modal);
+      scene.actionObject = modalAnchorId;
+    } else {
+      gameRoot.append(modal);
+      $("cookieActionForm").style.maxHeight = "85svh";
+    }
+    modal.querySelector(".cookie-action-details").open = false;
     const t = state.task,
       gloves = mode === "gloves",
       name = gloves ? items.gloves[0] : items[t.item][0],
@@ -211,7 +275,12 @@
     $("cookieSkip").hidden = gloves || t.kind !== "chill";
     $("cookieModalError").textContent = "";
     modal.hidden = false;
-    procedure.focus();
+    if (scene)
+      document
+        .querySelector("#game .scene")
+        .scrollIntoView({ block: "nearest", behavior: "instant" });
+    positionModal();
+    procedure.focus({ preventScroll: true });
   }
   function interact(id, target, source = "scene") {
     if (!active || !state.task) return;
@@ -263,7 +332,7 @@
       tell(`Destino desta etapa: ${items[t.target][0]}.`);
       return;
     }
-    openModal();
+    openModal("task", target || id);
   }
   function place(x, y, fromDrag = false) {
     if (!active) return;
@@ -385,9 +454,10 @@
   modal.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       closeModal();
     }
-    if (e.key === "Tab") {
+    if (e.key === "Tab" && modal.getAttribute("aria-modal") === "true") {
       const focusables = [
         ...modal.querySelectorAll("button,select,input"),
       ].filter(
@@ -567,6 +637,7 @@
       $("cookieMoveMode").textContent = "Ativar arraste de objetos";
       try {
         scene = new CookieScene(sceneRoot, interact, place, tell, useFallback);
+        scene.onViewChange = positionModal;
         viewportTools.hidden = false;
         $("engine").textContent = "Cookies 3D · procedimentos e tempos";
       } catch (error) {

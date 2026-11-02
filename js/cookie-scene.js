@@ -329,8 +329,20 @@ window.CookieScene = class CookieScene {
     if (this.hand) {
       this.scene.add(this.hand.group);
       this.hand.group.visible = false;
-      this.hand.group.scale.setScalar(2.2);
+      this.hand.group.scale.setScalar(1.16);
       this.hand.group.rotation.set(-1.2, Math.PI, 0);
+    }
+    this.highlights = new Map();
+    for (const [id, group] of this.objects) {
+      const materials = new Map();
+      group.traverse((object) => {
+        if (object.material?.emissive && !materials.has(object.material))
+          materials.set(object.material, {
+            color: object.material.emissive.clone(),
+            intensity: object.material.emissiveIntensity,
+          });
+      });
+      this.highlights.set(id, { materials, amount: 0 });
     }
     const canvas = this.renderer.domElement;
     this.down = (e) => {
@@ -492,8 +504,10 @@ window.CookieScene = class CookieScene {
           );
         this.hand.pose("grab", 0.15);
       }
+      this.updateHighlights();
       this.renderer.render(this.scene, this.camera);
       this.updateLabels();
+      this.onViewChange?.();
     };
     this.raf = requestAnimationFrame(this.frame);
   }
@@ -750,19 +764,58 @@ window.CookieScene = class CookieScene {
       this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
     }
   }
+  updateHighlights() {
+    for (const [id, record] of this.highlights) {
+      const touched =
+        id === this.hovered || id === this.drag?.id || id === this.actionObject;
+      record.amount += ((touched ? 1 : 0) - record.amount) * 0.25;
+      for (const [material, baseline] of record.materials) {
+        if (record.amount > 0.01) {
+          material.emissive.setHex(0x8ee05a);
+          material.emissiveIntensity = 0.26 * record.amount;
+        } else {
+          material.emissive.copy(baseline.color);
+          material.emissiveIntensity = baseline.intensity;
+        }
+      }
+    }
+  }
+  getObjectAnchor(id) {
+    const object = this.objects.get(id);
+    if (!object || !object.visible) return null;
+    this.scene.updateMatrixWorld(true);
+    this.camera.updateMatrixWorld();
+    const v = object
+      .localToWorld(new THREE.Vector3(0, 0.65, 0))
+      .project(this.camera);
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((v.x + 1) * rect.width) / 2,
+      y: rect.top + ((1 - v.y) * rect.height) / 2,
+    };
+  }
   updateHand(e) {
     if (!this.hand) return;
     this.setRay(e);
-    const point = new THREE.Vector3();
-    if (
-      !this.ray.ray.intersectPlane(
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.85),
-        point,
-      )
-    )
-      return;
-    this.hand.group.visible = true;
-    this.hand.group.position.copy(point).add(new THREE.Vector3(0.2, 0.2, 0.1));
+    const group = this.hand.group;
+    // Mesmos enquadramento, escala, orientação e poses do cursor das outras receitas.
+    const tip = this.ray.ray.origin
+      .clone()
+      .addScaledVector(this.ray.ray.direction, 4.35);
+    group.quaternion
+      .copy(this.camera.quaternion)
+      .multiply(
+        new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(-1.2, Math.PI, 0, "YXZ"),
+        ),
+      );
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(
+      group.quaternion,
+    );
+    group.visible = true;
+    group.scale.setScalar(1.16);
+    group.position.copy(tip).addScaledVector(forward, -0.3 * group.scale.x);
+    group.position.y += Math.sin(performance.now() * 0.006) * 0.012;
     this.hand.pose(this.drag ? "grab" : this.hovered ? "pinch" : "open", 0.35);
   }
   resize() {

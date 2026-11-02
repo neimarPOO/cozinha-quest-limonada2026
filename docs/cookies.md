@@ -46,3 +46,9 @@ O resultado mantém a integração com a roleta e com o histórico existente. `c
 - `npm test`: testes de quantidades, sequência, escolhas inválidas, descanso, porcionamento, proteção térmica, ponto do forno e resfriamento.
 
 Para verificar no navegador: concluir uma rodada com descanso e outra sem descanso, testar retirada precoce/sem luvas, aguardar mais de 15 s para queimar, repetir a receita, alternar para limonada/focaccia e verificar toque, teclado e larguras de 320 px a desktop. Sem WebGL, os botões mantêm a receita completa jogável.
+
+## Painéis próximos aos objetos
+
+No modo 3D, cada diálogo é um painel compacto ancorado à projeção do objeto acionado. Ao entregar um ingrediente, o painel fica próximo à tigela de destino. A posição acompanha zoom e movimento de câmera e é limitada à parte visível da cena, inclusive em telas pequenas. As explicações longas ficam em **Detalhes da etapa**. Escape ou o botão de fechar cancela a configuração sem avançar. Os painéis 3D não escurecem a cena nem prendem o foco; no modo alternativo sem WebGL, o diálogo permanece centralizado e mantém o foco dentro dele.
+
+A mão usa o mesmo modelo, escala de cursor, orientação relativa à câmera e poses das receitas de limonada e focaccia. Objetos sob o raio de toque, arrastados ou em configuração recebem o mesmo destaque emissivo verde (`0x8ee05a`, intensidade máxima `0.26`), com retorno gradual ao material original.
