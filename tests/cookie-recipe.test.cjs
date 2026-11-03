@@ -255,3 +255,18 @@ test("phase guidance includes correct amounts, duration and narrative procedure 
   assert.match(guide.build(catalog.focaccia, 5).timing, /20–25/);
   assert.match(guide.build(catalog.lemonade, 1).ingredients, /8 metades/);
 });
+
+test("contextual balloons expose only the current actionable object", () => {
+  const { contextMode } = require("../js/cookie-recipe");
+  for (const definition of Object.values(catalog).filter((d) => d?.tasks)) {
+    const s = new Session(definition);
+    assert.equal(contextMode(s, s.task.item), "task");
+    assert.equal(contextMode(s, "unrelated"), null);
+    s.status = "running";
+    assert.equal(contextMode(s, s.task.item), null);
+    s.status = "baking";
+    assert.equal(contextMode(s, "gloves"), "gloves");
+    s.gloves = true;
+    assert.equal(contextMode(s, "gloves"), null);
+  }
+});

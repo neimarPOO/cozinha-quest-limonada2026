@@ -34,6 +34,7 @@ window.CookieScene = class CookieScene {
       "aria-label",
       "Bancada 3D. Arraste ingredientes até a tigela indicada; use o scroll para zoom.",
     );
+    this.renderer.domElement.tabIndex = 0;
     root.append(this.renderer.domElement);
     this.scene = new T.Scene();
     this.scene.background = new T.Color("#233629");
@@ -367,6 +368,7 @@ window.CookieScene = class CookieScene {
         contact: hit.point?.clone(),
       };
       canvas.setPointerCapture(e.pointerId);
+      this.onDragStart?.();
       this.updateHand(e);
     };
     this.move = (e) => {
@@ -384,7 +386,7 @@ window.CookieScene = class CookieScene {
         this.updateCamera();
         return;
       }
-      this.hovered = this.hit(e)?.id;
+      this.setHovered(this.hit(e)?.id || null, e.pointerType);
       this.updateHand(e);
       if (!this.drag) return;
       const d = this.drag;
@@ -444,7 +446,7 @@ window.CookieScene = class CookieScene {
     };
     this.leave = () => {
       if (!this.drag && this.hand) this.hand.group.visible = false;
-      this.hovered = null;
+      this.setHovered(null);
     };
     this.wheel = (e) => {
       e.preventDefault();
@@ -668,7 +670,15 @@ window.CookieScene = class CookieScene {
     label.textContent = text;
     label.title = text;
     this.labelLayer.append(label);
-    this.labels.push({ anchor, label, id: parent.userData.entity });
+    const id = parent.userData.entity;
+    label.addEventListener("pointerenter", (e) => {
+      if (id === this.state?.task?.item) this.setHovered(id, e.pointerType);
+    });
+    label.addEventListener("pointerleave", () => this.setHovered(null));
+    label.addEventListener("click", () => {
+      if (id === this.state?.task?.item) this.interact(id, null, "scene");
+    });
+    this.labels.push({ anchor, label, id });
   }
   updateLabels() {
     const placed = [];
@@ -696,6 +706,10 @@ window.CookieScene = class CookieScene {
       if (label.hidden) continue;
       label.classList.toggle("is-target", priority(id) > 0);
       label.classList.toggle("is-hovered", id === this.hovered);
+      label.classList.toggle(
+        "is-actionable",
+        id === this.state?.task?.item && this.state.status === "ready",
+      );
       entry.width ||= label.offsetWidth || 126;
       entry.height ||= label.offsetHeight || 28;
       const w = entry.width,
@@ -765,6 +779,11 @@ window.CookieScene = class CookieScene {
       this.setZoom(1.7);
       this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
     }
+  }
+  setHovered(id, pointerType = "mouse") {
+    if (this.hovered === id) return;
+    this.hovered = id;
+    this.onHoverChange?.(id, pointerType);
   }
   updateHighlights() {
     for (const [id, record] of this.highlights) {

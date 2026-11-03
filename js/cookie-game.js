@@ -16,6 +16,13 @@
     "Dos ingredientes ao prato: prepare cookies em oito fases, com tempos e procedimentos.";
   recipe.steps = phases.map(([name, hint]) => [name, "Preparar", hint]);
   const gameRoot = document.getElementById("game");
+  const stage = document.querySelector("#game .scene");
+  const mission = document.querySelector(".game-mission");
+  mission.hidden = true;
+  stage.append(mission);
+  stage.append($("feedback"));
+  stage.append(document.querySelector(".game-scoreboard"));
+  stage.append(document.querySelector("#game .game-workbench > .progress"));
   const sceneRoot = document.createElement("div");
   sceneRoot.id = "cookieScene";
   sceneRoot.hidden = true;
@@ -26,7 +33,7 @@
   controls.setAttribute("aria-label", "Ingredientes e estações da receita");
   controls.innerHTML =
     '<summary class="cookie-fallback-tab">⚠ Modo sem WebGL · abra somente se a visualização 3D falhar</summary><p class="cookie-learning-note">Estes controles alternativos permitem jogar quando o WebGL não está disponível.</p><p class="cookie-learning-note">⏱ O cronômetro conta durante leitura, configuração e movimentação. Pausa apenas nas ações temporizadas; o forno continua seu próprio tempo, mesmo com modal aberto.</p><button type="button" class="btn cookie-touch-mode" id="cookieMoveMode" aria-pressed="false">Ativar arraste de objetos</button><p class="cookie-touch-hint">Deslize a cena para os lados. Ative o arraste para mover objetos ou use os botões abaixo.</p><details open><summary>Ingredientes · quantidades da receita</summary><div class="cookie-inventory"></div></details><details open><summary>Utensílios e estações</summary><div class="cookie-stations"></div></details>';
-  document.querySelector(".game-workbench").append(controls);
+  document.querySelector(".mission-actions").append(controls);
   let ingredientIds = definition.ingredientIds;
   function buildInventory() {
     controls.querySelector(".cookie-inventory").replaceChildren();
@@ -62,7 +69,14 @@
   taskPanel.hidden = true;
   taskPanel.innerHTML =
     '<p id="cookieTaskInstruction"></p><button type="button" class="btn primary" id="cookieTaskAction">Configurar ação</button><p id="cookieRealTime"></p><div id="cookieActivity" hidden><progress id="cookieActivityProgress" max="1" value="0"></progress><p id="cookieActivityText" role="status"></p><button type="button" class="btn primary" id="cookieStir" aria-pressed="false">Segure para misturar · ou mantenha Espaço pressionado</button></div><button type="button" class="btn" id="recipeAdvance" hidden>Avançar tempo de fermentação</button><div id="recipeRepeat" hidden><p id="recipeRepeatCount"></p><div id="recipeRepeatButtons"></div></div><div id="cookieBaking" hidden><p id="cookieBakeState" role="status"></p><button type="button" class="btn" id="cookieGloves">Equipar luvas</button><button type="button" class="btn primary" id="cookieRemove">Retirar assadeira</button></div><div id="cookiePortioning" hidden><p id="cookiePortionCount"></p><button type="button" class="btn" id="cookieCollect">Coletar uma porção</button><div id="cookieTray" role="group" aria-label="Posições na assadeira"></div><p>Posições com distância mínima. Bolinhas próximas são recusadas.</p></div><p id="cookieBuff"></p>';
-  document.querySelector(".mission-actions").prepend(taskPanel);
+  stage.append(taskPanel);
+  viewportTools.insertAdjacentHTML(
+    "beforeend",
+    '<button type="button" class="btn" id="stageAction">Ação atual</button><button type="button" class="btn" id="stageGuide" aria-expanded="false">Receita</button><button type="button" class="btn" id="stageControls" aria-expanded="false">Controles</button><button type="button" class="btn" id="stageFallback">Sem WebGL</button>',
+  );
+  const exit = $("quitBtn");
+  exit.style.removeProperty("width");
+  viewportTools.append(exit);
   const modal = document.createElement("div");
   modal.id = "cookieActionModal";
   modal.className = "cookie-modal";
@@ -83,6 +97,82 @@
     stirring = false,
     stopReason = "",
     modalAnchorId = null;
+  let hoverTimer = null,
+    closeTimer = null,
+    hoverObject = null,
+    dismissedHover = null,
+    actionsCollapsed = false,
+    lastActionState = "",
+    modalDraftKey = null;
+  const dialogDrafts = new Map();
+  function showGuide(open) {
+    mission.hidden = !open;
+    $("stageGuide").setAttribute("aria-expanded", String(open));
+  }
+  function scheduleBalloonClose() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      if (
+        !modal.hidden &&
+        !modal.matches(":hover") &&
+        !modal.contains(document.activeElement) &&
+        !CookieRecipe.contextMode(state, hoverObject)
+      )
+        closeModal({ passive: true, restoreFocus: false });
+    }, 280);
+  }
+  function onHover(id, pointerType = "mouse") {
+    clearTimeout(hoverTimer);
+    if (id !== hoverObject) dismissedHover = null;
+    hoverObject = id;
+    const mode = active ? CookieRecipe.contextMode(state, id) : null;
+    if (!mode) {
+      scheduleBalloonClose();
+      return;
+    }
+    clearTimeout(closeTimer);
+    if (
+      pointerType === "touch" ||
+      scene?.drag ||
+      !modal.hidden ||
+      dismissedHover === id + ":" + state.index
+    )
+      return;
+    hoverTimer = setTimeout(() => {
+      if (
+        active &&
+        !scene?.drag &&
+        modal.hidden &&
+        hoverObject === id &&
+        CookieRecipe.contextMode(state, id) === mode
+      )
+        openModal(mode, id, { focus: false });
+    }, 160);
+  }
+  modal.addEventListener("pointerenter", () => clearTimeout(closeTimer));
+  modal.addEventListener("pointerleave", scheduleBalloonClose);
+  modal.addEventListener("focusin", () => clearTimeout(closeTimer));
+  modal.addEventListener("focusout", scheduleBalloonClose);
+  $("stageGuide").onclick = () => {
+    closeModal({ passive: true, restoreFocus: false });
+    showGuide(mission.hidden);
+  };
+  $("stageAction").onclick = () => {
+    const mode = state.status === "baking" && !state.gloves ? "gloves" : "task";
+    if (state.status === "ready" || mode === "gloves") openModal(mode);
+    else {
+      actionsCollapsed = false;
+      render();
+    }
+  };
+  $("stageControls").onclick = () => {
+    actionsCollapsed = !actionsCollapsed;
+    render();
+  };
+  $("stageFallback").onclick = () => {
+    showGuide(true);
+    controls.open = true;
+  };
   function useFallback() {
     closeModal();
     scene?.dispose();
@@ -90,7 +180,9 @@
     sceneRoot.textContent =
       "A visualização WebGL falhou. Continue pela aba de controles alternativos.";
     controls.open = true;
-    viewportTools.hidden = true;
+    viewportTools.hidden = false;
+    gameRoot.classList.remove("stage-has-webgl");
+    showGuide(true);
     setExpanded(false);
     $("engine").textContent = "Cookies · modo alternativo sem WebGL";
     if (active) render();
@@ -123,7 +215,7 @@
     sceneRoot.style.touchAction = enabled ? "none" : "pan-x";
   };
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.hidden && active) setExpanded(false);
+    if (e.key === "Escape" && modal.hidden && active) showGuide(false);
   });
   function tell(message) {
     $("feedback").textContent = message;
@@ -158,18 +250,14 @@
         stage.clientHeight - h - 8,
         visibleBottom - bounds.top - h - 8,
       );
-    const fitsRight = ax + 22 + w <= stage.clientWidth - 8;
-    const left = Math.max(
-      8,
-      Math.min(right, fitsRight ? ax + 22 : ax - w - 22),
-    );
-    const y = Math.max(top, Math.min(Math.max(top, bottom), ay - h / 2));
+    const left = Math.max(8, Math.min(right, ax - w / 2));
+    const y = Math.max(top, Math.min(Math.max(top, bottom), ay - h - 20));
     card.style.left = left + "px";
     card.style.top = y + "px";
-    card.dataset.side = fitsRight ? "right" : "left";
+    card.dataset.side = "above";
     card.style.setProperty(
-      "--popover-arrow",
-      Math.max(16, Math.min(h - 16, ay - y)) + "px",
+      "--popover-x",
+      Math.max(14, Math.min(w - 14, ax - left)) + "px",
     );
   }
   window.addEventListener("resize", positionModal);
@@ -177,19 +265,36 @@
   window.visualViewport?.addEventListener("resize", positionModal);
   const panelSizeObserver = new ResizeObserver(positionModal);
   panelSizeObserver.observe($("cookieActionForm"));
-  function closeModal() {
+  function closeModal(options = {}) {
+    clearTimeout(hoverTimer);
+    clearTimeout(closeTimer);
+    if (!modal.hidden && modalDraftKey) {
+      if (options.discard) dialogDrafts.delete(modalDraftKey);
+      else
+        dialogDrafts.set(modalDraftKey, {
+          procedure: $("cookieProcedure").value,
+          fields: Object.fromEntries(new FormData($("cookieActionForm"))),
+        });
+    }
+    if (!options.passive && active && modalAnchorId)
+      dismissedHover = modalAnchorId + ":" + state.index;
     modal.hidden = true;
     modalMode = null;
     if (scene) scene.actionObject = null;
-    if (previousFocus?.isConnected) previousFocus.focus();
+    if (options.restoreFocus !== false && previousFocus?.isConnected)
+      previousFocus.focus({ preventScroll: true });
   }
-  function openModal(mode = "task", anchorId = null) {
+  function openModal(mode = "task", anchorId = null, options = {}) {
     if (!active) return;
     if (mode === "task" && state.status !== "ready") {
       tell("Conclua a ação em andamento.");
       return;
     }
+    clearTimeout(hoverTimer);
+    clearTimeout(closeTimer);
+    showGuide(false);
     previousFocus = document.activeElement;
+    modalDraftKey = recipe.id + ":" + state.index + ":" + mode;
     modalMode = mode;
     modalAnchorId =
       anchorId || (mode === "gloves" ? "gloves" : state.task.item);
@@ -221,7 +326,7 @@
           : "Observe o objeto e escolha o procedimento correspondente.");
     const procedure = $("cookieProcedure");
     procedure.replaceChildren(new Option("Selecione o procedimento…", ""));
-    const options = [
+    const procedureOptions = [
       correct,
       gloves
         ? "Retirar com as mãos sem proteção"
@@ -231,8 +336,9 @@
             ? "Adicionar toda a farinha e bater fortemente"
             : "Ignorar esta operação e seguir adiante",
     ];
-    if (state.index % 2) options.reverse();
-    for (const option of options) procedure.add(new Option(option, option));
+    if (state.index % 2) procedureOptions.reverse();
+    for (const option of procedureOptions)
+      procedure.add(new Option(option, option));
     const fields = $("cookieFields");
     fields.replaceChildren();
     function numberField(name, label, min, max, value) {
@@ -287,8 +393,16 @@
       document
         .querySelector("#game .scene")
         .scrollIntoView({ block: "nearest", behavior: "instant" });
+    const draft = dialogDrafts.get(modalDraftKey);
+    if (draft) {
+      procedure.value = draft.procedure;
+      for (const [name, value] of Object.entries(draft.fields)) {
+        const field = $("cookieActionForm").elements.namedItem(name);
+        if (field) field.value = value;
+      }
+    }
     positionModal();
-    procedure.focus({ preventScroll: true });
+    if (options.focus !== false) procedure.focus({ preventScroll: true });
   }
   function interact(id, target, source = "scene", contact = null) {
     if (!active || !state.task) return;
@@ -323,7 +437,12 @@
         state.collect();
         tell("Porção coletada. Escolha uma posição na assadeira.");
         render();
+      } else if (id === "tray" && contact && scene && state.holding) {
+        const local = scene.tray.worldToLocal(contact.clone());
+        place((local.x + 1.5) / 3, (local.z + 1) / 2);
       } else if (id === "tray") {
+        actionsCollapsed = false;
+        render();
         $("cookieTray").scrollIntoView({ block: "center", behavior: "smooth" });
         $("cookieTray").querySelector("button")?.focus();
       } else tell("Colete massa na tigela grande e posicione na assadeira.");
@@ -341,23 +460,12 @@
       tell(`Agora use ${items[t.item][0]}. ${t.procedure}.`);
       return;
     }
-    if (
-      scene &&
-      source === "scene" &&
-      CookieRecipe.requiresBowlDrop(t) &&
-      target !== t.target
-    ) {
-      tell(
-        `Arraste ${items[t.item][0]} até ${items[t.target][0]} para configurar quantidade e procedimento.`,
-      );
-      return;
-    }
     if (source === "manual" && !controls.open) return;
     if (target && t.target && target !== t.target) {
       tell(`Destino desta etapa: ${items[t.target][0]}.`);
       return;
     }
-    openModal("task", target || id);
+    openModal("task", id);
   }
   function place(x, y, fromDrag = false) {
     if (!active) return;
@@ -397,7 +505,7 @@
         return;
       }
       state.equipGloves();
-      closeModal();
+      closeModal({ discard: true });
       tell("Luvas equipadas. Observe o tempo e retire a assadeira.");
       render();
       return;
@@ -412,7 +520,7 @@
       render(false);
       return;
     }
-    closeModal();
+    closeModal({ discard: true });
     stirring = false;
     lastTime = performance.now();
     tell(
@@ -427,7 +535,7 @@
   $("cookieModalClose").onclick = closeModal;
   $("cookieSkip").onclick = () => {
     if (state?.skipOptional()) {
-      closeModal();
+      closeModal({ discard: true });
       tell(
         "Etapa opcional pulada. A receita continua sem esse bônus de apresentação.",
       );
@@ -533,19 +641,19 @@
     const statusKey = recipe.id + ":" + state.index;
     if (taskPanel.dataset.stepKey !== statusKey) {
       taskPanel.dataset.stepKey = statusKey;
-      const status = $("stepHint");
+      const status = $("sceneHint");
       status.classList.remove("recipe-status-attention");
       void status.offsetWidth;
       status.classList.add("recipe-status-attention");
     }
-    $("stepHint").setAttribute("aria-live", "polite");
+    $("sceneHint").setAttribute("aria-live", "polite");
     $("cookieStir").textContent = t.item.startsWith("half")
       ? "Segure para pressionar e girar"
       : "Segure para misturar · ou mantenha Espaço pressionado";
     $("recipeName").textContent =
       `${definition.emoji} ${definition.name} · receita completa`;
     $("sceneHint").textContent =
-      `${items[t.item][2]} ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""}${t.duration ? " · " + (t.durationRange ? t.durationRange.join("–") : t.duration) + " s" : ""}${t.target ? " → " + items[t.target][0] : ""}`;
+      `${items[t.item][2]} ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""}${t.duration ? " · " + (t.durationRange ? t.durationRange.join("–") : t.duration) + " s" : ""}${t.target ? " → " + items[t.target][0] : ""} · ${t.procedure}`;
     $("score").textContent = `${current.score} pontos`;
     $("stepCount").textContent = `${t.phase + 1} de ${phases.length}`;
     $("progressBar").style.width =
@@ -572,10 +680,20 @@
         : "Clique no objeto 3D ou use os botões da bancada.");
     const requiresDrop =
       scene && !controls.open && CookieRecipe.requiresBowlDrop(t);
-    $("cookieTaskAction").hidden = state.status !== "ready" || requiresDrop;
+    const actionState = statusKey + ":" + state.status;
+    if (actionState !== lastActionState) {
+      lastActionState = actionState;
+      actionsCollapsed = false;
+    }
+    taskPanel.hidden = Boolean(
+      scene && (state.status === "ready" || actionsCollapsed),
+    );
+    $("stageControls").hidden = Boolean(scene && state.status === "ready");
+    $("stageControls").setAttribute("aria-expanded", String(!taskPanel.hidden));
+    $("cookieTaskAction").hidden = state.status !== "ready" || Boolean(scene);
     if (requiresDrop)
       $("cookieTaskInstruction").textContent =
-        `Arraste ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""} até ${items[t.target][0]}. O modal abrirá somente após a entrega correta.`;
+        `Passe o mouse sobre ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""} para abrir o balão. Você também pode arrastar até ${items[t.target][0]}.`;
     $("cookieTaskAction").textContent = `Configurar ${items[t.item][0]}`;
     $("cookieActivity").hidden = state.status !== "running";
     $("cookieStir").hidden = !state.requiresStir;
@@ -698,6 +816,12 @@
       active = true;
       stopReason = "";
       sceneHooks = null;
+      dialogDrafts.clear();
+      hoverObject = null;
+      dismissedHover = null;
+      actionsCollapsed = false;
+      lastActionState = "";
+      showGuide(false);
       db.settings.seconds = GameSettings.normalizeDuration(db.settings.seconds);
       remainingTime = db.settings.seconds;
       current = {
@@ -741,6 +865,16 @@
                 definition,
               );
         scene.onViewChange = positionModal;
+        scene.onHoverChange = onHover;
+        scene.onDragStart = () =>
+          closeModal({ passive: true, restoreFocus: false });
+        scene.renderer.domElement.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && state.status === "ready") {
+            e.preventDefault();
+            openModal("task");
+          }
+        });
+        gameRoot.classList.add("stage-has-webgl");
         viewportTools.hidden = false;
         $("engine").textContent =
           definition.name + " 3D · procedimentos e tempos";
@@ -752,7 +886,7 @@
         useFallback();
       }
       tell(
-        "As estações já estão preparadas. Consulte a quantidade no status e arraste o primeiro ingrediente ao destino indicado.",
+        "Passe o mouse sobre o ingrediente destacado para abrir seu balão. Confirme o procedimento para iniciar a ação.",
       );
       render();
       lastTime = performance.now();
@@ -772,7 +906,8 @@
       viewportTools.hidden = true;
       setExpanded(false);
       taskPanel.hidden = true;
-      gameRoot.classList.remove("cookie-mode");
+      gameRoot.classList.remove("cookie-mode", "stage-has-webgl");
+      showGuide(false);
       $("threeRoot").style.display = three ? "" : "none";
       $("fallback").style.display = three ? "none" : "flex";
       $("engine").textContent = three

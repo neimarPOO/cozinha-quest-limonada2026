@@ -448,7 +448,15 @@
     ],
     bake: { min: 8, max: 10, burn: 15 },
   };
+  const contextMode = (session, id) => {
+    if (!session || !id) return null;
+    if (session.status === "ready" && session.task?.item === id) return "task";
+    if (session.status === "baking" && id === "gloves" && !session.gloves)
+      return "gloves";
+    return null;
+  };
   return {
+    contextMode,
     phases,
     items,
     tasks,
