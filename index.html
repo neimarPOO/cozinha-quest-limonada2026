@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/game-arcade.css?v=1">
   <link rel="stylesheet" href="css/cookie-game.css?v=3">
   <link rel="stylesheet" href="css/lobby-motion.css?v=1">
+  <link rel="stylesheet" href="css/game-stage.css?v=1">
 </head>
 
 <body>
@@ -108,15 +109,18 @@
             </div>
           </div>
           <div class="panel game-mission">
-            <span class="eyebrow">SUA MISSÃO AGORA</span>
-            <h2 id="stepTitle">Etapa</h2>
-            <p id="stepHint" class="muted"></p>
-            <div class="status" id="feedback" aria-live="polite">Escolha o ingrediente.</div>
-            <p class="muted" id="dragHint">🖱️ <b>Arraste</b> o ingrediente correto até a tigela (ou até a pia para
-              lavar). Depois <b>arraste a ferramenta destacada</b> — colher, peneira, faca ou panela — até a zona
-              iluminada. Nas etapas de massa, <b>clique na massa dentro da tigela</b>.</p>
-            <h3 class="recipe-roadmap-heading">Roteiro da receita</h3>
-            <div class="steps" id="stepList"></div>
+            <div class="mission-brief">
+              <span class="eyebrow">SUA MISSÃO AGORA</span>
+              <h2 id="stepTitle">Etapa</h2>
+              <p id="stepHint" class="muted"></p>
+              <div class="status" id="feedback" aria-live="polite">Escolha o ingrediente.</div>
+              <p class="muted hidden" id="dragHint">Arraste o ingrediente ao destino indicado e configure o procedimento.</p>
+            </div>
+            <div class="mission-recipe">
+              <h3 class="recipe-roadmap-heading">Orientação da receita</h3>
+              <section class="recipe-guide" id="stepList" aria-label="Como preparar esta fase"></section>
+            </div>
+            <div class="mission-actions">
             <div id="manual" class="hidden">
               <h3>1. Escolha o ingrediente</h3>
               <div class="ingredient-grid" id="ingredientChoices"></div>
@@ -125,7 +129,8 @@
                 style="width:100%;margin-top:12px">Adicionar à receita →</button>
               <p class="foot">Modo sem 3D: jogue com os botões.</p>
             </div>
-            <div class="divider"></div><button class="btn" id="quitBtn" style="width:100%">Encerrar tentativa</button>
+              <div class="divider"></div><button class="btn" id="quitBtn" style="width:100%">Encerrar tentativa</button>
+            </div>
           </div>
         </div>
               <div id="ovenModal" class="oven-modal-overlay hidden" role="dialog" aria-modal="true"
@@ -356,7 +361,7 @@
       <div class="panel">
         <h2>Configurações do evento</h2>
         <div class="formrow">
-          <div><label>Tempo por receita (segundos)</label><input id="durationSetting" type="number" min="30" max="600">
+          <div><label for="durationSetting">Tempo de cada receita (segundos)</label><input id="durationSetting" type="number" min="180" max="1800" step="1" aria-describedby="durationHelp"><small id="durationHelp">De 3 a 30 minutos (180–1800 segundos). Aplica-se às três receitas.</small>
           </div>
           <div><label>Máximo de prêmios físicos por dia</label><input id="dailyCap" type="number" min="0" max="999">
           </div>
@@ -410,12 +415,14 @@
   </div>
   <script src="public/three.min.js?v=3b3a1c97de3c"></script>
   <script src="public/models.js?v=b792297364ba"></script>
-  <script src="js/app.js?v=recipes-5"></script>
+  <script src="js/game-settings.js?v=1"></script>
+  <script src="js/app.js?v=recipes-6"></script>
   <script src="js/cookie-recipe.js?v=3"></script>
-  <script src="js/recipe-catalog.js?v=1"></script>
+  <script src="js/recipe-catalog.js?v=2"></script>
   <script src="js/cookie-scene.js?v=4"></script>
-  <script src="js/recipe-scene.js?v=1"></script>
-  <script src="js/cookie-game.js?v=4"></script>
+  <script src="js/recipe-scene.js?v=2"></script>
+  <script src="js/recipe-guide.js?v=1"></script>
+  <script src="js/cookie-game.js?v=5"></script>
   <script src="js/interface.js?v=1"></script>
   <script src="js/lobby-motion.js?v=1"></script>
 </body>

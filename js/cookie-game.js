@@ -62,9 +62,7 @@
   taskPanel.hidden = true;
   taskPanel.innerHTML =
     '<p id="cookieTaskInstruction"></p><button type="button" class="btn primary" id="cookieTaskAction">Configurar ação</button><p id="cookieRealTime"></p><div id="cookieActivity" hidden><progress id="cookieActivityProgress" max="1" value="0"></progress><p id="cookieActivityText" role="status"></p><button type="button" class="btn primary" id="cookieStir" aria-pressed="false">Segure para misturar · ou mantenha Espaço pressionado</button></div><button type="button" class="btn" id="recipeAdvance" hidden>Avançar tempo de fermentação</button><div id="recipeRepeat" hidden><p id="recipeRepeatCount"></p><div id="recipeRepeatButtons"></div></div><div id="cookieBaking" hidden><p id="cookieBakeState" role="status"></p><button type="button" class="btn" id="cookieGloves">Equipar luvas</button><button type="button" class="btn primary" id="cookieRemove">Retirar assadeira</button></div><div id="cookiePortioning" hidden><p id="cookiePortionCount"></p><button type="button" class="btn" id="cookieCollect">Coletar uma porção</button><div id="cookieTray" role="group" aria-label="Posições na assadeira"></div><p>Posições com distância mínima. Bolinhas próximas são recusadas.</p></div><p id="cookieBuff"></p>';
-  document
-    .querySelector(".game-mission")
-    .insertBefore(taskPanel, document.querySelector(".recipe-roadmap-heading"));
+  document.querySelector(".mission-actions").prepend(taskPanel);
   const modal = document.createElement("div");
   modal.id = "cookieActionModal";
   modal.className = "cookie-modal";
@@ -547,17 +545,24 @@
     $("recipeName").textContent =
       `${definition.emoji} ${definition.name} · receita completa`;
     $("sceneHint").textContent =
-      `${items[t.item][2]} ${items[t.item][0]}${t.target ? " → " + items[t.target][0] : ""}`;
+      `${items[t.item][2]} ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""}${t.duration ? " · " + (t.durationRange ? t.durationRange.join("–") : t.duration) + " s" : ""}${t.target ? " → " + items[t.target][0] : ""}`;
     $("score").textContent = `${current.score} pontos`;
     $("stepCount").textContent = `${t.phase + 1} de ${phases.length}`;
     $("progressBar").style.width =
       `${(state.index / state.tasks.length) * 100}%`;
-    $("stepList").innerHTML = phases
-      .map(
-        ([name], i) =>
-          `<div class="step ${i < t.phase ? "done" : i === t.phase ? "current" : ""}">${i + 1}. ${name}</div>`,
-      )
-      .join("");
+    const guideKey = recipe.id + ":" + t.phase;
+    if ($("stepList").dataset.guide !== guideKey) {
+      $("stepList").dataset.guide = guideKey;
+      const guidance = RecipeGuide.build(definition, t.phase);
+      $("stepList").replaceChildren();
+      for (const [name, text] of Object.entries(guidance)) {
+        if (name === "title" || !text) continue;
+        const paragraph = document.createElement("p");
+        paragraph.className = "recipe-guide-" + name;
+        paragraph.textContent = text;
+        $("stepList").append(paragraph);
+      }
+    }
     $("cookieTaskInstruction").textContent =
       `${items[t.item][0]}: ${t.procedure}.`;
     $("cookieRealTime").textContent =
@@ -693,6 +698,7 @@
       active = true;
       stopReason = "";
       sceneHooks = null;
+      db.settings.seconds = GameSettings.normalizeDuration(db.settings.seconds);
       remainingTime = db.settings.seconds;
       current = {
         recipe,

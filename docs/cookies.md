@@ -41,7 +41,7 @@ O resultado mantém a integração com a roleta e com o histórico existente. `c
 
 As especificações originais estão em `docs/recipes/limonada.txt` e `docs/recipes/focaccia.txt`. `js/recipe-catalog.js` preserva ingredientes, quantidades, fases, intervalos e bônus desses documentos.
 
-- Limonada: quatro limões, quatro cortes e oito metades espremidas individualmente; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de sopa de açúcar, mistura de 5–8 s, 8–10 cubos de gelo e espera de 5 s. Copo com dois cubos extras e preenchimento de 90%. Fatia e hortelã são opcionais; o bônus de apresentação de 10% exige ambas. Extração de cada metade (1 s) e animação de servir (2 s) são adaptações explícitas.
+- Limonada: quatro limões, quatro cortes e oito metades espremidas juntas em um lote; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de sopa de açúcar, mistura de 5–8 s, 8–10 cubos de gelo e espera de 5 s. Copo com dois cubos extras e preenchimento de 90%. Fatia e hortelã são opcionais; o bônus de apresentação de 10% exige ambas. Extração do lote de oito metades (3 s) e animação de servir (2 s) são adaptações explícitas.
 - Focaccia: 350 ml de água morna, 7 g de fermento biológico e uma colher de chá de açúcar; mistura de 5 s e ativação de 10 s. Massa com 500 g de farinha, duas colheres de chá de sal e três adições distintas de 20 ml de azeite (60 ml ao todo). Primeira fermentação de 30 s, com Avançar Tempo, e segunda de 15 s. Cavidades, 15 g de alecrim, uma colher de sopa de sal grosso; forno a 220 °C por 20–25 s, queimando acima de 30 s. Luvas, resfriamento de 5 s e cortes retangulares. A mistura suave de 4 s é uma adaptação do jogo.
 
 As ações de corte/espalhamento/cavidades têm botões equivalentes por teclado e toque. A aba sem WebGL continua recolhida, com abertura automática se a visualização falhar. O histórico registra `recipeDetails` para todas as receitas e preserva `cookieDetails` para compatibilidade com cookies.
@@ -63,3 +63,11 @@ Para verificar no navegador: concluir uma rodada com descanso e outra sem descan
 No modo 3D, cada diálogo é um painel compacto ancorado à projeção do objeto acionado. Ao entregar um ingrediente, o painel fica próximo à tigela de destino. A posição acompanha zoom e movimento de câmera e é limitada à parte visível da cena, inclusive em telas pequenas. As explicações longas ficam em **Detalhes da etapa**. Escape ou o botão de fechar cancela a configuração sem avançar. Os painéis 3D não escurecem a cena nem prendem o foco; no modo alternativo sem WebGL, o diálogo permanece centralizado e mantém o foco dentro dele.
 
 A mão usa o mesmo modelo, escala de cursor, orientação relativa à câmera e poses das receitas de limonada e focaccia. Objetos sob o raio de toque, arrastados ou em configuração recebem o mesmo destaque emissivo verde (`0x8ee05a`, intensidade máxima `0.26`), com retorno gradual ao material original.
+
+## Orientações e tempo de jogo
+
+A área de jogo usa a bancada em largura total e três painéis abaixo dela: ação atual, orientação da fase e controles. A orientação substitui a lista de passos e explica o procedimento, todas as quantidades da fase e seus tempos, gerados a partir da receita para evitar números divergentes. A indicação dentro da cena também mostra a quantidade e o tempo da ação atual.
+
+O tempo padrão passou a **180 segundos (3 minutos)** para todas as receitas. Na área administrativa, **Tempo de cada receita** aceita de 180 a 1.800 segundos (3–30 minutos), aplicados às três receitas. Configurações antigas e backups com menos de três minutos são ajustados automaticamente; tempos personalizados maiores são preservados até o limite. As esperas continuam pausando o cronômetro geral.
+
+Na limonada, as oito metades formam um único objeto arrastável: leve o lote ao espremedor, informe oito metades e processe durante três segundos no jogo. Não há mais oito modais de extração. Depois, transfira os cerca de 150 ml de suco para a jarra de uma vez. Essa simplificação substitui a extração individual descrita no anexo original.

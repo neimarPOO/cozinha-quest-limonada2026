@@ -148,10 +148,12 @@ for (const id of ["cookie", "focaccia"])
     assert.equal(burn.status, "burnt");
     assert.equal(burn.completed, false);
   });
-test("lemonade: 4 lemons, 8 separate halves, 150ml juice, 1000ml water and correct ranges", () => {
+test("lemonade: 4 lemons and a single eight-half batch, 150ml juice, 1000ml water and correct ranges", () => {
   const d = catalog.lemonade;
   assert.equal(d.tasks[0].quantity, 4);
-  assert.equal(d.tasks.filter((t) => t.item.startsWith("half")).length, 8);
+  assert.equal(d.tasks.filter((t) => t.item === "halves").length, 1);
+  assert.equal(d.tasks.find((t) => t.item === "halves").quantity, 8);
+  assert.ok(!d.tasks.some((t) => /^half[0-9]/.test(t.item)));
   assert.equal(d.tasks.find((t) => t.item === "dry").quantity, 150);
   assert.equal(d.tasks.find((t) => t.item === "water").quantity, 1000);
   const s = until(new Session(d), (t) => t.item === "white");
@@ -220,4 +222,36 @@ test("ingredients and required transfers demand a valid drop, ordinary stations 
     requiresBowlDrop(catalog.lemonade.tasks.find((t) => t.item === "knife")),
     false,
   );
+});
+
+test("recipe time defaults to three minutes, migrates old saves and validates admin limits", () => {
+  const settings = require("../js/game-settings");
+  assert.equal(settings.DEFAULT_SECONDS, 180);
+  for (const old of [undefined, NaN, 0, 30, 100, 179])
+    assert.equal(settings.normalizeDuration(old), 180);
+  assert.equal(settings.normalizeDuration(300), 300);
+  assert.equal(settings.normalizeDuration(1801), 1800);
+  assert.equal(settings.isValidDuration(179), false);
+  assert.equal(settings.isValidDuration(180), true);
+  assert.equal(settings.isValidDuration(1800), true);
+  assert.equal(settings.isValidDuration(1801), false);
+  assert.equal(settings.isValidDuration(180.5), false);
+});
+test("phase guidance includes correct amounts, duration and narrative procedure in all recipes", () => {
+  const guide = require("../js/recipe-guide");
+  const dry = guide.build(catalog.cookie, 0);
+  assert.match(dry.introduction, /tigela de secos/);
+  assert.match(dry.introduction, /reserve/);
+  assert.match(dry.ingredients, /450 g/);
+  assert.equal((dry.ingredients.match(/5 g/g) || []).length, 3);
+  assert.match(dry.timing, /3 segundos/);
+  for (const d of Object.values(catalog))
+    for (let phase = 0; phase < d.phases.length; phase++) {
+      const text = guide.build(d, phase);
+      assert.ok(text.introduction);
+      assert.ok(text.timing);
+    }
+  assert.match(guide.build(catalog.focaccia, 5).timing, /220 °C/);
+  assert.match(guide.build(catalog.focaccia, 5).timing, /20–25/);
+  assert.match(guide.build(catalog.lemonade, 1).ingredients, /8 metades/);
 });

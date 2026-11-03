@@ -106,13 +106,11 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     }
     this.tag(lemons, "lemon", 1);
     this.halves = [];
+    this.halvesBatch = this.entity("halves", -3.4, 0);
     for (let i = 0; i < 8; i++) {
-      const id = "half" + i,
-        g = this.entity(
-          id,
-          -4.55 + (i % 4) * 0.75,
-          -0.35 + Math.floor(i / 4) * 0.7,
-        );
+      const g = new THREE.Group();
+      g.position.set(-1.1 + (i % 4) * 0.75, 0, -0.35 + Math.floor(i / 4) * 0.7);
+      this.halvesBatch.add(g);
       this.cylinder(g, 0xf3eda2, 0.25, 0.25, 0.12, [0, 0.17, 0]);
       const rind = new THREE.Mesh(
         new THREE.TorusGeometry(0.24, 0.025, 8, 28),
@@ -125,9 +123,9 @@ window.RecipeScene = class RecipeScene extends CookieScene {
         const line = this.box(g, 0xfff6c4, [0.015, 0.015, 0.4], [0, 0.24, 0]);
         line.rotation.y = (j * Math.PI) / 3;
       }
-      this.tag(g, id, 0.65);
       this.halves.push(g);
     }
+    this.tag(this.halvesBatch, "halves", 0.75);
     this.dry = this.entity("dry", -0.5, -1.1);
     this.cylinder(this.dry, 0x74b6af, 0.65, 0.65, 0.3, [0, 0.2, 0]);
     this.cylinder(this.dry, 0xbed65b, 0.02, 0.25, 0.55, [0, 0.5, 0]);
@@ -368,12 +366,26 @@ window.RecipeScene = class RecipeScene extends CookieScene {
       if (done("lemon") && this.drag?.id !== "lemon")
         this.objects.get("lemon").position.set(-4.2, 0, -0.35);
       this.wholeLemons.forEach((m, i) => (m.visible = i >= cuts));
-      this.halves.forEach((g, i) => {
-        g.visible = i < cuts * 2 && !done("half" + i);
-      });
-      const extracted = state.history.filter((h) =>
-        h.item?.startsWith("half"),
-      ).length;
+      this.halvesBatch.visible = cuts > 0 && !done("halves");
+      this.halves.forEach((g, i) => (g.visible = i < cuts * 2));
+      const processing = t.item === "halves" && state.status === "running";
+      const extracted = done("halves")
+        ? 8
+        : processing
+          ? Math.min(8, (state.elapsed / state.target) * 8)
+          : 0;
+      if (this.drag?.id !== "halves") {
+        this.halvesBatch.position.set(-3.4, 0, 0);
+        this.halvesBatch.scale.setScalar(1);
+        if (processing) {
+          const progress = Math.min(1, state.elapsed / state.target);
+          this.halvesBatch.position.lerp(
+            this.dry.position.clone().add(new THREE.Vector3(0, 0.6, 0)),
+            progress,
+          );
+          this.halvesBatch.scale.setScalar(1 - progress * 0.7);
+        }
+      }
       this.juice.scale.y = done("dry") ? 0.1 : Math.max(0.1, extracted);
       this.juice.position.y = 0.23 + extracted * 0.013;
       const poured = done("dry");

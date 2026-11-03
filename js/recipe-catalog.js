@@ -28,7 +28,7 @@
     bonusItems: ["slice", "mint"],
     ingredientIds: [
       "lemon",
-      ...Array.from({ length: 8 }, (_, i) => "half" + i),
+      "halves",
       "water",
       "white",
       "ice",
@@ -42,7 +42,7 @@
       ],
       [
         "Extração do suco",
-        "Esprema as 8 metades, uma por vez, para obter aproximadamente 150 ml de suco.",
+        "Leve as 8 metades juntas ao espremedor e processe o lote para obter aproximadamente 150 ml de suco.",
       ],
       [
         "Base na jarra",
@@ -75,12 +75,11 @@
     },
     tasks: [],
   };
-  for (let i = 0; i < 8; i++)
-    lemonade.items["half" + i] = [
-      "Metade de limão " + (i + 1),
-      "1 metade",
-      "🍋",
-    ];
+  lemonade.items.halves = [
+    "Metades de limão",
+    "8 metades em um único lote",
+    "🍋",
+  ];
   lemonade.tasks = [
     add(0, "lemon", 4, "unidades", "board"),
     t(0, "knife", "Cortar transversalmente no centro", {
@@ -89,15 +88,15 @@
       target: "board",
       actionLabel: "Cortar o próximo limão",
     }),
-    ...Array.from({ length: 8 }, (_, i) =>
-      add(1, "half" + i, 1, "metade", "dry", {
-        duration: 1,
-        hold: true,
-        note: "Pressione e gire esta metade por 1 segundo no jogo. O reservatório acumula aproximadamente 150 ml ao fim das 8 metades.",
-      }),
-    ),
+    add(1, "halves", 8, "metades", "dry", {
+      duration: 3,
+      hold: true,
+      procedure: "Espremer todas as metades em conjunto",
+      note: "Arraste as 8 metades juntas. Pressione e gire por 3 segundos no jogo para obter cerca de 150 ml de suco; depois transfira todo o suco à jarra de uma vez.",
+    }),
     add(2, "dry", 150, "ml de suco", "wet", {
       procedure: "Despejar o suco concentrado na jarra",
+      ingredientName: "Suco de limão",
     }),
     add(2, "water", 1000, "ml", "wet"),
     add(2, "white", 4, "colheres de sopa", "wet", { quantityRange: [4, 6] }),
@@ -116,6 +115,7 @@
     add(5, "wet", 90, "% do volume do copo", "glass", {
       duration: 2,
       procedure: "Inclinar a jarra e servir até 90%",
+      ingredientName: "Limonada",
       note: "Preencha 90% do copo. A animação de servir dura 2 segundos no jogo.",
     }),
     add(5, "slice", 1, "fatia", "glass", { optional: true }),
