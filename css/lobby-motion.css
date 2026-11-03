@@ -1,0 +1,343 @@
+/* Animações decorativas exclusivas da seleção de receitas. */
+body.lobby-screen .shell {
+  position: relative;
+  z-index: 1;
+}
+body.lobby-screen::before {
+  inset: -12px;
+  transform-origin: 22% 48%;
+  animation: lobbyBackgroundDrift 24s ease-in-out infinite alternate paused;
+}
+.lobby-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.lobby-atmosphere::before,
+.lobby-atmosphere::after {
+  content: "";
+  position: absolute;
+  width: 65vw;
+  height: 65vh;
+  background: radial-gradient(ellipse, #ffc35d25, transparent 66%);
+  top: -10%;
+  left: -12%;
+  animation: lobbyLightBreathe 9s ease-in-out infinite alternate paused;
+}
+.lobby-atmosphere::after {
+  background: radial-gradient(ellipse, #2dc9db1f, transparent 66%);
+  left: auto;
+  right: -20%;
+  top: 4%;
+  animation-delay: -4s;
+}
+.lobby-mote {
+  position: absolute;
+  left: var(--mote-x);
+  top: 105%;
+  width: var(--mote-size);
+  height: var(--mote-size);
+  border-radius: 50%;
+  background: #ffe5a8;
+  box-shadow: 0 0 9px #ffc54d65;
+  animation: lobbyMoteRise var(--mote-time) linear var(--mote-delay) infinite
+    paused;
+}
+.lobby-mote:nth-child(3n) {
+  background: #b7f0dd;
+  box-shadow: 0 0 9px #5edbc044;
+}
+.lobby-screen #intro .recipe {
+  animation: lobbyCardFloat 6s ease-in-out infinite paused;
+}
+.lobby-screen #intro .recipe:nth-child(2) {
+  animation-delay: -2s;
+}
+.lobby-screen #intro .recipe:nth-child(3) {
+  animation-delay: -4s;
+}
+.lobby-screen #intro .recipe::after {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 43%,
+    #fff6d214 49%,
+    #ffffff22 50%,
+    transparent 57%
+  );
+  transform: translateX(-100%) rotate(-8deg);
+  animation: lobbyCardShine 10s ease-in-out infinite paused;
+}
+.lobby-screen #intro .recipe:nth-child(2)::after {
+  animation-delay: -3.3s;
+}
+.lobby-screen #intro .recipe:nth-child(3)::after {
+  animation-delay: -6.6s;
+}
+.lobby-screen #intro .recipe-art {
+  animation: lobbyFoodFloat 5.5s ease-in-out infinite paused;
+}
+.lobby-screen #intro .recipe:nth-child(2) .recipe-art {
+  animation-delay: -1.8s;
+}
+.lobby-screen #intro .recipe:nth-child(3) .recipe-art {
+  animation-delay: -3.6s;
+}
+.lobby-screen #intro .accent::after {
+  animation: lobbyUnderlineGlow 4s ease-in-out infinite paused;
+}
+.lobby-screen .brand-lemon {
+  display: inline-block;
+  animation: lobbyLemonSway 7s ease-in-out infinite paused;
+  transform-origin: 50% 85%;
+}
+.lobby-screen .lobby-invitation b {
+  display: inline-block;
+  animation: lobbyArrowLift 2.8s ease-in-out infinite paused;
+}
+.lobby-screen .quest-progress {
+  position: relative;
+  overflow: hidden;
+}
+.lobby-screen .quest-progress::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #abefbe, transparent);
+  animation: lobbyProgressGlint 7s ease-in-out infinite paused;
+  pointer-events: none;
+}
+body.lobby-motion::before,
+.lobby-motion .lobby-atmosphere::before,
+.lobby-motion .lobby-atmosphere::after,
+.lobby-motion .lobby-mote,
+.lobby-motion #intro .recipe,
+.lobby-motion #intro .recipe::after,
+.lobby-motion #intro .recipe-art,
+.lobby-motion #intro .accent::after,
+.lobby-motion .brand-lemon,
+.lobby-motion .lobby-invitation b,
+.lobby-motion .quest-progress::after {
+  animation-play-state: running;
+}
+/* O botão fica estável para facilitar a seleção por mouse, toque e teclado. */
+body.lobby-screen #intro .recipe:is(:hover, :focus, :active),
+body.lobby-screen
+  #intro
+  .recipe:is(:hover, :focus, :active)
+  .recipe-art {
+  animation-play-state: paused;
+}
+.lobby-motion-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  z-index: 20;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #b7de6b65;
+  border-radius: 9px 3px;
+  background: #0b171ef2;
+  color: #d8e7bc;
+  font: 600 11px/1.4 var(--font);
+  box-shadow: 0 4px 18px #0005;
+}
+.lobby-motion-toggle:hover {
+  border-color: #c6ed86;
+  background: #17271f;
+}
+.lobby-motion-toggle:disabled {
+  opacity: 0.8;
+}
+@keyframes lobbyBackgroundDrift {
+  0% {
+    transform: scale(1.015) translate3d(-2px, 0, 0);
+  }
+  100% {
+    transform: scale(1.045) translate3d(4px, -4px, 0);
+  }
+}
+@keyframes lobbyLightBreathe {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.96) translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1.08) translate3d(18px, 8px, 0);
+  }
+}
+@keyframes lobbyMoteRise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.42;
+  }
+  80% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate3d(24px, -115vh, 0);
+    opacity: 0;
+  }
+}
+@keyframes lobbyCardFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+@keyframes lobbyCardShine {
+  0%,
+  68% {
+    transform: translateX(-100%) rotate(-8deg);
+    opacity: 0;
+  }
+  72% {
+    opacity: 0.6;
+  }
+  92%,
+  100% {
+    transform: translateX(100%) rotate(-8deg);
+    opacity: 0;
+  }
+}
+@keyframes lobbyFoodFloat {
+  0%,
+  100% {
+    translate: 0 1px;
+    rotate: -1deg;
+  }
+  50% {
+    translate: 0 -5px;
+    rotate: 1deg;
+  }
+}
+@keyframes lobbyUnderlineGlow {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes lobbyLemonSway {
+  0%,
+  70%,
+  100% {
+    rotate: 0deg;
+  }
+  79% {
+    rotate: -6deg;
+  }
+  88% {
+    rotate: 4deg;
+  }
+}
+@keyframes lobbyArrowLift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+@keyframes lobbyProgressGlint {
+  0%,
+  20% {
+    translate: -110% 0;
+    opacity: 0;
+  }
+  30%,
+  70% {
+    opacity: 0.7;
+  }
+  90%,
+  100% {
+    translate: 350% 0;
+    opacity: 0;
+  }
+}
+@media (max-width: 700px) {
+  /* O recorte móvel mantém a imagem inteira em sua própria área. */
+  body.lobby-screen::before {
+    inset: 0;
+    animation: none;
+    transform: none;
+  }
+  .lobby-screen .lobby-mobile-art {
+    position: relative;
+    overflow: hidden;
+    background: none;
+  }
+  .lobby-screen .lobby-mobile-art::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    background:
+      linear-gradient(180deg, transparent 70%, #090d11),
+      url("../public/Chef%20Feliz%20na%20Cozinha%20Vibrante.png") left center /
+        auto 310px no-repeat;
+    animation: lobbyMobileDrift 18s ease-in-out infinite alternate paused;
+    transform-origin: 20% 50%;
+  }
+  .lobby-motion .lobby-mobile-art::before {
+    animation-play-state: running;
+  }
+  .lobby-mote:nth-child(n + 7) {
+    display: none;
+  }
+  .lobby-motion-toggle {
+    right: 12px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    font-size: 10px;
+  }
+  @keyframes lobbyMobileDrift {
+    from {
+      transform: scale(1.01);
+    }
+    to {
+      transform: scale(1.04) translate3d(2px, -2px, 0);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.lobby-screen::before,
+  .lobby-screen .lobby-mobile-art::before,
+  .lobby-screen .lobby-atmosphere::before,
+  .lobby-screen .lobby-atmosphere::after,
+  .lobby-screen .lobby-mote,
+  .lobby-screen #intro .recipe,
+  .lobby-screen #intro .recipe::after,
+  .lobby-screen #intro .recipe-art,
+  .lobby-screen #intro .accent::after,
+  .lobby-screen .brand-lemon,
+  .lobby-screen .lobby-invitation b,
+  .lobby-screen .quest-progress::after {
+    animation: none !important;
+    translate: none;
+    rotate: none;
+    transform: none;
+  }
+  .lobby-atmosphere {
+    display: none;
+  }
+  .lobby-screen #intro .recipe::after {
+    display: none;
+  }
+}
