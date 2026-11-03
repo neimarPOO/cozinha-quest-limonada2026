@@ -109,56 +109,97 @@
     mission.hidden = !open;
     $("stageGuide").setAttribute("aria-expanded", String(open));
   }
-  function scheduleBalloonClose() {
-    clearTimeout(closeTimer);
-    closeTimer = setTimeout(() => {
-      if (
-        !modal.hidden &&
-        !modal.matches(":hover") &&
-        !modal.contains(document.activeElement) &&
-        !CookieRecipe.contextMode(state, hoverObject)
-      )
-        closeModal({ passive: true, restoreFocus: false });
-    }, 280);
-  }
-  function onHover(id, pointerType = "mouse") {
-    clearTimeout(hoverTimer);
-    if (id !== hoverObject) dismissedHover = null;
+  const instructionBalloon = document.createElement("div");
+  instructionBalloon.className = "recipe-instruction-balloon";
+  instructionBalloon.setAttribute("role", "status");
+  instructionBalloon.hidden = true;
+  stage.append(instructionBalloon);
+  const objectMeter = document.createElement("div");
+  objectMeter.className = "object-work-progress";
+  objectMeter.hidden = true;
+  objectMeter.innerHTML =
+    '<progress max="1" value="0" aria-label="Progresso do procedimento"></progress><p></p>';
+  stage.append(objectMeter);
+  function onHover(id) {
     hoverObject = id;
-    const mode = active ? CookieRecipe.contextMode(state, id) : null;
-    if (!mode) {
-      scheduleBalloonClose();
-      return;
-    }
-    clearTimeout(closeTimer);
-    if (
-      pointerType === "touch" ||
-      scene?.drag ||
-      !modal.hidden ||
-      dismissedHover === id + ":" + state.index
-    )
-      return;
-    hoverTimer = setTimeout(() => {
-      if (
-        active &&
-        !scene?.drag &&
-        modal.hidden &&
-        hoverObject === id &&
-        CookieRecipe.contextMode(state, id) === mode
-      )
-        openModal(mode, id, { focus: false });
-    }, 160);
   }
-  modal.addEventListener("pointerenter", () => clearTimeout(closeTimer));
-  modal.addEventListener("pointerleave", scheduleBalloonClose);
-  modal.addEventListener("focusin", () => clearTimeout(closeTimer));
-  modal.addEventListener("focusout", scheduleBalloonClose);
+  function anchorOverlay(element, id) {
+    const point = scene?.getObjectAnchor(id);
+    if (!point) return;
+    const bounds = stage.getBoundingClientRect();
+    element.style.left =
+      Math.max(
+        8,
+        Math.min(
+          stage.clientWidth - element.offsetWidth - 8,
+          point.x - bounds.left - element.offsetWidth / 2,
+        ),
+      ) + "px";
+    element.style.top =
+      Math.max(
+        72,
+        Math.min(
+          stage.clientHeight - element.offsetHeight - 85,
+          point.y - bounds.top - element.offsetHeight - 22,
+        ),
+      ) + "px";
+  }
+  function positionOverlays() {
+    positionModal();
+    if (!active || !scene || !state.task) return;
+    const t = state.task;
+    instructionBalloon.hidden =
+      state.status !== "ready" || !modal.hidden || Boolean(scene.drag);
+    const quantity = t.quantityRange ? t.quantityRange.join("–") : t.quantity;
+    instructionBalloon.textContent =
+      t.procedure +
+      (quantity ? " · " + quantity + " " + t.unit : "") +
+      (t.duration
+        ? " · " +
+          (t.durationRange ? t.durationRange.join("–") : t.duration) +
+          " s"
+        : "") +
+      (t.temperature ? " · " + t.temperature + " °C" : "");
+    if (!instructionBalloon.hidden) anchorOverlay(instructionBalloon, t.item);
+    objectMeter.hidden = !["baking", "repeat"].includes(state.status);
+    if (!objectMeter.hidden) {
+      const repeated = state.status === "repeat";
+      objectMeter.querySelector("progress").value = repeated
+        ? state.repetitions.length / t.count
+        : Math.min(1, state.elapsed / state.target);
+      objectMeter.querySelector("p").textContent = repeated
+        ? `${state.repetitions.length} / ${t.count} · ${t.actionLabel}`
+        : `${state.elapsed.toFixed(1)} / ${state.target} s · ${state.elapsed >= definition.bake.min ? "Observe o ponto e retire com luvas" : "Assando"}`;
+      anchorOverlay(objectMeter, t.item);
+    }
+    const activity = $("cookieActivity");
+    if (state.status === "running") {
+      if (activity.parentElement !== stage) stage.append(activity);
+      activity.classList.add("object-work-progress");
+      anchorOverlay(activity, t.item);
+    }
+  }
   $("stageGuide").onclick = () => {
     closeModal({ passive: true, restoreFocus: false });
     showGuide(mission.hidden);
   };
   $("stageAction").onclick = () => {
     const mode = state.status === "baking" && !state.gloves ? "gloves" : "task";
+    if (
+      scene &&
+      state.status === "ready" &&
+      CookieRecipe.requiresBowlDrop(state.task) &&
+      state.task.target &&
+      !controls.open
+    ) {
+      tell(
+        "Arraste o ingrediente até " +
+          items[state.task.target][0] +
+          " para informar a quantidade.",
+      );
+      scene.focus(state.task.item);
+      return;
+    }
     if (state.status === "ready" || mode === "gloves") openModal(mode);
     else {
       actionsCollapsed = false;
@@ -307,7 +348,10 @@
       gameRoot.append(modal);
       $("cookieActionForm").style.maxHeight = "85svh";
     }
-    modal.querySelector(".cookie-action-details").open = false;
+    modal.querySelector(".cookie-action-details").hidden = true;
+    modal.querySelector(".eyebrow").textContent = "QUANTIDADE E TEMPO";
+    $("cookieProcedure").hidden = true;
+    modal.querySelector('label[for="cookieProcedure"]').hidden = true;
     const t = state.task,
       gloves = mode === "gloves",
       name = gloves ? items.gloves[0] : items[t.item][0],
@@ -393,6 +437,7 @@
       document
         .querySelector("#game .scene")
         .scrollIntoView({ block: "nearest", behavior: "instant" });
+    procedure.value = correct;
     const draft = dialogDrafts.get(modalDraftKey);
     if (draft) {
       procedure.value = draft.procedure;
@@ -402,7 +447,11 @@
       }
     }
     positionModal();
-    if (options.focus !== false) procedure.focus({ preventScroll: true });
+    if (options.focus !== false)
+      (
+        fields.querySelector("input") || modal.querySelector('[type="submit"]')
+      ).focus({ preventScroll: true });
+    instructionBalloon.hidden = true;
   }
   function interact(id, target, source = "scene", contact = null) {
     if (!active || !state.task) return;
@@ -465,7 +514,23 @@
       tell(`Destino desta etapa: ${items[t.target][0]}.`);
       return;
     }
-    openModal("task", id);
+    if (
+      scene &&
+      source === "scene" &&
+      CookieRecipe.requiresBowlDrop(t) &&
+      t.target &&
+      target !== t.target
+    ) {
+      tell(
+        "Coloque " +
+          items[t.item][0] +
+          " em " +
+          items[t.target][0] +
+          " para configurar a quantidade ou o tempo.",
+      );
+      return;
+    }
+    openModal("task", target || id);
   }
   function place(x, y, fromDrag = false) {
     if (!active) return;
@@ -686,7 +751,10 @@
       actionsCollapsed = false;
     }
     taskPanel.hidden = Boolean(
-      scene && (state.status === "ready" || actionsCollapsed),
+      scene &&
+        (state.status === "ready" ||
+          (state.status === "running" && !t.allowSkip) ||
+          actionsCollapsed),
     );
     $("stageControls").hidden = Boolean(scene && state.status === "ready");
     $("stageControls").setAttribute("aria-expanded", String(!taskPanel.hidden));
@@ -778,6 +846,14 @@
       }
     }
     scene?.sync(state);
+    if (!scene) {
+      instructionBalloon.hidden = true;
+      objectMeter.hidden = true;
+      const activity = $("cookieActivity");
+      taskPanel.append(activity);
+      activity.classList.remove("object-work-progress");
+    }
+    positionOverlays();
   }
   function tick() {
     if (!active) return;
@@ -864,14 +940,14 @@
                 useFallback,
                 definition,
               );
-        scene.onViewChange = positionModal;
+        scene.onViewChange = positionOverlays;
         scene.onHoverChange = onHover;
         scene.onDragStart = () =>
           closeModal({ passive: true, restoreFocus: false });
         scene.renderer.domElement.addEventListener("keydown", (e) => {
           if (e.key === "Enter" && state.status === "ready") {
             e.preventDefault();
-            openModal("task");
+            $("stageAction").click();
           }
         });
         gameRoot.classList.add("stage-has-webgl");
@@ -886,7 +962,7 @@
         useFallback();
       }
       tell(
-        "Passe o mouse sobre o ingrediente destacado para abrir seu balão. Confirme o procedimento para iniciar a ação.",
+        "Siga o balão sobre o objeto destacado. Entregue o ingrediente na tigela e informe a quantidade; selecione os utensílios para configurar o tempo.",
       );
       render();
       lastTime = performance.now();
@@ -900,6 +976,9 @@
       closeModal();
       scene?.dispose();
       scene = null;
+      instructionBalloon.hidden = true;
+      objectMeter.hidden = true;
+      $("cookieActivity").hidden = true;
       sceneRoot.replaceChildren();
       sceneRoot.hidden = true;
       controls.hidden = true;

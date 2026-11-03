@@ -223,3 +223,47 @@ body:has(#game.cookie-mode:not(.hidden)) #play {
     bottom: 110px;
   }
 }
+.recipe-instruction-balloon,
+.object-work-progress {
+  position: absolute;
+  z-index: 20;
+  width: min(280px, calc(100% - 16px));
+  padding: 12px 14px;
+  border: 1px solid #c3e78e;
+  border-radius: 12px;
+  background: #10251ef2;
+  color: #f3ffe4;
+  box-shadow: 0 8px 24px #0008;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.recipe-instruction-balloon {
+  pointer-events: none;
+}
+.recipe-instruction-balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: #10251e;
+  border-right: 1px solid #c3e78e;
+  border-bottom: 1px solid #c3e78e;
+}
+.object-work-progress {
+  z-index: 22;
+}
+.object-work-progress progress {
+  width: 100%;
+  accent-color: #b1ed36;
+}
+.object-work-progress p {
+  margin: 4px 0;
+  font-size: 12px;
+}
+.object-work-progress .btn {
+  width: 100%;
+  font-size: 12px;
+}
