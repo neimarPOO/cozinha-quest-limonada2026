@@ -160,7 +160,13 @@
           " s"
         : "") +
       (t.temperature ? " · " + t.temperature + " °C" : "");
-    if (!instructionBalloon.hidden) anchorOverlay(instructionBalloon, t.item);
+    if (!instructionBalloon.hidden) {
+      const instructionBottom = 64 + instructionBalloon.offsetHeight + 18;
+      const feedbackHeight = $("feedback").offsetHeight;
+      const topSpace = instructionBottom + feedbackHeight + 14;
+      stage.style.setProperty("--instruction-bottom", instructionBottom + "px");
+      stage.style.setProperty("--stage-top-space", topSpace + "px");
+    }
     objectMeter.hidden = !["baking", "repeat"].includes(state.status);
     if (!objectMeter.hidden) {
       const repeated = state.status === "repeat";

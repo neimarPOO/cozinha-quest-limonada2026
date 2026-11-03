@@ -238,19 +238,68 @@ body:has(#game.cookie-mode:not(.hidden)) #play {
   line-height: 1.5;
 }
 .recipe-instruction-balloon {
+  top: 64px;
+  left: 18px;
+  width: min(460px, calc(100% - 36px));
+  padding: 14px 20px;
+  background: #fff;
+  color: #111;
+  border: 3px solid #171717;
+  border-radius: 26px 30px 24px 8px / 22px 26px 28px 18px;
+  box-shadow:
+    5px 5px 0 #171717,
+    9px 9px 0 #c9f15f;
+  font-family: "Outfit", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
   pointer-events: none;
 }
 .recipe-instruction-balloon::after {
   content: "";
   position: absolute;
-  bottom: -7px;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  transform: rotate(45deg);
-  background: #10251e;
-  border-right: 1px solid #c3e78e;
-  border-bottom: 1px solid #c3e78e;
+  bottom: -11px;
+  left: 30px;
+  width: 17px;
+  height: 17px;
+  background: #fff;
+  border-right: 3px solid #171717;
+  border-bottom: 3px solid #171717;
+  transform: skewY(-15deg) rotate(35deg);
+}
+#game.cookie-mode .scene {
+  --stage-top-space: 190px;
+  --instruction-bottom: 140px;
+  background: linear-gradient(120deg, #182c27, #0a171c);
+}
+#game.cookie-mode #cookieScene {
+  top: var(--stage-top-space);
+}
+#game.cookie-mode #sceneHint {
+  display: none;
+}
+#game.cookie-mode #recipeName {
+  max-width: calc(100% - 105px);
+}
+#game.cookie-mode #feedback {
+  top: var(--instruction-bottom);
+  max-width: min(460px, calc(100% - 36px));
+  left: 18px;
+}
+@media (max-width: 650px) {
+  .recipe-instruction-balloon {
+    left: 12px;
+    width: calc(100% - 28px);
+    padding: 12px 15px;
+    font-size: 13px;
+  }
+  #game.cookie-mode #feedback {
+    left: 12px;
+    max-width: calc(100% - 24px);
+  }
+  #game.cookie-mode #recipeName {
+    font-size: 10px;
+  }
 }
 .object-work-progress {
   z-index: 22;
