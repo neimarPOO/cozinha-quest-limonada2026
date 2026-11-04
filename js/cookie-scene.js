@@ -563,6 +563,7 @@ window.CookieScene = class CookieScene {
       )
         this.renderer.shadowMap.needsUpdate = true;
       this.shadowKey = shadowKey;
+      this.beforeRender?.();
       this.renderer.render(this.scene, this.camera);
       const gl = this.renderer.getContext();
       if (gl.fenceSync && !gl.isContextLost()) {
@@ -581,6 +582,7 @@ window.CookieScene = class CookieScene {
       await this.renderer.compileAsync(this.scene, this.camera);
     else this.renderer.compile(this.scene, this.camera);
     if (this.disposed) return false;
+    this.beforeRender?.();
     this.renderer.render(this.scene, this.camera);
     const gl = this.renderer.getContext();
     if (gl.fenceSync && !gl.isContextLost()) {
@@ -1012,12 +1014,64 @@ window.CookieScene = class CookieScene {
     this.renderWidth = w;
     this.renderHeight = h;
     this.renderer.setSize(w, h);
-    const inset = Math.min(h * 0.36, this.instructionInset || 190);
-    this.camera.aspect = w / (h - inset);
+    const inset = Math.min(h * 0.36, this.instructionInset || 130);
+    const workWidth = Math.max(300, w - (this.notebookInset || 0));
+    this.camera.aspect = workWidth / (h - inset);
     // Extend the view above the usable workbench so the wall also fills behind HUD.
-    this.camera.setViewOffset(w, h - inset, 0, -inset, w, h);
+    this.camera.setViewOffset(workWidth, h - inset, 0, -inset, w, h);
     this.updateCamera();
     if (first) this.root.scrollLeft = (w - this.root.clientWidth) / 2;
+  }
+  setNotebookInset(value) {
+    const inset = Math.round(value);
+    if (this.notebookInset === inset) return;
+    this.notebookInset = inset;
+    this.resize();
+    if (this.state?.task) this.revealCurrentObject(this.state.task.item);
+  }
+  readPageHand(event, grab) {
+    if (!this.hand) return;
+    if (!this.readingHand) {
+      this.readingHand = true;
+      this.handRenderState = [];
+      this.handMaterialState = new Map();
+      this.hand.group.traverse((o) => {
+        if (!o.isMesh) return;
+        this.handRenderState.push([o, o.renderOrder, o.castShadow]);
+        o.renderOrder = 1100;
+        o.castShadow = false;
+        if (!this.handMaterialState.has(o.material))
+          this.handMaterialState.set(o.material, {
+            depth: o.material.depthTest,
+            transparent: o.material.transparent,
+          });
+        o.material.depthTest = false;
+        o.material.transparent = true;
+        o.material.needsUpdate = true;
+      });
+      this.renderer.shadowMap.needsUpdate = true;
+    }
+    const shadowDirty = this.renderer.shadowMap.needsUpdate;
+    this.updateHand(event);
+    this.renderer.shadowMap.needsUpdate = shadowDirty;
+    this.hand.pose(grab ? "grab" : "press", 0.8);
+    this.needsRender = true;
+  }
+  endReadingHand() {
+    if (!this.readingHand) return;
+    for (const [o, order, shadow] of this.handRenderState) {
+      o.renderOrder = order;
+      o.castShadow = shadow;
+    }
+    for (const [material, saved] of this.handMaterialState) {
+      material.depthTest = saved.depth;
+      material.transparent = saved.transparent;
+      material.needsUpdate = true;
+    }
+    this.readingHand = false;
+    this.hand.group.visible = false;
+    this.needsRender = true;
+    this.renderer.shadowMap.needsUpdate = true;
   }
   setInstructionInset(value) {
     const inset = Math.round(value);

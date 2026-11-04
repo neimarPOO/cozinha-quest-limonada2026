@@ -51,5 +51,55 @@
         "Sem espera fixa nesta fase: execute o procedimento com cuidado e siga a orientação atual.",
     };
   }
-  return { build };
+  function notebook(definition) {
+    const ingredients = definition.ingredientIds
+      .filter((id) => !["halves", "juice"].includes(id))
+      .map((id) => {
+        const additions = definition.tasks.filter(
+          (t) => t.item === id && t.quantity,
+        );
+        const min = additions.reduce(
+          (n, t) => n + (t.quantityRange?.[0] ?? t.quantity),
+          0,
+        );
+        const max = additions.reduce(
+          (n, t) => n + (t.quantityRange?.[1] ?? t.quantity),
+          0,
+        );
+        return {
+          name: definition.items[id][0],
+          amount: additions.length
+            ? `${min === max ? min : min + "–" + max} ${additions[0].unit}`
+            : definition.items[id][1],
+        };
+      });
+    const chapters = definition.phases.map(([title], phase) => {
+      const guide = build(definition, phase);
+      const instructions = definition.tasks
+        .filter((t) => t.phase === phase)
+        .map((t) => {
+          const amount = t.quantity
+            ? ` (${t.quantityRange ? t.quantityRange.join("–") : t.quantity} ${t.unit})`
+            : "";
+          const ingredient = t.ingredientName || definition.items[t.item][0];
+          const action =
+            t.quantity && /^Adicionar.*(quantidade|tigela)/i.test(t.procedure)
+              ? `Adicione ${t.quantityRange ? t.quantityRange.join(" a ") : t.quantity} ${t.unit} de ${ingredient}${t.target ? " na " + definition.items[t.target][0] : ""}.`
+              : `${ingredient}${amount}: ${t.procedure}${t.target ? " na " + definition.items[t.target][0] : ""}${t.temperature ? " a " + t.temperature + " °C" : ""}${t.count ? " (" + t.count + " ações)" : ""}.`;
+          return (
+            action +
+            (t.optional ? " Opcional." : "") +
+            (t.note ? " " + t.note : "")
+          );
+        });
+      return {
+        title,
+        introduction: guide.introduction,
+        instructions,
+        timing: guide.timing,
+      };
+    });
+    return { title: definition.name, ingredients, chapters };
+  }
+  return { build, notebook };
 });

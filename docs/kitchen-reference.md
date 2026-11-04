@@ -17,8 +17,8 @@ Os modelos continuam sendo objetos 3D interativos; a referência não é usada c
   ao movimentar a mão, arrastar ou executar procedimentos.
 - `RecipeScene`: mantém a mesma cozinha nas receitas de limonada e focaccia.
 
-A projeção estende o fundo atrás da interface, reservando o enquadramento útil abaixo dos
-balões. Os modais de quantidade continuam condicionados à entrega correta; as barras de
+A projeção estende o fundo atrás da interface, reservando o enquadramento útil ao lado do
+caderno de receitas. Os modais de quantidade continuam condicionados à entrega correta; as barras de
 trabalho permanecem sobre os utensílios. Zoom, arraste e raycast usam a mesma câmera.
 
 Em celular, transmissão do vidro e sombras dinâmicas são desativadas, os modelos usam

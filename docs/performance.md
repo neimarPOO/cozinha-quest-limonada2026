@@ -68,3 +68,10 @@ os cabeçalhos definidos em `netlify.toml`; o servidor Node não participa dela.
 
 KTX2 e redução adaptativa de resolução não foram introduzidos. Os ganhos desta
 etapa vêm da execução e da entrega dos mesmos recursos visuais.
+
+## Caderno de receitas
+
+A página usa uma textura de canvas apenas para a faixa visível do documento, no
+mesmo contexto WebGL da bancada e da mão. O texto completo permanece no DOM para
+acessibilidade e fallback. Rolar a página atualiza somente essa textura; não se
+rasteriza uma imagem gigante com toda a receita nem se cria outro renderizador.

@@ -8,9 +8,10 @@ window.GameLoader = (() => {
     "js/kitchen-environment.js?v=3",
     "js/kitchen-assets.js?v=3",
     "js/kitchen-lighting.js?v=2",
-    "js/cookie-scene.js?v=7",
+    "js/cookie-scene.js?v=8",
     "js/recipe-scene.js?v=4",
-    "js/cookie-game.js?v=10",
+    "js/recipe-notebook.js?v=1",
+    "js/cookie-game.js?v=11",
   ];
   const wood = ["diffuse", "bump", "roughness"].map(
     (n) => "public/textures/kitchen/hardwood2_" + n + ".jpg",
@@ -25,6 +26,7 @@ window.GameLoader = (() => {
     "KitchenLighting",
     "CookieScene",
     "RecipeScene",
+    "RecipeNotebook",
     "CookieGame",
   ];
   const loaded = new Set();

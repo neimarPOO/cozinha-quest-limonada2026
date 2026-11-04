@@ -107,13 +107,9 @@
   const dialogDrafts = new Map();
   function showGuide(open) {
     mission.hidden = !open;
-    $("stageGuide").setAttribute("aria-expanded", String(open));
+    if (open && innerWidth < 900) notebook.show(false);
   }
-  const instructionBalloon = document.createElement("div");
-  instructionBalloon.className = "recipe-instruction-balloon";
-  instructionBalloon.setAttribute("role", "status");
-  instructionBalloon.hidden = true;
-  stage.append(instructionBalloon);
+  const notebook = new RecipeNotebook(stage);
   const objectMeter = document.createElement("div");
   objectMeter.className = "object-work-progress";
   objectMeter.hidden = true;
@@ -148,28 +144,9 @@
     positionModal();
     if (!active || !scene || !state.task) return;
     const t = state.task;
-    instructionBalloon.hidden =
-      state.status !== "ready" || !modal.hidden || Boolean(scene.drag);
-    const quantity = t.quantityRange ? t.quantityRange.join("–") : t.quantity;
-    const instructionText =
-      t.procedure +
-      (quantity ? " · " + quantity + " " + t.unit : "") +
-      (t.duration
-        ? " · " +
-          (t.durationRange ? t.durationRange.join("–") : t.duration) +
-          " s"
-        : "") +
-      (t.temperature ? " · " + t.temperature + " °C" : "");
-    if (instructionBalloon.textContent !== instructionText)
-      instructionBalloon.textContent = instructionText;
-    if (!instructionBalloon.hidden) {
-      const instructionBottom = 64 + instructionBalloon.offsetHeight + 18;
-      const feedbackHeight = $("feedback").offsetHeight;
-      const topSpace = instructionBottom + feedbackHeight + 14;
-      stage.style.setProperty("--instruction-bottom", instructionBottom + "px");
-      stage.style.setProperty("--stage-top-space", topSpace + "px");
-      scene.setInstructionInset?.(topSpace);
-    }
+    const topSpace = 65 + $("feedback").offsetHeight + 16;
+    stage.style.setProperty("--stage-top-space", topSpace + "px");
+    scene.setInstructionInset(topSpace);
     objectMeter.hidden = !["baking", "repeat"].includes(state.status);
     if (!objectMeter.hidden) {
       const repeated = state.status === "repeat";
@@ -190,7 +167,9 @@
   }
   $("stageGuide").onclick = () => {
     closeModal({ passive: true, restoreFocus: false });
-    showGuide(mission.hidden);
+    const open = notebook.root.hidden;
+    if (open) showGuide(false);
+    notebook.show(open);
   };
   $("stageAction").onclick = () => {
     const mode = state.status === "baking" && !state.gloves ? "gloves" : "task";
@@ -225,6 +204,7 @@
   };
   function useFallback() {
     closeModal();
+    notebook.detach();
     scene?.dispose();
     scene = null;
     sceneRoot.textContent =
@@ -294,7 +274,7 @@
     };
     const ax = point.x - bounds.left,
       ay = point.y - bounds.top;
-    const right = stage.clientWidth - w - 8,
+    const right = stage.clientWidth - (scene.notebookInset || 0) - w - 8,
       top = Math.max(8, visibleTop - bounds.top + 8),
       bottom = Math.min(
         stage.clientHeight - h - 8,
@@ -460,7 +440,6 @@
       (
         fields.querySelector("input") || modal.querySelector('[type="submit"]')
       ).focus({ preventScroll: true });
-    instructionBalloon.hidden = true;
   }
   function interact(id, target, source = "scene", contact = null) {
     if (!active || !state.task) return;
@@ -770,7 +749,7 @@
     $("cookieTaskAction").hidden = state.status !== "ready" || Boolean(scene);
     if (requiresDrop)
       $("cookieTaskInstruction").textContent =
-        `Passe o mouse sobre ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""} para abrir o balão. Você também pode arrastar até ${items[t.target][0]}.`;
+        `Passe o mouse sobre ${items[t.item][0]}${quantityHint ? " · " + quantityHint : ""} e consulte as quantidades no caderno. Arraste até ${items[t.target][0]}.`;
     $("cookieTaskAction").textContent = `Configurar ${items[t.item][0]}`;
     $("cookieActivity").hidden = state.status !== "running";
     $("cookieStir").hidden = !state.requiresStir;
@@ -854,13 +833,13 @@
           items[id][1] + (added ? " · adicionado" : "");
       }
     }
+    notebook.setPhase(t.phase);
     scene?.sync(state);
     if (scene && scene.revealedStep !== statusKey) {
       scene.revealedStep = statusKey;
       scene.revealCurrentObject(t.item);
     }
     if (!scene) {
-      instructionBalloon.hidden = true;
       objectMeter.hidden = true;
       const activity = $("cookieActivity");
       taskPanel.append(activity);
@@ -914,6 +893,7 @@
       ingredientIds = definition.ingredientIds;
       recipe = RECIPES.find((r) => r.id === definition.id);
       buildInventory();
+      notebook.open(definition);
       state = new Session(definition);
       active = true;
       stopReason = "";
@@ -966,6 +946,7 @@
                 useFallback,
                 definition,
               );
+        notebook.attach(scene);
         scene.onViewChange = positionOverlays;
         scene.onHoverChange = onHover;
         scene.onDragStart = () =>
@@ -988,7 +969,7 @@
         useFallback();
       }
       tell(
-        "Siga o balão sobre o objeto destacado. Entregue o ingrediente na tigela e informe a quantidade; selecione os utensílios para configurar o tempo.",
+        "Consulte o caderno de receitas. Arraste os ingredientes até a bancada indicada e configure as quantidades e os tempos. Role ou arraste a página com a mão para continuar lendo.",
       );
       render();
       const preparingScene = scene;
@@ -1017,9 +998,11 @@
       active = false;
       clearInterval(timerId);
       closeModal();
+      notebook.detach();
+      notebook.show(false);
       scene?.dispose();
       scene = null;
-      instructionBalloon.hidden = true;
+
       objectMeter.hidden = true;
       $("cookieActivity").hidden = true;
       sceneRoot.replaceChildren();

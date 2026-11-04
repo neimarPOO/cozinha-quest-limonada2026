@@ -4,15 +4,19 @@ As três receitas usam o mesmo controlador de quantidades, procedimentos, painé
 
 ## Jogar
 
-Execute `npm start`, escolha a receita e siga o objeto destacado. O balão de quadrinhos, branco com texto preto, fica no canto superior esquerdo em uma faixa reservada acima da cena 3D e contém somente a instrução atual, com quantidade, tempo ou temperatura. Passar o mouse não abre formulários. Arraste o ingrediente até a tigela indicada: somente a entrega correta abre o pequeno modal para informar quantidade ou tempo. Utensílios e estações são selecionados para configurar seu tempo. A orientação define o procedimento; o formulário não pede uma segunda seleção dele. Valores incorretos não avançam a receita. A barra de progresso e o botão de mistura acompanham o utensílio em uso; forno e ações repetidas também exibem progresso junto do objeto. **Receita** abre a orientação da fase dentro da cena, sem lista de passos. **Sem WebGL** abre os controles alternativos, também disponíveis por teclado. A bancada ocupa toda a janela.
+Execute `npm start`, escolha a receita e consulte o **caderno de receitas** à direita. A folha pautada contém ingredientes, quantidades totais e modo de preparo completo, com notas e tempos reais/de jogo. Role a página ou arraste-a com a mão 3D. A leitura não avança sozinha: **Ir ao preparo atual** localiza a fase em andamento. **Receita** abre/fecha o caderno; em celular ele começa recolhido para liberar a bancada.
 
-Use o **scroll do mouse sobre a cena** para aproximar/afastar (80–250%). Os botões +/− oferecem o mesmo controle. **Visão geral** restaura o enquadramento; **Focar etapa** aproxima o destino atual. O botão direito pressionado move a câmera, e a bancada já ocupa toda a janela; Escape fecha o balão ou a orientação. O zoom permanece ao redimensionar a tela e não interrompe o arraste.
+A mão usa o mesmo contexto WebGL da bancada e aparece sobre o papel. Rolar ou arrastar dentro da página não muda o zoom nem aciona ingredientes. Teclado (setas/PageUp/PageDown/Espaço) e controles nativos continuam disponíveis. Sem WebGL, a mesma receita aparece como texto HTML acessível.
+
+Arraste cada ingrediente ao destino indicado; a entrega correta abre o pequeno modal de quantidade/tempo. Os controles e as barras sobre utensílios permanecem disponíveis na cena. **Sem WebGL** abre os controles alternativos.
+
+Use o **scroll do mouse sobre a cena** para aproximar/afastar (80–250%). Os botões +/− oferecem o mesmo controle. **Visão geral** restaura o enquadramento; **Focar etapa** aproxima o destino atual. O botão direito pressionado move a câmera, e a bancada já ocupa toda a janela; Escape fecha a configuração ou o caderno quando ele está em foco. O zoom permanece ao redimensionar a tela e não interrompe o arraste.
 
 A cena usa a mesma mão articulada e as mesmas poses das outras receitas, com materiais independentes para descarte seguro, sombras suaves no desktop, cerâmica arredondada, texturas procedurais e legendas HTML de tamanho constante durante o zoom. Em telas menores, a renderização reduz sombras e densidade de pixels para preservar o desempenho.
 
 Ao misturar com colher ou espátula, mantenha o botão de mistura pressionado (toque, mouse, Espaço ou Enter) até completar a barra. Batedeira, descanso e resfriamento contam automaticamente após a configuração.
 
-A quantidade correta aparece no status destacado da receita, que pulsa ao mudar de procedimento e respeita a preferência por movimento reduzido. O campo de quantidade começa vazio: o jogador precisa preenchê-lo. Cada modal pede, quando pertinente, quantidade, duração ou temperatura. Uma configuração incorreta não avança a receita e desconta 5 pontos. Os balões podem ser fechados com Escape sem executar a ação.
+As quantidades corretas e os procedimentos ficam no caderno, gerados da mesma definição usada para validar o preparo. O campo de quantidade começa vazio: o jogador precisa preenchê-lo. Cada modal pede, quando pertinente, quantidade, duração ou temperatura. Uma configuração incorreta não avança a receita e desconta 5 pontos. As configurações podem ser fechadas com Escape sem executar a ação.
 
 As quantidades são as reais: 450 g de farinha, 5 g de bicarbonato, 5 g de fermento, 5 g de sal, 200 g de manteiga em ponto de pomada, 200 g de açúcar mascavo, 100 g de açúcar branco, um ovo, uma colher de chá de baunilha e 350 g de gotas de chocolate.
 
