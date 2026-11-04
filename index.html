@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/game-immersive.css?v=4">
   <link rel="stylesheet" href="css/game-loading.css?v=1">
   <link rel="stylesheet" href="css/recipe-notebook.css?v=2">
+  <link rel="stylesheet" href="css/wheel-design.css?v=1">
 </head>
 
 <body>
@@ -281,8 +282,14 @@
           </button>
         </div>
       </div>
-      <div id="wheelArea" class="hidden wheel-stage">
-        <div class="roleta-head">Roleta de prêmios</div>
+      <div id="wheelArea" class="hidden wheel-stage" role="dialog" aria-modal="true" aria-label="Roleta de recompensas">
+        <header class="reward-header"><span class="reward-brand">🍋 COZINHA QUEST</span><span class="reward-event">Bancada de recompensas</span></header>
+        <div class="reward-layout">
+          <div class="reward-copy"><span class="reward-kicker">UMA PITADA DE SORTE</span><h1>Seu talento<br><em>vale uma rodada.</em></h1><p class="reward-intro">Da bancada para uma nova conquista. Gire a roleta e descubra a recompensa do seu preparo.</p><div class="reward-receipt"><span>SEU PREPARO</span><strong id="rouletteRecipeValue"></strong><div><small>PONTUAÇÃO CONQUISTADA</small><b id="rouletteScoreValue">0 pts</b></div></div>
+            <div class="reward-action-slot"></div>
+            <p class="reward-note">A roleta também pode conceder uma insígnia digital ou um giro extra.</p>
+          </div>
+          <div class="reward-machine"><span class="reward-machine-label" id="rouletteState" aria-hidden="true">Sua rodada está pronta</span>
         <div class="roleta-frame">
           <div class="roleta-disc-wrap" id="roletaDiscWrap"><svg id="roletaSvg" class="roleta-disc"
               viewBox="0 0 500 500"></svg></div>
@@ -293,9 +300,11 @@
               </svg></div>
           </div>
         </div>
+          <div class="reward-wheel-base" aria-hidden="true"><span>FEITO COM CAPRICHO · SERVIDO COM SORTE</span></div></div>
+        </div>
         <div class="roleta-foot">
-          <p class="wheel-status-msg" id="wheelStatusMsg">Pontuação suficiente! Gire a roleta de prêmios.</p><button
-            class="btn gold btn-spin" id="spinBtn">🎰 GIRAR A ROLETA</button>
+          <p class="wheel-status-msg" id="wheelStatusMsg" role="status" aria-live="polite" aria-atomic="true">Pontuação suficiente! Gire a roleta de prêmios.</p><button
+            class="btn gold btn-spin" id="spinBtn">🍋 GIRAR ROLETA</button>
         </div>
       </div>
     </section>
@@ -418,7 +427,8 @@
   </div>
   <script src="js/game-loader.js?v=3"></script>
   <script src="js/game-settings.js?v=1"></script>
-  <script src="js/app.js?v=performance-1"></script>
+  <script src="js/wheel-design.js?v=1"></script>
+  <script src="js/app.js?v=wheel-1"></script>
   <script src="js/cookie-recipe.js?v=4"></script>
   <script src="js/recipe-catalog.js?v=2"></script>
   <script src="js/recipe-guide.js?v=3"></script>

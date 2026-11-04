@@ -1,0 +1,413 @@
+/* Recompensa com os mesmos materiais da cozinha: azulejo, madeira e metal. */
+#wheelArea.wheel-stage {
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 26px clamp(22px, 5vw, 90px);
+  background:
+    radial-gradient(ellipse at 74% 40%, #64884825, transparent 49%),
+    linear-gradient(110deg, #071713f5, #09231eea),
+    url("../public/Chef%20Feliz%20na%20Cozinha%20Vibrante.png") center/cover;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+#wheelArea::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  background-image:
+    linear-gradient(#8ab79b30 1px, transparent 1px),
+    linear-gradient(90deg, #8ab79b30 1px, transparent 1px);
+  background-size: 92px 92px;
+}
+.reward-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: none;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 7px 0 20px;
+  border-bottom: 1px solid #c6dc9025;
+}
+.reward-brand {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  color: #def49d;
+}
+.reward-event {
+  color: #a6bcb0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.reward-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(380px, 1.15fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 90px);
+  width: 100%;
+  max-width: 1400px;
+  margin: auto;
+  padding: 12px 0 25px;
+  flex: 1;
+}
+.reward-copy {
+  max-width: 490px;
+}
+.reward-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+  letter-spacing: 2.2px;
+  color: #d6b979;
+  font-weight: 700;
+}
+.reward-kicker::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  background: #d6b979;
+}
+.reward-copy h1 {
+  margin: 19px 0 20px;
+  color: #fff8e7;
+  font-size: clamp(34px, 3.8vw, 61px);
+  line-height: 1.05;
+  letter-spacing: -2px;
+  font-weight: 900;
+}
+.reward-copy h1 em {
+  display: inline-block;
+  color: #c5ee71;
+  font-style: italic;
+  margin-top: 6px;
+}
+.reward-intro {
+  margin: 0 0 26px;
+  color: #bdd0c1;
+  font-size: 15px;
+  line-height: 1.8;
+  max-width: 365px;
+}
+.reward-receipt {
+  border: 1px solid #d9c17e55;
+  border-radius: 14px 4px;
+  background: linear-gradient(120deg, #20382de6, #0c201ae6);
+  padding: 15px 18px;
+  box-shadow: 0 10px 22px #0002;
+}
+.reward-receipt > span,
+.reward-receipt small {
+  display: block;
+  color: #a1b29d;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.reward-receipt > strong {
+  display: block;
+  color: #f9e5b8;
+  font-size: 16px;
+  margin: 7px 0 13px;
+}
+.reward-receipt > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #c7d6ac25;
+  padding-top: 12px;
+}
+.reward-receipt b {
+  color: #d3f581;
+  font-size: 23px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+#wheelArea .roleta-foot {
+  align-items: stretch;
+  width: 100%;
+  gap: 13px;
+  margin-top: 24px;
+  text-align: left;
+}
+#wheelArea .wheel-status-msg {
+  color: #c9dbcd;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 42px;
+}
+#wheelArea .wheel-status-msg b {
+  color: #e5edb5;
+}
+#wheelArea .btn-spin {
+  width: 100%;
+  min-height: 58px;
+  padding: 15px 24px;
+  border: 1px solid #dcffa8;
+  border-radius: 12px 4px;
+  background: linear-gradient(180deg, #c8f47e, #9bd945);
+  color: #16250c;
+  box-shadow:
+    inset 0 1px 0 #f6ffe0,
+    0 7px 0 #426220,
+    0 15px 30px #07150b99;
+  font:
+    900 17px "Outfit",
+    sans-serif;
+  letter-spacing: 0.6px;
+}
+#wheelArea .btn-spin:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 9px 0 #426220,
+    0 20px 32px #9dd34b22;
+}
+#wheelArea .btn-spin:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: translateY(4px);
+  box-shadow: 0 3px 0 #426220;
+}
+.reward-note {
+  margin: 23px 0 0;
+  color: #90a796;
+  font-size: 11px;
+  line-height: 1.65;
+  max-width: 380px;
+}
+.reward-machine {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  isolation: isolate;
+  min-width: 0;
+  padding-top: 20px;
+}
+.reward-machine::before {
+  content: "";
+  position: absolute;
+  width: 85%;
+  height: 85%;
+  top: 4%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #b7e16d19, transparent 70%);
+  filter: blur(22px);
+  z-index: -1;
+}
+.reward-machine-label {
+  color: #e3d5a9;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  margin-bottom: 28px;
+}
+#wheelArea .roleta-frame {
+  width: min(60vh, 100%, 640px);
+  aspect-ratio: 1;
+  flex: none;
+}
+#wheelArea .roleta-frame::before {
+  inset: -2%;
+  border: 1px solid #e1ce9955;
+  background: linear-gradient(145deg, #3e5f4c, #0b1d16);
+  box-shadow:
+    0 20px 60px #0008,
+    0 0 0 5px #082118;
+  mask: none;
+  z-index: -1;
+}
+#wheelArea .roleta-disc {
+  filter: drop-shadow(0 10px 15px #0005);
+}
+#wheelArea .roleta-disc-wrap {
+  will-change: auto;
+}
+#wheelArea[data-state="spinning"] .roleta-disc-wrap {
+  will-change: transform;
+}
+#wheelArea[data-state="spinning"] .reward-machine-label {
+  color: #d6f48b;
+}
+#wheelArea[data-state="spinning"] .roleta-frame::before {
+  box-shadow:
+    0 20px 60px #0008,
+    0 0 0 5px #082118,
+    0 0 45px #b6ed4530;
+}
+#wheelArea .roleta-pointer {
+  top: -3%;
+  filter: drop-shadow(0 4px 5px #0008);
+}
+.reward-wheel-base {
+  position: relative;
+  width: 73%;
+  text-align: center;
+  padding: 27px 8px 12px;
+  margin-top: -8px;
+  z-index: -2;
+  color: #d5b77c;
+  background: linear-gradient(#614429, #2b2318);
+  border: 1px solid #9b764c;
+  border-radius: 8px 8px 45% 45% / 8px 8px 26% 26%;
+  box-shadow: 0 18px 32px #0005;
+}
+.reward-wheel-base span {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+@media (max-width: 820px) {
+  #wheelArea.wheel-stage {
+    padding: 16px 20px 26px;
+    gap: 8px;
+  }
+  .reward-header {
+    padding-bottom: 14px;
+  }
+  .reward-brand {
+    font-size: 14px;
+  }
+  .reward-event {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .reward-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 10px;
+    max-width: 550px;
+  }
+  .reward-copy {
+    display: contents;
+  }
+  .reward-kicker {
+    order: 0;
+    font-size: 9px;
+  }
+  .reward-copy h1 {
+    order: 1;
+    text-align: center;
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: -1px;
+  }
+  .reward-copy h1 br {
+    display: none;
+  }
+  .reward-copy h1 em {
+    margin: 0 0 0 5px;
+  }
+  .reward-intro {
+    display: none;
+  }
+  .reward-receipt {
+    order: 2;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+    padding: 10px 14px;
+  }
+  .reward-receipt > span {
+    grid-column: 1;
+  }
+  .reward-receipt > strong {
+    grid-column: 1;
+    margin: 6px 0 0;
+    font-size: 13px;
+  }
+  .reward-receipt > div {
+    grid-column: 2;
+    grid-row: 1/3;
+    border: 0;
+    padding: 0;
+  }
+  .reward-receipt small {
+    display: none;
+  }
+  .reward-receipt b {
+    font-size: 22px;
+  }
+  .reward-machine {
+    order: 3;
+    width: 100%;
+    padding: 0;
+  }
+  .reward-machine-label {
+    font-size: 9px;
+    margin: 0 0 20px;
+    letter-spacing: 1.4px;
+  }
+  #wheelArea .roleta-frame {
+    width: min(43vh, 88vw, 460px);
+  }
+  .reward-wheel-base {
+    width: 64%;
+    padding: 19px 6px 9px;
+  }
+  .reward-wheel-base span {
+    font-size: 6px;
+  }
+  .reward-action-slot {
+    order: 4;
+    width: 100%;
+  }
+  #wheelArea .roleta-foot {
+    margin: 0;
+    gap: 8px;
+    text-align: center;
+  }
+  #wheelArea .wheel-status-msg {
+    min-height: 0;
+    font-size: 12px;
+  }
+  #wheelArea .btn-spin {
+    min-height: 52px;
+    font-size: 15px;
+  }
+  .reward-note {
+    order: 5;
+    text-align: center;
+    margin: 4px 0;
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #wheelArea,
+  #wheelArea *,
+  #wheelArea *::before,
+  #wheelArea *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.reward-hub {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  left: 36%;
+  top: 36%;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 8px #0007);
+}
+.reward-hub svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

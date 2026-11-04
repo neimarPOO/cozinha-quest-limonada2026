@@ -82,34 +82,8 @@
     try { document.body.appendChild($('wheelArea')) } catch (e) { }
     function buildRoletaSvg() {
       let svg = $('roletaSvg'); if (!svg) return;
-      let cx = 250, cy = 250, r = 232;
-      let html = `<defs><filter id="hubShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="rgba(0,0,0,0.45)"/></filter></defs><circle cx="250" cy="250" r="246" fill="#101312"/><circle cx="250" cy="250" r="238" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="2"/>`;
-      ROLET_SECTORS.forEach((sec, k) => {
-        let a1 = (-112.5 + k * 45) * Math.PI / 180, a2 = (-112.5 + (k + 1) * 45) * Math.PI / 180;
-        let x1 = (cx + r * Math.cos(a1)).toFixed(2), y1 = (cy + r * Math.sin(a1)).toFixed(2);
-        let x2 = (cx + r * Math.cos(a2)).toFixed(2), y2 = (cy + r * Math.sin(a2)).toFixed(2);
-        let path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
-        html += `<path d="${path}" fill="${sec.color}" stroke="rgba(255,255,255,.82)" stroke-width="1.15"/>`;
-        let midDeg = -90 + k * 45;
-        html += `<g transform="rotate(${midDeg + 90}, ${cx}, ${cy})">
-      <text x="${cx}" y="74" fill="#ffffff" font-size="20" font-weight="900" text-anchor="middle" font-family="'Outfit',system-ui,sans-serif" letter-spacing=".4">${sec.label}</text>
-      <text x="${cx}" y="93" fill="rgba(255,255,255,.88)" font-size="11.5" font-weight="800" text-anchor="middle" font-family="'Outfit',system-ui,sans-serif" letter-spacing="1.1">${sec.sub}</text>
-      <circle cx="${cx}" cy="152" r="16" fill="rgba(10,14,11,.18)"/>
-      <text x="${cx}" y="158" font-size="18" text-anchor="middle">${sec.emoji}</text>
-    </g>`;
-      });
-      ROLET_SECTORS.forEach((_, m) => {
-        let pegAngle = (-112.5 + m * 45) * Math.PI / 180;
-        let px1 = (cx + 226 * Math.cos(pegAngle)).toFixed(2), py1 = (cy + 226 * Math.sin(pegAngle)).toFixed(2);
-        let px2 = (cx + 236 * Math.cos(pegAngle)).toFixed(2), py2 = (cy + 236 * Math.sin(pegAngle)).toFixed(2);
-        html += `<line x1="${px1}" y1="${py1}" x2="${px2}" y2="${py2}" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/>`;
-      });
-      html += `<circle cx="${cx}" cy="${cy}" r="246" fill="none" stroke="rgba(255,207,107,.5)" stroke-width="2"/>
-    <circle cx="${cx}" cy="${cy}" r="55" fill="#f6f1e3" stroke="#11150f" stroke-width="2" filter="url(#hubShadow)"/>
-    <circle cx="${cx}" cy="${cy}" r="50" fill="none" stroke="rgba(17,21,15,.16)" stroke-width="1"/>
-    <text x="${cx}" y="246" fill="#141719" font-size="14.5" font-weight="900" text-anchor="middle" font-family="'Outfit',system-ui,sans-serif" letter-spacing="1.8">PRÊMIOS</text>
-    <text x="${cx}" y="265" fill="#7c8672" font-size="9.5" font-weight="800" text-anchor="middle" font-family="'Outfit',system-ui,sans-serif" letter-spacing="2.2">LIMONADA</text>`;
-      svg.innerHTML = html; setRoletaRotation(roletaAngle);
+      WheelDesign.render(svg,ROLET_SECTORS,{score:current?.score,recipe:current?.recipe?.name});
+      setRoletaRotation(roletaAngle);
     }
 
     function setRoletaRotation(deg) {
@@ -121,6 +95,8 @@
     function spinWheelPhysics(targetIndex, onComplete) {
       if (isRoletaSpinning) return;
       isRoletaSpinning = true;
+      WheelDesign.state("spinning");
+      const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
       let pArrow = $('wheelPointer');
       let jitter = (random() - .5) * 26;
       let targetAngleNorm = (((-targetIndex * 45 + jitter) % 360) + 360) % 360;
@@ -129,9 +105,9 @@
       if (diff < 0) diff += 360;
       let fullSpins = (6 + Math.floor(random() * 2)) * 360;
       let startAngle = roletaAngle;
-      let totalSpinDelta = fullSpins + diff;
+      let totalSpinDelta = (reduce ? 0 : fullSpins) + diff;
       let finalTargetAngle = startAngle + totalSpinDelta;
-      let duration = 4.8;
+      let duration = reduce ? .25 : 4.8;
       let startTime = performance.now();
       let lastPegSlot = Math.floor((startAngle - 22.5) / 45);
       let pointerDeflection = 0;
@@ -150,7 +126,7 @@
         let curAngle = startAngle + totalSpinDelta * progress;
         if (u >= 1) {
           let bounceT = elapsed - duration;
-          if (bounceT < 0.6) {
+          if (!reduce && bounceT < 0.6) {
             let bounce = Math.sin(bounceT * 18) * Math.exp(-bounceT * 7.5) * 2.8;
             curAngle = finalTargetAngle + bounce;
           } else curAngle = finalTargetAngle;
@@ -165,13 +141,14 @@
         }
         pointerDeflection *= 0.72;
         if (pArrow) pArrow.style.transform = `rotate(${pointerDeflection.toFixed(1)}deg)`;
-        if (elapsed < duration + 0.65) {
+        if (elapsed < duration + (reduce ? 0 : 0.65)) {
           requestAnimationFrame(anim);
         } else {
           roletaAngle = finalTargetAngle;
           setRoletaRotation(roletaAngle);
           if (pArrow) pArrow.style.transform = 'rotate(0deg)';
           isRoletaSpinning = false;
+          WheelDesign.state("settled");
           let frame = document.querySelector('.roleta-frame');
           if (frame) { frame.classList.remove('is-win'); void frame.offsetWidth; frame.classList.add('is-win'); setTimeout(() => frame.classList.remove('is-win'), 1300) }
           if (onComplete) onComplete(targetIndex);
@@ -556,9 +533,10 @@ function renderResultCard(data) {
       $('award').classList.add('hidden');
       $('wheelArea').classList.toggle('hidden', !unlock);
       $('spinBtn').disabled = false;
-      $('spinBtn').textContent = '🎰 GIRAR A ROLETA';
+      $('spinBtn').textContent = '🍋 GIRAR ROLETA';
       if ($('wheelStatusMsg')) $('wheelStatusMsg').textContent = 'Pontuação suficiente! Gire a roleta de prêmios da bancada.';
       buildRoletaSvg();
+      if(unlock)queueMicrotask(()=>$("spinBtn").focus({preventScroll:true}));
       resetWheelAngle();
       $('endTitle').textContent = won ? 'Receita concluída!' : 'Tempo esgotado!';
       $('endDesc').textContent = !unlock ? (won ? `Receita concluída, mas a roleta libera a partir de ${meta} pontos (faltaram ${meta - current.score}).` : `Você fez ${current.score} pontos. A roleta libera a partir de ${meta} pontos.`) : (won ? 'Você liberou a roleta de prêmios da bancada!' : 'Sua pontuação liberou a roleta de prêmios!');
@@ -596,6 +574,7 @@ function renderResultCard(data) {
       if (!game || game.status !== 'aguardando_roleta') return;
       if (isRoletaSpinning) return;
       $('spinBtn').disabled = true;
+      $('spinBtn').textContent='Revelando sua recompensa…';
       let cap = db.settings.dailyCap, today = dailyPhysical();
       if ($('wheelStatusMsg')) $('wheelStatusMsg').textContent = today >= cap ? 'Limite diário de prêmios físicos atingido — hoje a roleta entrega a Insígnia Digital.' : availablePrizes().length ? 'Girando a roleta... boa sorte! 🍀' : 'Estoque de prêmios físicos esgotado — hoje a roleta entrega a Insígnia Digital.';
       let pick = wheelPick();
@@ -603,10 +582,12 @@ function renderResultCard(data) {
       if (isRespin) current.hadRespin = true;
       let missCopy = prize ? null : (MISS_COPY[pick.sector] || MISS_COPY.miss_2);
       spinWheelPhysics(targetIndex, (idx) => {
+        $("spinBtn").textContent="RECOMPENSA REVELADA";
         if (isRespin) {
+          WheelDesign.state("again");
           if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = '🤩 <b>GIRE NOVAMENTE!</b> Você ganhou um giro extra na roleta — o resultado será sorteado de novo!';
           $('spinBtn').disabled = false;
-          $('spinBtn').textContent = '🎰 GIRAR NOVAMENTE!';
+          $('spinBtn').textContent = '↻ GIRAR NOVAMENTE';
           playRoletaJingle(true);
           return;
         }
@@ -646,9 +627,13 @@ function renderResultCard(data) {
             missCopy: missCopy
           });
           renderAll();
+          $("nextBtn").focus({preventScroll:true});
         }, 2400);
       });
     }
+    document.addEventListener('focusin',event=>{const area=$('wheelArea');if(!area.classList.contains('hidden')&&!area.contains(event.target)){if($('spinBtn').disabled)area.focus({preventScroll:true});else $('spinBtn').focus({preventScroll:true});}});
+    $('wheelArea').addEventListener('keydown' ,event=>{if(event.key==='Tab'&&!$('wheelArea').classList.contains('hidden')){event.preventDefault();if(!$('spinBtn').disabled)$('spinBtn').focus();}});
+    document.querySelector('.reward-action-slot').append($('wheelArea').querySelector('.roleta-foot'));
     $('spinBtn').onclick = spin; $('nextBtn').onclick = () => { if (current) { let g = db.games.find(x => x.id === current.gameId); if (g?.status === 'aguardando_roleta') { alert('Gire a roleta antes de iniciar outra partida.'); return } } current = null; $('end').classList.add('hidden'); $('intro').classList.remove('hidden'); renderAll() };
     function renderAll() { buildRoletaSvg(); $('currentDay').value = db.day; $('durationSetting').value = db.settings.seconds; $('dailyCap').value = db.settings.dailyCap; $('wheelScore').value = db.settings.wheelScore; let f = $('dayFilter'); if (f.options.length < 22) for (let i = 1; i <= 21; i++)f.add(new Option(`Dia ${i}`, String(i))); renderStats(); renderPrizes(); renderSessions(); renderHistory() } function renderStats() { let filter = $('dayFilter').value, items = db.games.filter(g => filter === 'all' || g.day === Number(filter)), physical = items.filter(g => g.prize), delivered = items.filter(g => g.status === 'entregue'); $('stats').innerHTML = [['Partidas', items.length], ['Receitas concluídas', items.filter(g => g.completed).length], ['Prêmios físicos', physical.length], ['Prêmios entregues', delivered.length]].map(([a, b]) => `<div class="stat"><b>${b}</b><span>${a}</span></div>`).join(''); $('stockSummary').innerHTML = db.prizes.map(p => `<p><b>${p.name}</b> — saldo total: ${Math.max(0, p.qty - db.games.filter(g => g.prize === p.id && g.status !== 'cancelado').length)} • disponível hoje: ${available(p)}</p>`).join(''); $('latest').innerHTML = tableGames(items.slice(-6).reverse()) } function tableGames(arr) { return `<table><thead><tr><th>Código</th><th>Dia</th><th>Receita</th><th>Pontos</th><th>Prêmio</th><th>Status</th><th>Ação</th></tr></thead><tbody>${arr.map(g => `<tr><td>LQ-${fmt(g.day)}-${String(g.id).padStart(5, '0')}</td><td>${g.day}</td><td>${g.recipe}</td><td>${g.score}</td><td>${db.prizes.find(p => p.id === g.prize)?.name || 'Digital / nenhum'}</td><td>${g.status}</td><td>${g.status === 'reservado' ? `<button class="btn" data-deliver="${g.id}">Entregar</button> <button class="btn" data-cancel="${g.id}">Cancelar</button>` : '—'}</td></tr>`).join('')}</tbody></table>` } function renderHistory() { $('historyTable').innerHTML = tableGames([...db.games].reverse()); document.querySelectorAll('[data-deliver]').forEach(e => e.onclick = () => { let g = db.games.find(x => x.id === Number(e.dataset.deliver)); if (g && g.status === 'reservado') { g.status = 'entregue'; audit('entrega', `Partida ${g.id}`); save(); renderAll() } }); document.querySelectorAll('[data-cancel]').forEach(e => e.onclick = () => { let g = db.games.find(x => x.id === Number(e.dataset.cancel)); if (g && g.status === 'reservado' && confirm('Cancelar reserva e devolver a disponibilidade ao estoque?')) { g.status = 'cancelado'; audit('cancelamento', `Partida ${g.id}`); save(); renderAll() } }) } function renderPrizes() { $('prizeTable').innerHTML = `<table><thead><tr><th>Prêmio</th><th>Estoque total</th><th>Limite/dia</th><th>Disponível hoje</th><th>Ajustar limite</th></tr></thead><tbody>${db.prizes.map(p => `<tr><td>${p.name}</td><td>${p.qty}</td><td>${p.perDay}</td><td>${available(p)}</td><td><input type="number" min="0" value="${p.perDay}" style="max-width:85px" data-limit="${p.id}"></td></tr>`).join('')}</tbody></table>`; $('prizeSelect').innerHTML = db.prizes.map(p => `<option value="${p.id}">${p.name}</option>`).join(''); document.querySelectorAll('[data-limit]').forEach(e => e.onchange = () => { let p = db.prizes.find(x => x.id === e.dataset.limit); p.perDay = Math.max(0, Number(e.value) || 0); audit('limite', `${p.id} = ${p.perDay}`); save(); renderAll() }) } function renderSessions() { $('sessionTable').innerHTML = `<table><thead><tr><th>Dia</th><th>Hora</th><th>Duração</th><th>Vagas</th><th>Ocupadas</th><th>Ação</th></tr></thead><tbody>${db.sessions.slice().sort((a, b) => a.day - b.day || a.time.localeCompare(b.time)).map(s => { let used = db.games.filter(g => g.sessionId === s.id && g.status !== 'cancelado').length; return `<tr><td>${s.day}</td><td>${s.time}</td><td>${s.duration} min</td><td>${s.capacity}</td><td>${used}</td><td><button class="btn" data-remove-session="${s.id}" ${used ? 'disabled' : ''}>Excluir</button></td></tr>` }).join('')}</tbody></table>`; document.querySelectorAll('[data-remove-session]').forEach(e => e.onclick = () => { if (confirm('Excluir sessão sem reservas?')) { db.sessions = db.sessions.filter(s => s.id !== e.dataset.removeSession); save(); renderAll() } }) } $('restockBtn').onclick = () => { let p = db.prizes.find(x => x.id === $('prizeSelect').value), n = Number($('addStock').value); if (!Number.isInteger(n) || n <= 0) return alert('Informe uma quantidade positiva.'); p.qty += n; audit('reposicao', `${p.id} +${n}`); save(); renderAll() }; $('addSessionBtn').onclick = () => { let day = Number($('sessionDay').value), time = $('sessionTime').value, capacity = Number($('sessionSeats').value), duration = Number($('sessionDuration').value); if (!Number.isInteger(day) || day < 1 || day > 21 || !time || capacity < 1 || duration < 10) return alert('Verifique os dados da sessão.'); if (db.sessions.some(s => s.day === day && s.time === time)) return alert('Já existe uma sessão nesse dia e horário.'); db.sessions.push({ id: 'S' + Date.now() + '-' + Math.floor(random() * 100000), day, time, capacity, duration }); audit('sessao', `Dia ${day} ${time} ${capacity} vagas`); save(); renderAll() }; $('currentDay').onchange = e => { let d = Number(e.target.value); if (d >= 1 && d <= 21) { db.day = d; audit('dia', `Alterado para ${d}`); save(); renderAll() } }; $('dayFilter').onchange = renderStats; $('saveSettings').onclick = () => { let seconds = Number($('durationSetting').value), cap = Number($('dailyCap').value), meta = Number($('wheelScore').value); if (!GameSettings.isValidDuration(seconds) || cap < 0 || meta < 0 || meta > 1000) return alert('Valores inválidos.'); db.settings = { seconds, dailyCap: cap, wheelScore: meta }; audit('configuracoes', JSON.stringify(db.settings)); save(); renderAll(); alert('Configurações salvas.') }; function download(name, content, type) { let a = document.createElement('a'), url = URL.createObjectURL(new Blob([content], { type })); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) } $('exportJson').onclick = () => download('limonada-backup-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(db, null, 2), 'application/json'); $('exportCsv').onclick = () => { let rows = [['codigo', 'dia', 'data_hora', 'receita', 'pontos', 'concluida', 'premio', 'sessao', 'status'], ...db.games.map(g => [g.id, g.day, g.time, g.recipe, g.score, g.completed, g.prize || '', g.sessionId || '', g.status])]; download('limonada-partidas.csv', '\ufeff' + rows.map(r => r.map(x => '"' + String(x).replaceAll('"', '""') + '"').join(';')).join('\r\n'), 'text/csv;charset=utf-8') }; $('importBtn').onclick = () => $('importFile').click(); $('importFile').onchange = async e => { let file = e.target.files[0]; if (!file) return; try { let obj = JSON.parse(await file.text()); if (!obj.games || !obj.prizes || !obj.sessions || !obj.settings) throw Error('Formato inválido'); if (confirm('Substituir todos os dados locais pelo backup selecionado?')) { obj.settings.seconds = GameSettings.normalizeDuration(obj.settings.seconds); db = obj; save(); renderAll(); alert('Backup importado.') } } catch (err) { alert('Falha na importação: ' + err.message) } e.target.value = '' }; $('resetBtn').onclick = () => { if (prompt('Digite APAGAR para eliminar os dados:') === 'APAGAR') { db = fresh(); save(); renderAll() } };
     // Visualização: usa Three.js quando a biblioteca estiver acessível; a lógica do jogo é independente do 3D.
