@@ -166,6 +166,7 @@
       const topSpace = instructionBottom + feedbackHeight + 14;
       stage.style.setProperty("--instruction-bottom", instructionBottom + "px");
       stage.style.setProperty("--stage-top-space", topSpace + "px");
+      scene.setInstructionInset?.(topSpace);
     }
     objectMeter.hidden = !["baking", "repeat"].includes(state.status);
     if (!objectMeter.hidden) {
@@ -852,6 +853,10 @@
       }
     }
     scene?.sync(state);
+    if (scene && scene.revealedStep !== statusKey) {
+      scene.revealedStep = statusKey;
+      scene.revealCurrentObject(t.item);
+    }
     if (!scene) {
       instructionBalloon.hidden = true;
       objectMeter.hidden = true;

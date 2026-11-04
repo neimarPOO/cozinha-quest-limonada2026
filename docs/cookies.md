@@ -1,6 +1,6 @@
 # Cookies: receita interativa
 
-As três receitas usam o mesmo controlador de quantidades, procedimentos, painéis contextuais e cronômetro. Cookies têm oito fases, limonada seis e focaccia sete. As tigelas e estações já estão preparadas; selecionar as tigelas não é uma tarefa. Os assets novos são gerados localmente com Three.js; não há downloads de modelos ou dependências novas.
+As três receitas usam o mesmo controlador de quantidades, procedimentos, painéis contextuais e cronômetro. Cookies têm oito fases, limonada seis e focaccia sete. As tigelas e estações já estão preparadas; selecionar as tigelas não é uma tarefa. Os modelos são gerados com Three.js; texturas fotográficas e o suporte de luz de área são fornecidos pelo próprio projeto, sem requisições externas durante o jogo. A [direção visual da cozinha](kitchen-reference.md) descreve os materiais físicos, modelos e critérios de revisão.
 
 ## Jogar
 

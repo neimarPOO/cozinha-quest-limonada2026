@@ -273,7 +273,7 @@ body:has(#game.cookie-mode:not(.hidden)) #play {
   background: linear-gradient(120deg, #182c27, #0a171c);
 }
 #game.cookie-mode #cookieScene {
-  top: var(--stage-top-space);
+  top: 0;
 }
 #game.cookie-mode #sceneHint {
   display: none;

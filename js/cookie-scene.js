@@ -10,7 +10,7 @@ window.CookieScene = class CookieScene {
     this.time = 0;
     this.labels = [];
     this.zoom = 1;
-    this.viewTarget = new THREE.Vector3(0, 0.45, 0);
+    this.viewTarget = new THREE.Vector3(0, 0.65, 0);
     this.mobile = matchMedia("(pointer: coarse)").matches || innerWidth < 700;
     this.onFailure = onFailure;
     this.labelLayer = document.createElement("div");
@@ -333,6 +333,9 @@ window.CookieScene = class CookieScene {
       this.hand.group.scale.setScalar(1.16);
       this.hand.group.rotation.set(-1.2, Math.PI, 0);
     }
+    window.KitchenEnvironment?.enhance(this);
+    window.KitchenAssets?.enhance(this);
+    window.KitchenLighting?.enhance(this);
     this.highlights = new Map();
     for (const [id, group] of this.objects) {
       const materials = new Map();
@@ -509,6 +512,20 @@ window.CookieScene = class CookieScene {
         this.hand.pose("grab", 0.15);
       }
       this.updateHighlights();
+      const shadowKey = [
+        this.state?.index,
+        this.state?.status,
+        this.state?.portions?.length,
+        this.state?.repetitions?.length,
+        this.state?.bakeQuality,
+      ].join(":");
+      if (
+        shadowKey !== this.shadowKey ||
+        this.drag ||
+        ["running", "baking"].includes(this.state?.status)
+      )
+        this.renderer.shadowMap.needsUpdate = true;
+      this.shadowKey = shadowKey;
       this.renderer.render(this.scene, this.camera);
       this.updateLabels();
       this.onViewChange?.();
@@ -659,6 +676,20 @@ window.CookieScene = class CookieScene {
       curveSegments: 6,
     });
     g.translate(0, 0, -d / 2 + r);
+    // ExtrudeGeometry uses world-sized UVs; normalize each face for material maps.
+    const pos = g.attributes.position,
+      normals = g.attributes.normal,
+      uv = g.attributes.uv;
+    for (let i = 0; i < pos.count; i++) {
+      const nx = Math.abs(normals.getX(i)),
+        ny = Math.abs(normals.getY(i)),
+        nz = Math.abs(normals.getZ(i));
+      if (ny >= nx && ny >= nz)
+        uv.setXY(i, pos.getX(i) / w + 0.5, pos.getZ(i) / d + 0.5);
+      else if (nx >= nz)
+        uv.setXY(i, pos.getZ(i) / d + 0.5, pos.getY(i) / h + 0.5);
+      else uv.setXY(i, pos.getX(i) / w + 0.5, pos.getY(i) / h + 0.5);
+    }
     return g;
   }
   label(parent, text, y, width) {
@@ -744,7 +775,7 @@ window.CookieScene = class CookieScene {
   updateCamera() {
     if (!this.camera) return;
     const distance = Math.max(
-      12.8,
+      11.8,
       8.2 /
         (Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) *
           this.camera.aspect),
@@ -752,7 +783,7 @@ window.CookieScene = class CookieScene {
     this.camera.position
       .copy(this.viewTarget)
       .add(
-        new THREE.Vector3(0, 0.46, 0.89)
+        new THREE.Vector3(0, 0.36, 0.93)
           .normalize()
           .multiplyScalar(distance / this.zoom),
       );
@@ -767,7 +798,7 @@ window.CookieScene = class CookieScene {
     if (output) output.value = Math.round(this.zoom * 100) + "%";
   }
   resetView() {
-    this.viewTarget.set(0, 0.45, 0);
+    this.viewTarget.set(0, 0.65, 0);
     this.setZoom(1);
     this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
   }
@@ -779,6 +810,18 @@ window.CookieScene = class CookieScene {
       this.setZoom(1.7);
       this.root.scrollLeft = (this.renderWidth - this.root.clientWidth) / 2;
     }
+  }
+  revealCurrentObject(id) {
+    if (this.renderWidth <= this.root.clientWidth) return;
+    const point = this.getObjectAnchor(id);
+    if (!point) return;
+    const bounds = this.root.getBoundingClientRect();
+    if (point.x >= bounds.left + 55 && point.x <= bounds.right - 55) return;
+    this.root.scrollLeft = THREE.MathUtils.clamp(
+      this.root.scrollLeft + point.x - bounds.left - this.root.clientWidth / 2,
+      0,
+      this.renderWidth - this.root.clientWidth,
+    );
   }
   setHovered(id, pointerType = "mouse") {
     if (this.hovered === id) return;
@@ -817,6 +860,7 @@ window.CookieScene = class CookieScene {
   }
   updateHand(e) {
     if (!this.hand) return;
+    this.renderer.shadowMap.needsUpdate = true;
     this.setRay(e);
     const group = this.hand.group;
     // Mesmos enquadramento, escala, orientação e poses do cursor das outras receitas.
@@ -848,9 +892,19 @@ window.CookieScene = class CookieScene {
     this.renderWidth = w;
     this.renderHeight = h;
     this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
+    const inset = Math.min(h * 0.36, this.instructionInset || 190);
+    this.camera.aspect = w / (h - inset);
+    // Extend the view above the usable workbench so the wall also fills behind HUD.
+    this.camera.setViewOffset(w, h - inset, 0, -inset, w, h);
     this.updateCamera();
     if (first) this.root.scrollLeft = (w - this.root.clientWidth) / 2;
+  }
+  setInstructionInset(value) {
+    const inset = Math.round(value);
+    if (inset !== this.instructionInset) {
+      this.instructionInset = inset;
+      this.resize();
+    }
   }
   setRay(e) {
     const r = this.renderer.domElement.getBoundingClientRect();
@@ -978,15 +1032,25 @@ window.CookieScene = class CookieScene {
     );
     if (this.hand) this.hand.group.traverse((o) => o.skeleton?.dispose());
     this.grain?.dispose();
+    const textures = new Set(),
+      materials = new Set(),
+      geometries = new Set();
     this.scene.traverse((o) => {
-      o.geometry?.dispose();
-      if (o.material) {
-        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
-          m.map?.dispose();
-          m.dispose();
-        }
+      if (o.geometry) geometries.add(o.geometry);
+      for (const m of o.material
+        ? Array.isArray(o.material)
+          ? o.material
+          : [o.material]
+        : []) {
+        materials.add(m);
+        for (const value of Object.values(m))
+          if (value?.isTexture) textures.add(value);
       }
     });
+    for (const texture of textures) texture.dispose();
+    for (const material of materials) material.dispose();
+    for (const geometry of geometries) geometry.dispose();
+    this.environmentTarget?.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

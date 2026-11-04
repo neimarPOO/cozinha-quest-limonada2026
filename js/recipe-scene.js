@@ -28,6 +28,8 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     this.actionMarks = [];
     if (definition.id === "lemonade") this.lemonadeAssets();
     else this.focacciaAssets();
+    window.KitchenAssets?.enhanceRecipe?.(this);
+    this.highlights.clear();
     for (const [id, g] of this.objects) {
       if (!this.highlights.has(id)) {
         const materials = new Map();
