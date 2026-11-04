@@ -48,7 +48,7 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     const g = this.objects.get(id);
     this.scene.remove(g);
     g.traverse((o) => {
-      o.geometry?.dispose();
+      if (!o.geometry?.userData.kitchenShared) o.geometry?.dispose();
       if (o.material) {
         o.material.map?.dispose();
         o.material.dispose();
@@ -340,6 +340,7 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     }
   }
   sync(state) {
+    this.needsRender = true;
     this.state = state;
     const t = state.task;
     if (!t) return;

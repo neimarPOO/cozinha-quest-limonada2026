@@ -49,3 +49,6 @@ Limonada recebe jarra/copo com paredes, alça e bojo e espremedor estriado; foca
 recebe garrafas de ombro arredondado e potes com conteúdo separado do vidro.
 
 Créditos dos mapas e da biblioteca: [recursos da cozinha](../public/textures/kitchen/README.md).
+
+A [documentação de desempenho](performance.md) descreve carregamento sob demanda,
+preparação da GPU e reutilização de recursos sem redução da qualidade.

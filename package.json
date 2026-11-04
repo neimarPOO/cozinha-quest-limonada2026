@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "build": "echo Site pronto para publicacao",
-    "test": "node tests/cookie-recipe.test.cjs"
+    "test": "node tests/run.cjs",
+    "test:server": "node --test tests/server.test.cjs"
   },
   "keywords": [],
   "author": "",

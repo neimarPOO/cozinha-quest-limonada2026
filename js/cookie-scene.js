@@ -7,6 +7,9 @@ window.CookieScene = class CookieScene {
     this.announce = announce;
     this.objects = new Map();
     this.disposed = false;
+    this.preparing = true;
+    this.needsRender = true;
+    this.pendingAssets = [];
     this.time = 0;
     this.labels = [];
     this.zoom = 1;
@@ -323,8 +326,9 @@ window.CookieScene = class CookieScene {
     );
     this.ring.rotation.x = -Math.PI / 2;
     this.scene.add(this.ring);
-    this.hand =
-      typeof three !== "undefined" && three?.createHand
+    this.hand = window.KitchenHand
+      ? KitchenHand.create()
+      : typeof three !== "undefined" && three?.createHand
         ? three.createHand()
         : null;
     if (this.hand) {
@@ -336,6 +340,18 @@ window.CookieScene = class CookieScene {
     window.KitchenEnvironment?.enhance(this);
     window.KitchenAssets?.enhance(this);
     window.KitchenLighting?.enhance(this);
+    this.staticBatchStats = window.KitchenResources?.batchStatic(
+      this.kitchenEnvironment,
+    );
+    document.fonts?.ready.then(() => {
+      if (!this.disposed) {
+        for (const entry of this.labels) {
+          entry.width = 0;
+          entry.height = 0;
+        }
+        this.labelSignature = null;
+      }
+    });
     this.highlights = new Map();
     for (const [id, group] of this.objects) {
       const materials = new Map();
@@ -442,12 +458,16 @@ window.CookieScene = class CookieScene {
       this.updateHand(e);
     };
     this.cancel = () => {
+      this.needsRender = true;
+      this.renderer.shadowMap.needsUpdate = true;
       if (this.drag) this.drag.g.position.copy(this.drag.home);
       this.drag = null;
       this.pan = null;
       if (this.hand) this.hand.group.visible = false;
     };
     this.leave = () => {
+      this.needsRender = true;
+      this.renderer.shadowMap.needsUpdate = true;
       if (!this.drag && this.hand) this.hand.group.visible = false;
       this.setHovered(null);
     };
@@ -484,18 +504,27 @@ window.CookieScene = class CookieScene {
     this.frame = (t) => {
       if (this.disposed) return;
       this.raf = requestAnimationFrame(this.frame);
-      if (document.hidden) return;
+      if (document.hidden || this.preparing) return;
       if (t - this.last < 1000 / 30) return;
+      if (this.frameFence) {
+        const gl = this.renderer.getContext();
+        if (gl.isContextLost()) return;
+        const status = gl.clientWaitSync(this.frameFence, 0, 0);
+        if (status === gl.TIMEOUT_EXPIRED) return;
+        gl.deleteSync(this.frameFence);
+        this.frameFence = null;
+      }
       this.time = t / 1000;
+      this.frameDelta = Math.min(1, (t - this.last) / 1000);
       this.last = t;
       if (
         this.state?.status === "running" &&
         ["mixer", "spoon", "spatula"].includes(this.state.task.item) &&
         (!this.state.requiresStir || this.state.working)
       ) {
-        this.wetMix.rotation.y += 0.15;
+        this.wetMix.rotation.y += 4.5 * this.frameDelta;
         this.wetMix.scale.setScalar(1 + Math.sin(t / 100) * 0.015);
-        this.whisk.rotation.y += 0.3;
+        this.whisk.rotation.y += 9 * this.frameDelta;
       }
       if (this.hand && this.state?.working && this.state?.requiresStir) {
         const bowl = this.state.task.target === "dry" ? this.dry : this.wet;
@@ -509,9 +538,17 @@ window.CookieScene = class CookieScene {
               Math.cos(t / 220) * 0.2,
             ),
           );
-        this.hand.pose("grab", 0.15);
+        this.hand.pose("grab", 1 - Math.pow(0.85, this.frameDelta * 30));
       }
-      this.updateHighlights();
+      const highlightChanged = this.updateHighlights();
+      const animated =
+        this.state?.status === "running" &&
+        ((["mixer", "spoon", "spatula"].includes(this.state.task.item) &&
+          (!this.state.requiresStir || this.state.working)) ||
+          (this.state.working && this.state.requiresStir));
+      if (!this.needsRender && !highlightChanged && !this.drag && !animated)
+        return;
+      this.needsRender = false;
       const shadowKey = [
         this.state?.index,
         this.state?.status,
@@ -527,10 +564,59 @@ window.CookieScene = class CookieScene {
         this.renderer.shadowMap.needsUpdate = true;
       this.shadowKey = shadowKey;
       this.renderer.render(this.scene, this.camera);
+      const gl = this.renderer.getContext();
+      if (gl.fenceSync && !gl.isContextLost()) {
+        this.frameFence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+        gl.flush();
+      }
       this.updateLabels();
       this.onViewChange?.();
     };
     this.raf = requestAnimationFrame(this.frame);
+  }
+  async prepare() {
+    await Promise.all(this.pendingAssets);
+    if (this.disposed) return false;
+    if (this.renderer.compileAsync)
+      await this.renderer.compileAsync(this.scene, this.camera);
+    else this.renderer.compile(this.scene, this.camera);
+    if (this.disposed) return false;
+    this.renderer.render(this.scene, this.camera);
+    const gl = this.renderer.getContext();
+    if (gl.fenceSync && !gl.isContextLost()) {
+      const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      gl.flush();
+      try {
+        await new Promise((resolve, reject) => {
+          const poll = () => {
+            if (this.disposed) {
+              resolve();
+              return;
+            }
+            if (gl.isContextLost()) {
+              reject(new Error("WebGL indisponível durante preparação"));
+              return;
+            }
+            const status = gl.clientWaitSync(fence, 0, 0);
+            if (status === gl.WAIT_FAILED) {
+              reject(new Error("Falha ao preparar GPU"));
+              return;
+            }
+            if (status === gl.TIMEOUT_EXPIRED) setTimeout(poll, 16);
+            else resolve();
+          };
+          poll();
+        });
+      } finally {
+        if (!this.disposed && !gl.isContextLost()) gl.deleteSync(fence);
+      }
+    }
+    if (this.disposed) return false;
+    this.preparing = false;
+    this.last = performance.now();
+    this.updateLabels();
+    this.onViewChange?.();
+    return true;
   }
   material(color) {
     return new THREE.MeshStandardMaterial({
@@ -650,6 +736,13 @@ window.CookieScene = class CookieScene {
     return this.grain;
   }
   softBox(w, h, d) {
+    return window.KitchenResources
+      ? KitchenResources.geometry(this, `box:${w}:${h}:${d}`, () =>
+          this.buildSoftBox(w, h, d),
+        )
+      : this.buildSoftBox(w, h, d);
+  }
+  buildSoftBox(w, h, d) {
     const r = Math.min(0.055, w / 8, h / 8, d / 8);
     if (r < 0.015) return new THREE.BoxGeometry(w, h, d);
     const s = new THREE.Shape(),
@@ -712,6 +805,24 @@ window.CookieScene = class CookieScene {
     this.labels.push({ anchor, label, id });
   }
   updateLabels() {
+    const signature = [
+      this.renderWidth,
+      this.renderHeight,
+      this.state?.index,
+      this.state?.status,
+      this.hovered,
+      this.drag?.id,
+      ...this.camera.projectionMatrix.elements,
+      ...this.camera.matrixWorld.elements,
+      ...[...this.objects.values()].flatMap((g) => [
+        g.visible,
+        g.position.x,
+        g.position.y,
+        g.position.z,
+      ]),
+    ].join(",");
+    if (signature === this.labelSignature) return;
+    this.labelSignature = signature;
     const placed = [];
     const priority = (id) =>
       id === this.state?.task?.item
@@ -774,6 +885,7 @@ window.CookieScene = class CookieScene {
   }
   updateCamera() {
     if (!this.camera) return;
+    this.needsRender = true;
     const distance = Math.max(
       11.8,
       8.2 /
@@ -826,13 +938,19 @@ window.CookieScene = class CookieScene {
   setHovered(id, pointerType = "mouse") {
     if (this.hovered === id) return;
     this.hovered = id;
+    this.needsRender = true;
     this.onHoverChange?.(id, pointerType);
   }
   updateHighlights() {
+    let changed = false;
     for (const [id, record] of this.highlights) {
       const touched =
         id === this.hovered || id === this.drag?.id || id === this.actionObject;
-      record.amount += ((touched ? 1 : 0) - record.amount) * 0.25;
+      const previous = record.amount;
+      record.amount +=
+        ((touched ? 1 : 0) - record.amount) *
+        (1 - Math.pow(0.75, (this.frameDelta || 1 / 30) * 30));
+      if (Math.abs(record.amount - previous) > 0.0005) changed = true;
       for (const [material, baseline] of record.materials) {
         if (record.amount > 0.01) {
           material.emissive.setHex(0x8ee05a);
@@ -843,6 +961,7 @@ window.CookieScene = class CookieScene {
         }
       }
     }
+    return changed;
   }
   getObjectAnchor(id) {
     const object = this.objects.get(id);
@@ -860,6 +979,7 @@ window.CookieScene = class CookieScene {
   }
   updateHand(e) {
     if (!this.hand) return;
+    this.needsRender = true;
     this.renderer.shadowMap.needsUpdate = true;
     this.setRay(e);
     const group = this.hand.group;
@@ -926,6 +1046,7 @@ window.CookieScene = class CookieScene {
     return null;
   }
   sync(state) {
+    this.needsRender = true;
     this.state = state;
     const t = state.task;
     this.ring.visible = !!t;
@@ -1049,8 +1170,15 @@ window.CookieScene = class CookieScene {
     });
     for (const texture of textures) texture.dispose();
     for (const material of materials) material.dispose();
-    for (const geometry of geometries) geometry.dispose();
+    for (const geometry of geometries)
+      if (!geometry.userData.kitchenShared) geometry.dispose();
+    window.KitchenResources?.releaseGeometries(this);
     this.environmentTarget?.dispose();
+    if (this.frameFence) {
+      const gl = this.renderer.getContext();
+      if (!gl.isContextLost()) gl.deleteSync(this.frameFence);
+      this.frameFence = null;
+    }
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

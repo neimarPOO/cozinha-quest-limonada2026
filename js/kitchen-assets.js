@@ -145,7 +145,7 @@ window.KitchenAssets = (() => {
         )
           continue;
         g.remove(child);
-        child.geometry?.dispose();
+        if (!child.geometry?.userData.kitchenShared) child.geometry?.dispose();
         if (child.material)
           for (const m of Array.isArray(child.material)
             ? child.material
@@ -457,7 +457,8 @@ window.KitchenAssets = (() => {
       if (c.whisk) {
         for (const child of [...c.whisk.children]) {
           c.whisk.remove(child);
-          child.geometry?.dispose();
+          if (!child.geometry?.userData.kitchenShared)
+            child.geometry?.dispose();
           child.material?.dispose();
         }
         cyl(c.whisk, 0.027, 0.027, 0.57, steel, [0, 0, 0]);
@@ -1120,7 +1121,7 @@ window.KitchenAssets = (() => {
       );
     // Replace only geometry of existing vessel meshes: animation references remain intact.
     function remesh(o, geometry) {
-      o.geometry.dispose();
+      if (!o.geometry.userData.kitchenShared) o.geometry.dispose();
       o.geometry = geometry;
     }
     function added(g, geometry, material, pos = [0, 0, 0]) {

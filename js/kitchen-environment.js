@@ -14,7 +14,7 @@ window.KitchenEnvironment = (() => {
         child.isPointLight
       ) {
         scene.remove(child);
-        child.geometry?.dispose();
+        if (!child.geometry?.userData.kitchenShared) child.geometry?.dispose();
         if (child.material) {
           child.material.map?.dispose();
           child.material.dispose();
@@ -144,9 +144,10 @@ window.KitchenEnvironment = (() => {
     wood.dispose();
     const loader = new T.TextureLoader();
     const photo = (name, color = false) => {
-      const texture = loader.load(
-        "public/textures/kitchen/hardwood2_" + name + ".jpg",
-      );
+      const url = "public/textures/kitchen/hardwood2_" + name + ".jpg";
+      const texture = window.KitchenResources
+        ? KitchenResources.texture(view, url)
+        : loader.load(url);
       texture.wrapS = texture.wrapT = T.RepeatWrapping;
       texture.repeat.set(1.2, 1);
       texture.anisotropy = view.mobile ? 2 : 8;

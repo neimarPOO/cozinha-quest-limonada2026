@@ -151,7 +151,7 @@
     instructionBalloon.hidden =
       state.status !== "ready" || !modal.hidden || Boolean(scene.drag);
     const quantity = t.quantityRange ? t.quantityRange.join("–") : t.quantity;
-    instructionBalloon.textContent =
+    const instructionText =
       t.procedure +
       (quantity ? " · " + quantity + " " + t.unit : "") +
       (t.duration
@@ -160,6 +160,8 @@
           " s"
         : "") +
       (t.temperature ? " · " + t.temperature + " °C" : "");
+    if (instructionBalloon.textContent !== instructionText)
+      instructionBalloon.textContent = instructionText;
     if (!instructionBalloon.hidden) {
       const instructionBottom = 64 + instructionBalloon.offsetHeight + 18;
       const feedbackHeight = $("feedback").offsetHeight;
@@ -871,6 +873,8 @@
     const now = performance.now(),
       dt = (now - lastTime) / 1000;
     lastTime = now;
+    const previousSeconds = current.remaining,
+      previousStatus = state.status;
     const paused = CookieRecipe.shouldPauseClock(state);
     state.working = stirring;
     state.tick(dt, stirring);
@@ -878,21 +882,32 @@
       remainingTime = Math.max(0, remainingTime - dt);
       current.remaining = Math.ceil(remainingTime);
     }
-    $("timer").dataset.paused = String(paused);
-    renderTimer();
-    render();
+    if (
+      previousSeconds !== current.remaining ||
+      $("timer").dataset.paused !== String(paused)
+    ) {
+      $("timer").dataset.paused = String(paused);
+      renderTimer();
+    }
+    if (
+      ["running", "baking"].includes(previousStatus) ||
+      state.status !== previousStatus
+    )
+      render();
     if (active && current.remaining <= 0) {
       stopReason =
         "O tempo de jogo acabou. O relógio conta na leitura, nos modais e na movimentação; pausa apenas durante ações temporizadas.";
       finish(false);
     }
   }
+  let startupRevision = 0;
   const api = {
     get active() {
       return active;
     },
-    start(id = "cookie") {
+    async start(id = "cookie") {
       if (active) api.stop();
+      const startupToken = ++startupRevision;
       clearInterval(timerId);
       definition = RecipeCatalog[id] || RecipeCatalog.cookie;
       ({ phases, items } = definition);
@@ -976,12 +991,29 @@
         "Siga o balão sobre o objeto destacado. Entregue o ingrediente na tigela e informe a quantidade; selecione os utensílios para configurar o tempo.",
       );
       render();
+      const preparingScene = scene;
+      if (preparingScene) {
+        try {
+          await preparingScene.prepare();
+        } catch (error) {
+          if (active && scene === preparingScene) useFallback();
+        }
+        if (
+          !active ||
+          startupToken !== startupRevision ||
+          (scene && scene !== preparingScene)
+        )
+          return false;
+      }
       lastTime = performance.now();
       timerId = setInterval(tick, 100);
+      return true;
     },
     stop() {
       if (!active) return null;
       const report = state.report();
+      const hadWebGL = Boolean(scene);
+      startupRevision++;
       active = false;
       clearInterval(timerId);
       closeModal();
@@ -1000,9 +1032,10 @@
       showGuide(false);
       $("threeRoot").style.display = three ? "" : "none";
       $("fallback").style.display = three ? "none" : "flex";
-      $("engine").textContent = three
-        ? "Cozinha 3D • Three.js • arraste os itens"
-        : "Modo 2D";
+      $("engine").textContent =
+        hadWebGL || three
+          ? "Cozinha 3D • Three.js • arraste os itens"
+          : "Modo 2D";
       window.dispatchEvent(new Event("resize"));
       return report;
     },

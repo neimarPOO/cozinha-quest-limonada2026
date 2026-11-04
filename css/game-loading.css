@@ -1,0 +1,51 @@
+.game-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #071611e8;
+  backdrop-filter: blur(8px);
+}
+.game-loading[hidden] {
+  display: none;
+}
+.game-loading section {
+  width: min(420px, 100%);
+  padding: 30px;
+  border: 1px solid #b3e379;
+  border-radius: 24px 8px;
+  background: linear-gradient(130deg, #244232, #101e21);
+  text-align: center;
+  box-shadow: 0 20px 80px #0008;
+}
+.game-loading h2 {
+  color: #e6ffb3;
+  font-size: 24px;
+}
+.game-loading p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e3eadd;
+}
+.game-loading-spinner {
+  display: inline-block;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #acd76c40;
+  border-top-color: #c8f67e;
+  border-radius: 50%;
+  animation: kitchen-loading 1s linear infinite;
+}
+@keyframes kitchen-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-loading-spinner {
+    animation: none;
+    border-color: #c8f67e;
+  }
+}
