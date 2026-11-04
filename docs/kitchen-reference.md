@@ -15,7 +15,7 @@ Os modelos continuam sendo objetos 3D interativos; a referência não é usada c
 - `CookieScene`: UVs normalizados para os materiais, câmera frontal ajustável e limpeza
   de texturas/materiais/geometrias ao sair. Sombras estáticas são reaproveitadas e atualizadas
   ao movimentar a mão, arrastar ou executar procedimentos.
-- `RecipeScene`: mantém a mesma cozinha nas receitas de limonada e focaccia.
+- `RecipeScene`: mantém a cozinha da limonada e o suporte legado da focaccia; `BrownieScene` usa a mesma base para o brownie.
 
 A projeção estende o fundo atrás da interface, reservando o enquadramento útil ao lado do
 caderno de receitas. Os modais de quantidade continuam condicionados à entrega correta; as barras de
@@ -45,8 +45,8 @@ e inox. O mapa HDR distingue a janela clara, a madeira e a parede verde.
 
 As três receitas recebem madeira com mapas fotográficos locais. As tigelas têm
 perfis côncavos mais profundos; utensílios e luvas têm contorno e costuras volumosos.
-Limonada recebe jarra/copo com paredes, alça e bojo e espremedor estriado; focaccia
-recebe garrafas de ombro arredondado e potes com conteúdo separado do vidro.
+Limonada recebe jarra/copo com paredes, alça e bojo e espremedor estriado; brownie
+recebe panela metálica, fogão, peneira, chocolate picado e fôrma quadrada com massa e casquinha rachada.
 
 Créditos dos mapas e da biblioteca: [recursos da cozinha](../public/textures/kitchen/README.md).
 

@@ -527,7 +527,7 @@ window.CookieScene = class CookieScene {
         this.whisk.rotation.y += 9 * this.frameDelta;
       }
       if (this.hand && this.state?.working && this.state?.requiresStir) {
-        const bowl = this.state.task.target === "dry" ? this.dry : this.wet;
+        const bowl = this.objects.get(this.state.task.target) || this.wet;
         this.hand.group.visible = true;
         this.hand.group.position
           .copy(bowl.position)

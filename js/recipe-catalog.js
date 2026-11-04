@@ -122,153 +122,200 @@
     add(5, "mint", 1, "ramo", "glass", { optional: true }),
     t(5, "glass", "Entregar a limonada pronta"),
   ];
-  const focaccia = {
-    id: "focaccia",
-    name: "Mini focaccia",
-    emoji: "🥖",
+  const brownie = {
+    id: "brownie",
+    name: "Brownie de chocolate",
+    emoji: "🍫",
     ingredientIds: [
-      "water",
-      "yeast",
+      "butter",
+      "chocolate",
       "white",
+      "egg",
+      "vanilla",
+      "cocoa",
       "flour",
       "salt",
-      "oil",
-      "rosemary",
-      "coarse",
     ],
-    bake: { min: 20, max: 25, burn: 30 },
     phases: [
       [
-        "Ativação do fermento",
-        "350 ml de água morna, 7 g de fermento biológico e 1 colher de chá de açúcar.",
+        "Fôrma e forno",
+        "Preaqueça a 180 °C. Unte uma fôrma quadrada de metal de aproximadamente 20 × 20 cm, forre o fundo com papel-manteiga e unte também o papel.",
       ],
       [
-        "Preparo da massa",
-        "500 g de farinha, 2 colheres de chá de sal, fermento ativado e 20 ml de azeite; misture sem sovar pesado.",
+        "Manteiga noisette e chocolate",
+        "Doure a manteiga em fogo médio até apresentar aroma amendoado. Desligue o fogo, transfira imediatamente para uma tigela e derreta nela o chocolate picado. Reserve.",
       ],
       [
-        "Primeira fermentação",
-        "Cubra e deixe em local aquecido: 1 hora real = 30 segundos de jogo, com opção de avançar o tempo.",
+        "Ovos e açúcar: a casquinha",
+        "Bata os ovos em temperatura ambiente com o açúcar refinado por cerca de oito minutos, até formar um creme fofo, esbranquiçado e volumoso.",
       ],
       [
-        "Modelagem e segunda fermentação",
-        "Unte com 20 ml de azeite, espalhe a massa nos cantos e cubra: 30 minutos reais = 15 segundos no jogo.",
-      ],
-      [
-        "Cavidades e cobertura",
-        "Faça cavidades com os dedos; acrescente 20 ml de azeite, 15 g de alecrim e 1 colher de sopa de sal grosso.",
+        "Massa delicada",
+        "Incorpore o chocolate com manteiga aos ovos. Junte a baunilha, peneire farinha, cacau e sal diretamente sobre a mistura e incorpore delicadamente com espátula.",
       ],
       [
         "Assamento",
-        "Forno a 220 °C. 20–25 minutos reais = 20–25 segundos no jogo; acima de 30 segundos, queima.",
+        "Despeje na fôrma preparada e asse em forno preaquecido a 180 °C por 20–24 minutos. O centro deve permanecer úmido, mas não totalmente líquido.",
       ],
       [
-        "Resfriar, cortar e servir",
-        "Retire com luvas e espere 5 minutos reais (5 segundos no jogo) antes de cortar em retângulos.",
+        "Descanso, corte e serviço",
+        "Retire com luvas e deixe esfriar por pelo menos duas horas antes de cortar. Assim a estrutura firma e a casquinha permanece crocante.",
       ],
     ],
     items: {
-      dry: ["Copo medidor", "Mistura de fermento", "🥛"],
-      wet: ["Tigela grande", "Mistura e fermentação", "🥣"],
-      water: ["Água morna", "350 ml", "💧"],
-      yeast: ["Fermento biológico seco", "7 g", "🥄"],
-      white: ["Açúcar", "1 colher de chá", "🍚"],
-      flour: ["Farinha de trigo", "500 g", "🌾"],
-      salt: ["Sal", "2 colheres de chá", "🧂"],
-      oil: ["Azeite de oliva", "60 ml: 20 + 20 + 20", "🫒"],
-      spoon: ["Colher de pau", "Mistura inicial", "🥄"],
-      spatula: ["Espátula", "Mistura suave", "🥄"],
-      cloth: ["Pano de prato", "Cobrir a massa", "▧"],
-      bench: ["Bancada aquecida", "Fermentação", "⏱️"],
-      tray: ["Assadeira 20 × 30 cm", "Modelar e assar", "▦"],
-      hands: ["Mãos limpas e untadas", "Espalhar e pressionar", "✋"],
-      rosemary: ["Alecrim fresco", "15 g", "🌿"],
-      coarse: ["Sal grosso", "1 colher de sopa", "🧂"],
-      oven: ["Forno", "220 °C", "🔥"],
-      gloves: ["Luvas térmicas", "Retirar a assadeira", "🧤"],
-      knife: ["Faca de pão", "Fatias retangulares", "🔪"],
-      plate: ["Prato de entrega", "Focaccia pronta", "🍽️"],
+      butter: [
+        "Manteiga sem sal",
+        "170 g na massa + pequena porção para untar",
+        "🧈",
+      ],
+      chocolate: ["Chocolate amargo 70%", "120 g, picado", "🍫"],
+      white: ["Açúcar branco refinado", "200 g, bem fino", "🍚"],
+      egg: ["Ovos em temperatura ambiente", "3 unidades", "🥚"],
+      vanilla: ["Extrato ou essência de baunilha", "1 colher de chá", "🍶"],
+      cocoa: ["Cacau em pó amargo", "40 g", "🍫"],
+      flour: ["Farinha de trigo", "60 g", "🌾"],
+      salt: ["Sal fino", "1 colher de café", "🧂"],
+      dry: [
+        "Tigela de chocolate",
+        "Reservar manteiga noisette com chocolate",
+        "🥣",
+      ],
+      wet: [
+        "Tigela de ovos e massa",
+        "Creme de ovos e incorporação delicada",
+        "🥣",
+      ],
+      pan: ["Panela", "Manteiga noisette em fogo médio", "🍳"],
+      stove: ["Fogão", "Aquecer e desligar o fogo", "🔥"],
+      spoon: ["Colher", "Derreter o chocolate na manteiga quente", "🥄"],
+      mixer: ["Batedeira", "Bater ovos com açúcar", "⚙️"],
+      spatula: ["Espátula", "Incorporar delicadamente", "🥄"],
+      sieve: ["Peneira", "Farinha, cacau e sal sobre a massa", "◌"],
+      tray: [
+        "Fôrma quadrada 20 × 20 cm",
+        "Metal, untada e com papel-manteiga",
+        "▦",
+      ],
+      paper: ["Papel-manteiga", "Forrar o fundo e untar", "▧"],
+      oven: ["Forno", "180 °C", "🔥"],
+      gloves: ["Luvas térmicas", "Retirar a fôrma quente", "🧤"],
+      bench: [
+        "Bancada de descanso",
+        "Pelo menos 2 horas reais antes do corte",
+        "⏱️",
+      ],
+      knife: ["Faca de corte", "Cortar apenas depois do descanso", "🔪"],
+      plate: [
+        "Prato de entrega",
+        "Brownies com casquinha e centro úmido",
+        "🍽️",
+      ],
     },
+    bake: { min: 20, max: 24, burn: 30 },
     tasks: [],
   };
-  focaccia.tasks = [
-    add(0, "water", 350, "ml", "dry"),
-    add(0, "yeast", 7, "g", "dry"),
-    add(0, "white", 1, "colher de chá", "dry"),
-    t(0, "spoon", "Misturar o pré-fermento", { duration: 5, target: "dry" }),
-    t(0, "bench", "Aguardar ativação do fermento", {
-      duration: 10,
-      note: "10 minutos reais → 10 segundos no jogo. Observe a espuma.",
+  brownie.tasks = [
+    t(0, "oven", "Pré-aquecer o forno", { temperature: 180 }),
+    t(0, "butter", "Untar a fôrma com uma pequena porção de manteiga", {
+      target: "tray",
+      delivery: true,
+      note: "O documento não quantifica a manteiga para untar. Separe uma pequena porção adicional aos 170 g destinados à massa.",
     }),
-    add(1, "flour", 500, "g", "wet"),
-    add(1, "salt", 2, "colheres de chá", "wet"),
-    t(1, "dry", "Transferir o fermento ativado à tigela", {
-      target: "wet",
+    t(0, "paper", "Forrar o fundo da fôrma com papel-manteiga", {
+      target: "tray",
       delivery: true,
     }),
-    add(1, "oil", 20, "ml", "wet"),
-    t(1, "spatula", "Misturar suavemente sem sovar pesado", {
+    t(0, "butter", "Untar também o papel-manteiga", {
+      target: "tray",
+      delivery: true,
+    }),
+    add(1, "butter", 170, "g", "pan"),
+    t(1, "stove", "Dourar a manteiga em fogo médio", {
+      duration: 6,
+      note: "Tempo adaptado: 6 segundos no jogo. Na receita real, observe a cor dourada e o aroma amendoado; não há duração fixa. Evite queimar.",
+    }),
+    t(1, "stove", "Desligar o fogo"),
+    t(1, "pan", "Transferir imediatamente a manteiga noisette para a tigela", {
+      target: "dry",
+      delivery: true,
+    }),
+    add(1, "chocolate", 120, "g", "dry", {
+      note: "Use chocolate amargo com 70% de cacau, picado. O calor da manteiga derrete o chocolate.",
+    }),
+    t(
+      1,
+      "spoon",
+      "Misturar até derreter completamente o chocolate e reservar",
+      {
+        target: "dry",
+        duration: 4,
+        note: "4 segundos no jogo; na cozinha, misture até não restarem pedaços de chocolate.",
+      },
+    ),
+    add(2, "egg", 3, "unidades", "wet", {
+      note: "Ovos em temperatura ambiente.",
+    }),
+    add(2, "white", 200, "g", "wet", {
+      note: "Dica do documento: bater levemente o açúcar no liquidificador ou processador para deixá-lo bem fino.",
+    }),
+    t(2, "mixer", "Bater até obter creme fofo, esbranquiçado e volumoso", {
+      target: "wet",
+      duration: 8,
+      note: "Cerca de 8 minutos reais → 8 segundos no jogo. Esta aeração ajuda a formar a casquinha.",
+    }),
+    t(
+      3,
+      "dry",
+      "Incorporar a mistura de chocolate e manteiga aos ovos batidos",
+      { target: "wet", delivery: true },
+    ),
+    add(3, "vanilla", 1, "colher de chá", "wet"),
+    t(3, "spatula", "Incorporar delicadamente a baunilha e o chocolate", {
+      target: "wet",
+      duration: 3,
+      note: "Tempo de jogo adaptado: 3 segundos. Preserve a aeração do creme.",
+    }),
+    add(3, "flour", 60, "g", "sieve"),
+    add(3, "cocoa", 40, "g", "sieve"),
+    add(3, "salt", 1, "colher de café", "sieve"),
+    t(3, "sieve", "Peneirar os secos diretamente sobre a massa", {
+      target: "wet",
+      duration: 3,
+      hold: true,
+      note: "3 segundos no jogo. Farinha, cacau e sal devem passar pela peneira.",
+    }),
+    t(3, "spatula", "Incorporar os secos gentilmente, sem bater em excesso", {
+      target: "wet",
       duration: 4,
-      target: "wet",
-      note: "Adaptação: misture por 4 segundos, até a massa ficar pegajosa e homogênea.",
     }),
-    t(2, "cloth", "Cobrir a tigela com o pano", {
-      target: "wet",
-      delivery: true,
-    }),
-    t(2, "bench", "Fermentar até dobrar de volume", {
-      duration: 30,
-      allowSkip: true,
-      note: "1 hora real → 30 segundos no jogo; Avançar tempo conclui apenas esta espera.",
-    }),
-    add(3, "oil", 20, "ml", "tray"),
-    t(3, "wet", "Transferir a massa crescida à assadeira", {
+    t(4, "wet", "Despejar a massa na fôrma preparada", {
       target: "tray",
       delivery: true,
     }),
-    t(3, "hands", "Espalhar suavemente até os cantos", {
-      kind: "repeat",
-      count: 4,
+    t(4, "spatula", "Distribuir a massa na fôrma delicadamente", {
       target: "tray",
-      actionLabel: "Espalhar a massa em outro canto",
+      duration: 2,
     }),
-    t(3, "cloth", "Cobrir novamente a assadeira", {
-      target: "tray",
-      delivery: true,
-    }),
-    t(3, "bench", "Aguardar a segunda fermentação", {
-      duration: 15,
-      note: "30 minutos reais → 15 segundos no jogo.",
-    }),
-    t(4, "hands", "Pressionar com os dedos limpos e untados", {
-      kind: "repeat",
-      count: 6,
-      target: "tray",
-      actionLabel: "Pressionar outro ponto da massa",
-    }),
-    add(4, "oil", 20, "ml", "tray"),
-    add(4, "rosemary", 15, "g", "tray"),
-    add(4, "coarse", 1, "colher de sopa", "tray"),
-    t(5, "oven", "Pré-aquecer o forno", { temperature: 220 }),
-    t(5, "tray", "Abrir o forno e inserir a assadeira", {
+    t(4, "tray", "Inserir a fôrma no forno preaquecido", {
       target: "oven",
       delivery: true,
     }),
-    t(5, "oven", "Assar até a crosta ficar dourada", {
+    t(4, "oven", "Assar mantendo o centro úmido, mas não líquido", {
       kind: "bake",
-      note: "20–25 minutos reais → 20–25 segundos no jogo. Use luvas para retirar; acima de 30 segundos, queima.",
+      note: "20–24 minutos reais → 20–24 segundos no jogo. O limite de 30 segundos para queimar é uma regra do jogo, não um tempo adicional da receita.",
     }),
-    t(6, "bench", "Aguardar antes de desformar", {
-      duration: 5,
-      note: "5 minutos reais → 5 segundos no jogo.",
+    t(5, "bench", "Esfriar completamente antes de cortar", {
+      duration: 20,
+      note: "Pelo menos 2 horas reais → 20 segundos no jogo. Esta espera é obrigatória e não pode ser pulada.",
     }),
-    t(6, "knife", "Cortar em fatias retangulares", {
+    t(5, "knife", "Cortar o brownie já frio em quadrados", {
+      target: "tray",
       kind: "repeat",
       count: 4,
-      target: "tray",
-      actionLabel: "Cortar a próxima fatia",
+      actionLabel: "Fazer o próximo corte",
+      note: "Porcionamento adaptado ao jogo: dois cortes em cada direção formam nove quadrados. O documento não define rendimento.",
     }),
-    t(6, "plate", "Servir as fatias de focaccia"),
+    t(5, "plate", "Servir os brownies com casquinha crocante e centro úmido"),
   ];
-  return { cookie, lemonade, focaccia };
+  return { cookie, lemonade, brownie };
 });

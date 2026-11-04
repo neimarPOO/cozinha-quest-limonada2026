@@ -119,15 +119,11 @@ test("portion count, collection, bounds and spacing remain enforced", () => {
   s.collect();
   assert.equal(s.place(0.12, 0.12).ok, false);
 });
-for (const id of ["cookie", "focaccia"])
+for (const id of ["cookie", "brownie"])
   test(`${id}: oven temperature, timing, gloves, early removal and burning`, () => {
     const d = catalog[id],
       s = until(new Session(d), (t) => !!t.temperature);
-    assert.equal(
-      s.configure({ ...values(s), temperature: d.id === "cookie" ? 220 : 180 })
-        .ok,
-      false,
-    );
+    assert.equal(s.configure({ ...values(s), temperature: 220 }).ok, false);
     action(s);
     until(s, (t) => t.kind === "bake");
     assert.equal(
@@ -176,38 +172,52 @@ test("lemonade: 90% fill and both optional garnishes required for presentation b
   action(skip);
   assert.equal(skip.aesthetics, 100);
 });
-test("focaccia: three exact 20ml olive oil additions, 30s/15s proofing, permitted time skip", () => {
-  const d = catalog.focaccia;
-  assert.deepEqual(
-    d.tasks.filter((t) => t.item === "oil").map((t) => t.quantity),
-    [20, 20, 20],
-  );
-  const s = until(new Session(d), (t) => t.allowSkip);
-  assert.equal(s.advanceTime(), false);
-  s.configure(values(s));
-  assert.ok(s.advanceTime());
-  assert.equal(s.task.phase, 3);
+test("brownie: exact document quantities, noisette, aeration and mandatory two-hour cooling adaptation", () => {
+  const d = catalog.brownie;
+  for (const [item, amount] of Object.entries({
+    butter: 170,
+    chocolate: 120,
+    white: 200,
+    egg: 3,
+    vanilla: 1,
+    cocoa: 40,
+    flour: 60,
+    salt: 1,
+  }))
+    assert.equal(
+      d.tasks.find((t) => t.item === item && t.quantity)?.quantity,
+      amount,
+    );
   assert.equal(
-    d.tasks.find((t) => t.phase === 3 && t.item === "bench").duration,
-    15,
+    d.tasks.some((t) => ["yeast", "rosemary", "oil"].includes(t.item)),
+    false,
   );
+  assert.equal(d.tasks.find((t) => t.item === "mixer").duration, 8);
+  assert.match(d.tasks.find((t) => t.item === "mixer").note, /8 minutos reais/);
+  assert.equal(
+    d.tasks.find((t) => t.item === "stove" && t.duration).duration,
+    6,
+  );
+  assert.equal(
+    d.tasks.filter((t) => t.item === "butter" && t.delivery).length,
+    2,
+  );
+  assert.equal(d.bake.min, 20);
+  assert.equal(d.bake.max, 24);
 });
-test("repeated cuts/dimples require distinct positions and cannot advance without enough interactions", () => {
-  const s = until(
-    new Session(catalog.focaccia),
-    (t) => t.phase === 4 && t.kind === "repeat",
-  );
+test("brownie cuts require distinct positions and cannot advance without enough interactions", () => {
+  const s = until(new Session(catalog.brownie), (t) => t.kind === "repeat");
   s.configure(values(s));
   s.repeat(0);
   assert.equal(s.repeat(0).ok, false);
   assert.equal(s.status, "repeat");
-  for (let i = 1; i < 6; i++) s.repeat(i);
-  assert.equal(s.task.item, "oil");
+  for (let i = 1; i < 4; i++) s.repeat(i);
+  assert.equal(s.task.item, "plate");
 });
 test("cooling cannot be skipped and serving cannot occur early", () => {
-  const s = until(new Session(catalog.focaccia), (t) => t.phase === 6);
+  const s = until(new Session(catalog.brownie), (t) => t.phase === 5);
   s.configure(values(s));
-  s.tick(4.9);
+  s.tick(19.9);
   assert.equal(s.status, "running");
   assert.equal(s.configure(values(s)).ok, false);
   s.tick(0.1);
@@ -216,7 +226,7 @@ test("cooling cannot be skipped and serving cannot occur early", () => {
 test("ingredients and required transfers demand a valid drop, ordinary stations are selectable", () => {
   assert.ok(requiresBowlDrop(catalog.cookie.tasks[0]));
   assert.ok(
-    requiresBowlDrop(catalog.focaccia.tasks.find((t) => t.item === "cloth")),
+    requiresBowlDrop(catalog.brownie.tasks.find((t) => t.item === "paper")),
   );
   assert.equal(
     requiresBowlDrop(catalog.lemonade.tasks.find((t) => t.item === "knife")),
@@ -251,8 +261,8 @@ test("phase guidance includes correct amounts, duration and narrative procedure 
       assert.ok(text.introduction);
       assert.ok(text.timing);
     }
-  assert.match(guide.build(catalog.focaccia, 5).timing, /220 °C/);
-  assert.match(guide.build(catalog.focaccia, 5).timing, /20–25/);
+  assert.match(guide.build(catalog.brownie, 4).timing, /180 °C/);
+  assert.match(guide.build(catalog.brownie, 4).timing, /20–24/);
   assert.match(guide.build(catalog.lemonade, 1).ingredients, /8 metades/);
 });
 

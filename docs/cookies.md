@@ -1,6 +1,6 @@
 # Cookies: receita interativa
 
-As três receitas usam o mesmo controlador de quantidades, procedimentos, painéis contextuais e cronômetro. Cookies têm oito fases, limonada seis e focaccia sete. As tigelas e estações já estão preparadas; selecionar as tigelas não é uma tarefa. Os modelos são gerados com Three.js; texturas fotográficas e o suporte de luz de área são fornecidos pelo próprio projeto, sem requisições externas durante o jogo. A [direção visual da cozinha](kitchen-reference.md) descreve os materiais físicos, modelos e critérios de revisão.
+As três receitas usam o mesmo controlador de quantidades, procedimentos, painéis contextuais e cronômetro. Cookies têm oito fases, limonada seis e brownie seis. As tigelas e estações já estão preparadas; selecionar as tigelas não é uma tarefa. Os modelos são gerados com Three.js; texturas fotográficas e o suporte de luz de área são fornecidos pelo próprio projeto, sem requisições externas durante o jogo. A [direção visual da cozinha](kitchen-reference.md) descreve os materiais físicos, modelos e critérios de revisão.
 
 ## Jogar
 
@@ -43,10 +43,10 @@ O resultado mantém a integração com a roleta e com o histórico existente. `c
 
 ## Receitas dos anexos
 
-As especificações originais estão em `docs/recipes/limonada.txt` e `docs/recipes/focaccia.txt`. `js/recipe-catalog.js` preserva ingredientes, quantidades, fases, intervalos e bônus desses documentos.
+As especificações atuais estão em `docs/recipes/limonada.txt` e `docs/recipes/brownie.txt`. A focaccia foi substituída pelo [brownie do documento anexado](brownie.md); sua transcrição permanece arquivada para referência histórica.
 
-- Limonada: quatro limões, quatro cortes e oito metades espremidas juntas em um lote; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de sopa de açúcar, mistura de 5–8 s, 8–10 cubos de gelo e espera de 5 s. Copo com dois cubos extras e preenchimento de 90%. Fatia e hortelã são opcionais; o bônus de apresentação de 10% exige ambas. Extração do lote de oito metades (3 s) e animação de servir (2 s) são adaptações explícitas.
-- Focaccia: 350 ml de água morna, 7 g de fermento biológico e uma colher de chá de açúcar; mistura de 5 s e ativação de 10 s. Massa com 500 g de farinha, duas colheres de chá de sal e três adições distintas de 20 ml de azeite (60 ml ao todo). Primeira fermentação de 30 s, com Avançar Tempo, e segunda de 15 s. Cavidades, 15 g de alecrim, uma colher de sopa de sal grosso; forno a 220 °C por 20–25 s, queimando acima de 30 s. Luvas, resfriamento de 5 s e cortes retangulares. A mistura suave de 4 s é uma adaptação do jogo.
+- Limonada: quatro limões e oito metades espremidas juntas; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de açúcar, gelo e apresentação.
+- Brownie: manteiga noisette, chocolate 70%, ovos e açúcar aerados, secos peneirados e incorporados delicadamente, forno a 180 °C por 20–24 minutos e descanso mínimo de duas horas. Os tempos abreviados do jogo aparecem ao lado dos tempos reais no caderno.
 
 As ações de corte/espalhamento/cavidades têm botões equivalentes por teclado e toque. A aba sem WebGL continua recolhida, com abertura automática se a visualização falhar. O histórico registra `recipeDetails` para todas as receitas e preserva `cookieDetails` para compatibilidade com cookies.
 
@@ -54,13 +54,14 @@ As ações de corte/espalhamento/cavidades têm botões equivalentes por teclado
 
 - `js/cookie-recipe.js`: dados e máquina de estados independentes do navegador.
 - `js/cookie-scene.js`: bancada compartilhada, modelos de cookies, seleção e arraste.
-- `js/recipe-scene.js`: assets e estados específicos de limonada e focaccia.
+- `js/recipe-scene.js`: assets e estados da limonada (inclui suporte legado da focaccia).
+- `js/brownie-scene.js`: panela, fogão, peneira, fôrma e estados do brownie.
 - `js/recipe-catalog.js`: dados das três receitas.
 - `js/cookie-game.js`: modais, comandos acessíveis, timers e integração com histórico.
 - `css/cookie-game.css`: estilos exclusivos da nova receita.
 - `npm test`: testes de quantidades, sequência, escolhas inválidas, descanso, porcionamento, proteção térmica, ponto do forno e resfriamento.
 
-Para verificar no navegador: concluir uma rodada com descanso e outra sem descanso, testar retirada precoce/sem luvas, aguardar mais de 15 s para queimar, repetir a receita, alternar para limonada/focaccia e verificar toque, teclado e larguras de 320 px a desktop. Sem WebGL, os botões mantêm a receita completa jogável.
+Para verificar no navegador: concluir uma rodada com descanso e outra sem descanso, testar retirada precoce/sem luvas, aguardar mais de 15 s para queimar, repetir a receita, alternar para limonada/brownie e verificar toque, teclado e larguras de 320 px a desktop. Sem WebGL, os botões mantêm a receita completa jogável.
 
 ## Painéis próximos aos objetos
 

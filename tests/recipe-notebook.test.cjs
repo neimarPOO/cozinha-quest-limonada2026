@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { notebook } = require("../js/recipe-guide");
 const recipes = require("../js/recipe-catalog");
-for (const id of ["cookie", "lemonade", "focaccia"])
+for (const id of ["cookie", "lemonade", "brownie"])
   test(
     id +
       ": notebook contains every ingredient and preparation phase from the playable recipe",
@@ -31,7 +31,7 @@ for (const id of ["cookie", "lemonade", "focaccia"])
 test("notebook preserves recipe amounts, divided additions, oven temperatures and real/game times", () => {
   const cookie = notebook(recipes.cookie),
     lemon = notebook(recipes.lemonade),
-    bread = notebook(recipes.focaccia);
+    bread = notebook(recipes.brownie);
   assert.equal(
     cookie.ingredients.find((i) => /Farinha/.test(i.name)).amount,
     "450 g",
@@ -39,10 +39,10 @@ test("notebook preserves recipe amounts, divided additions, oven temperatures an
   assert.match(JSON.stringify(cookie.chapters), /180 °C/);
   assert.match(JSON.stringify(cookie.chapters), /12–24/);
   assert.equal(
-    bread.ingredients.find((i) => /Azeite/.test(i.name)).amount,
-    "60 ml",
+    bread.ingredients.find((i) => /Manteiga/.test(i.name)).amount,
+    "170 g",
   );
-  assert.match(JSON.stringify(bread.chapters), /220 °C/);
+  assert.match(JSON.stringify(bread.chapters), /180 °C/);
   assert.equal(
     lemon.ingredients.find((i) => /gelo/i.test(i.name)).amount,
     "10–12 cubos",
@@ -208,7 +208,7 @@ test("notebook crosses out only completed procedures, preserving timed work and 
     optional = new Session(definition);
   assert.equal(optional.skipOptional(), true);
   assert.equal(procedureProgress(definition, optional)[0], "skipped");
-  for (const id of ["cookie", "lemonade", "focaccia"])
+  for (const id of ["cookie", "lemonade", "brownie"])
     assert.deepEqual(
       notebook(recipes[id]).chapters.flatMap((c) => c.taskIndices),
       recipes[id].tasks.map((_, i) => i),

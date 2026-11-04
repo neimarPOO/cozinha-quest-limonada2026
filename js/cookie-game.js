@@ -532,7 +532,9 @@
     tell(
       result.ok
         ? state.bakeQuality === "ideal"
-          ? "Bordas douradas e centro macio! Deixe firmar na bancada."
+          ? definition.id === "brownie"
+            ? "Casquinha formada e centro úmido! Aguarde o descanso completo antes de cortar."
+            : "Bordas douradas e centro macio! Deixe firmar na bancada."
           : "A massa assou além do ideal e perdeu maciez. Agora deixe esfriar."
         : result.message,
     );
@@ -813,7 +815,7 @@
         b.textContent = used ? "🍪" : "+";
       }
     }
-    $("cookieBuff").hidden = recipe.id === "focaccia";
+    $("cookieBuff").hidden = recipe.id === "brownie";
     $("cookieBuff").textContent =
       recipe.id === "lemonade"
         ? "Decoração opcional: fatia de limão + hortelã = +10% na apresentação."
@@ -939,14 +941,23 @@
         scene =
           recipe.id === "cookie"
             ? new CookieScene(sceneRoot, interact, place, tell, useFallback)
-            : new RecipeScene(
-                sceneRoot,
-                interact,
-                place,
-                tell,
-                useFallback,
-                definition,
-              );
+            : recipe.id === "brownie"
+              ? new BrownieScene(
+                  sceneRoot,
+                  interact,
+                  place,
+                  tell,
+                  useFallback,
+                  definition,
+                )
+              : new RecipeScene(
+                  sceneRoot,
+                  interact,
+                  place,
+                  tell,
+                  useFallback,
+                  definition,
+                );
         notebook.attach(scene);
         scene.onViewChange = positionOverlays;
         scene.onHoverChange = onHover;
