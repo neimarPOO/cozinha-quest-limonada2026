@@ -111,6 +111,8 @@ window.RecipeNotebook = class RecipeNotebook {
     this.definition = definition;
     this.model = RecipeGuide.notebook(definition);
     this.phase = 0;
+    this.progress = [];
+    this.progressKey = null;
     this.root.querySelector("h2").textContent = this.model.title;
     const heading = (tag, text) => {
       const e = document.createElement(tag);
@@ -129,8 +131,11 @@ window.RecipeNotebook = class RecipeNotebook {
         heading("h4", `${i + 1}. ${chapter.title}`),
         heading("p", chapter.introduction),
       );
-      for (const instruction of chapter.instructions)
-        section.append(heading("p", instruction));
+      chapter.instructions.forEach((instruction, index) => {
+        const p = heading("p", instruction);
+        p.dataset.taskIndex = chapter.taskIndices[index];
+        section.append(p);
+      });
       section.append(heading("p", chapter.timing));
       this.readable.append(section);
     });
@@ -166,6 +171,29 @@ window.RecipeNotebook = class RecipeNotebook {
       if (Number(section.dataset.phase) === phase)
         section.setAttribute("aria-current", "step");
       else section.removeAttribute("aria-current");
+    }
+    this.schedulePaint();
+  }
+  setProgress(state) {
+    const progress = RecipeGuide.procedureProgress(this.definition, state),
+      key = progress.join(",");
+    if (key === this.progressKey) return;
+    this.progress = progress;
+    this.progressKey = key;
+    for (const paragraph of this.readable.querySelectorAll(
+      "[data-task-index]",
+    )) {
+      const status = progress[Number(paragraph.dataset.taskIndex)];
+      paragraph.classList.toggle("is-completed", status === "done");
+      paragraph.dataset.status = status;
+      paragraph.setAttribute(
+        "aria-label",
+        (status === "done"
+          ? "Concluído. "
+          : status === "skipped"
+            ? "Opcional não realizado. "
+            : "") + paragraph.textContent,
+      );
     }
     this.schedulePaint();
   }
@@ -251,37 +279,40 @@ window.RecipeNotebook = class RecipeNotebook {
       ctx = this.ctx;
     const text = (
       value,
-      font = "15px Georgia",
-      color = "#3a3029",
+      font = "17px Georgia",
+      color = "#2d261f",
       gap = 10,
+      taskIndex = null,
     ) => {
       ctx.font = font;
       let line = "";
       for (const word of value.split(/\s+/)) {
         const next = line ? line + " " + word : word;
         if (line && ctx.measureText(next).width > available) {
-          this.lines.push({ text: line, font, color, x: left, y });
-          y += 26;
+          this.lines.push({ text: line, font, color, x: left, y, taskIndex });
+          y += 29;
           line = word;
         } else line = next;
       }
       if (line) {
-        this.lines.push({ text: line, font, color, x: left, y });
-        y += 26;
+        this.lines.push({ text: line, font, color, x: left, y, taskIndex });
+        y += 29;
       }
       y += gap;
     };
-    text("Ingredientes", "bold italic 23px Georgia", "#5b3625", 12);
+    text("Ingredientes", "bold italic 24px Georgia", "#5b3625", 12);
     for (const item of this.model.ingredients)
-      text(`${item.amount} — ${item.name}`, "15px Georgia", "#3a3029", 2);
+      text(`${item.amount} — ${item.name}`, "17px Georgia", "#2d261f", 2);
     y += 18;
-    text("Modo de preparo", "bold italic 23px Georgia", "#5b3625", 16);
+    text("Modo de preparo", "bold italic 24px Georgia", "#5b3625", 16);
     this.model.chapters.forEach((chapter, i) => {
       this.chapterY[i] = y - 20;
-      text(`${i + 1}. ${chapter.title}`, "bold 18px Georgia", "#4f3728", 12);
+      text(`${i + 1}. ${chapter.title}`, "bold 20px Georgia", "#4f3728", 12);
       text(chapter.introduction);
-      for (const instruction of chapter.instructions) text(instruction);
-      text(chapter.timing, "italic 14px Georgia", "#66523b", 26);
+      chapter.instructions.forEach((instruction, index) =>
+        text(instruction, undefined, undefined, 10, chapter.taskIndices[index]),
+      );
+      text(chapter.timing, "italic 16px Georgia", "#66523b", 26);
     });
     this.documentHeight = y + 40;
     this.root.querySelector(".notebook-spacer").style.height =
@@ -301,7 +332,7 @@ window.RecipeNotebook = class RecipeNotebook {
     const w = this.page.clientWidth,
       h = this.page.clientHeight;
     if (!w || !h) return;
-    const scale = Math.min(devicePixelRatio || 1, 2);
+    const scale = Math.min(Math.max(devicePixelRatio || 1, 2), 2.5);
     const cw = Math.round(w * scale),
       ch = Math.round(h * scale);
     if (this.canvas.width !== cw || this.canvas.height !== ch) {
@@ -326,7 +357,7 @@ window.RecipeNotebook = class RecipeNotebook {
     const top = this.page.scrollTop;
     ctx.strokeStyle = "#a8bdce60";
     ctx.lineWidth = 0.7;
-    for (let y = 44 - (top % 26); y < h; y += 26) {
+    for (let y = 44 - (top % 29); y < h; y += 29) {
       ctx.beginPath();
       ctx.moveTo(20, y);
       ctx.lineTo(w - 12, y);
@@ -346,8 +377,22 @@ window.RecipeNotebook = class RecipeNotebook {
       const y = line.y - top;
       if (y < -30 || y > h + 30) continue;
       ctx.font = line.font;
-      ctx.fillStyle = line.color;
+      const completed =
+        line.taskIndex !== null && this.progress?.[line.taskIndex] === "done";
+      ctx.fillStyle = completed ? "#70604b" : line.color;
       ctx.fillText(line.text, line.x, y);
+      if (completed) {
+        const size = parseFloat(line.font.match(/[\d.]+px/)[0]);
+        ctx.strokeStyle = "#736048";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(line.x - 1, y - size * 0.32);
+        ctx.lineTo(
+          line.x + ctx.measureText(line.text).width + 1,
+          y - size * 0.32,
+        );
+        ctx.stroke();
+      }
     }
     // Grão discreto do papel, sem rasterizar toda a receita na GPU.
     ctx.fillStyle = "#9d774b0a";

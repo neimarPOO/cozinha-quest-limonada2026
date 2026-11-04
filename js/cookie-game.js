@@ -669,6 +669,7 @@
     }
   });
   function render(allowComplete = true) {
+    if (active) notebook.setProgress(state);
     if (!active) return;
     if (state.status === "burnt") {
       stopReason = `${definition.name} passou de ${definition.bake.burn} segundos no forno e queimou. Retire entre ${definition.bake.min} e ${definition.bake.max} segundos.`;

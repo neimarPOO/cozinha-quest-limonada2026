@@ -3,15 +3,15 @@ window.GameLoader = (() => {
   const scripts = [
     "public/three.min.js?v=3b3a1c97de3c",
     "js/kitchen-resources.js?v=1",
-    "js/kitchen-hand.js?v=1",
+    "js/kitchen-hand.js?v=2",
     "public/vendor/RectAreaLightUniformsLib.js?v=158",
     "js/kitchen-environment.js?v=3",
     "js/kitchen-assets.js?v=3",
     "js/kitchen-lighting.js?v=2",
-    "js/cookie-scene.js?v=8",
+    "js/cookie-scene.js?v=9",
     "js/recipe-scene.js?v=4",
-    "js/recipe-notebook.js?v=1",
-    "js/cookie-game.js?v=11",
+    "js/recipe-notebook.js?v=2",
+    "js/cookie-game.js?v=12",
   ];
   const wood = ["diffuse", "bump", "roughness"].map(
     (n) => "public/textures/kitchen/hardwood2_" + n + ".jpg",

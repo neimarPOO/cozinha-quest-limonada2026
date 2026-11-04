@@ -74,16 +74,33 @@ test("reading hand restores shared materials and individual mesh properties", ()
   group.add(a, b);
   const owner = {
     hand: { group, pose() {} },
-    renderer: { shadowMap: { needsUpdate: false } },
+    renderer: {
+      shadowMap: { needsUpdate: false },
+      info: { render: { frame: 1 } },
+      clearDepth() {
+        this.clears = (this.clears || 0) + 1;
+      },
+    },
+    camera: { quaternion: new THREE.Quaternion() },
+    ray: {
+      ray: {
+        origin: new THREE.Vector3(),
+        direction: new THREE.Vector3(0, 0, -1),
+      },
+    },
+    setRay() {},
     updateHand() {
       group.visible = true;
     },
   };
   const methods = context.window.CookieScene.prototype;
   methods.readPageHand.call(owner, { clientX: 100, clientY: 100 }, true);
-  assert.equal(material.depthTest, false);
+  assert.equal(material.depthTest, true);
   assert.equal(material.transparent, true);
   assert.equal(a.renderOrder, 1100);
+  a.onBeforeRender(owner.renderer);
+  b.onBeforeRender(owner.renderer);
+  assert.equal(owner.renderer.clears, 1);
   methods.endReadingHand.call(owner);
   assert.equal(material.depthTest, true);
   assert.equal(material.transparent, false);
@@ -156,4 +173,63 @@ test("notebook projection stays aligned with its page under camera view offsets"
     assert.ok(Math.abs((v.x + 1) * 500 - x) < 0.001);
     assert.ok(Math.abs((1 - v.y) * 400 - y) < 0.001);
   });
+});
+
+test("notebook crosses out only completed procedures, preserving timed work and skipped optionals", () => {
+  const { Session } = require("../js/cookie-recipe"),
+    { procedureProgress } = require("../js/recipe-guide");
+  const s = new Session(recipes.cookie);
+  const wrong = s.configure({ procedure: s.task.procedure, quantity: 400 });
+  assert.equal(wrong.ok, false);
+  assert.equal(procedureProgress(recipes.cookie, s)[0], "pending");
+  while (s.task.item !== "spoon") {
+    const t = s.task;
+    assert.equal(
+      s.configure({ procedure: t.procedure, quantity: t.quantity }).ok,
+      true,
+    );
+  }
+  const mixIndex = s.index;
+  assert.equal(
+    procedureProgress(recipes.cookie, s).filter((x) => x === "done").length,
+    mixIndex,
+  );
+  const t = s.task;
+  s.configure({ procedure: t.procedure, duration: t.duration });
+  s.tick(1, true);
+  assert.equal(procedureProgress(recipes.cookie, s)[mixIndex], "pending");
+  s.tick(t.duration, true);
+  assert.equal(procedureProgress(recipes.cookie, s)[mixIndex], "done");
+  assert.equal(procedureProgress(recipes.cookie, s)[mixIndex + 1], "pending");
+  const definition = {
+      ...recipes.cookie,
+      tasks: [recipes.cookie.tasks.find((t) => t.kind === "chill")],
+    },
+    optional = new Session(definition);
+  assert.equal(optional.skipOptional(), true);
+  assert.equal(procedureProgress(definition, optional)[0], "skipped");
+  for (const id of ["cookie", "lemonade", "focaccia"])
+    assert.deepEqual(
+      notebook(recipes[id]).chapters.flatMap((c) => c.taskIndices),
+      recipes[id].tasks.map((_, i) => i),
+    );
+});
+test("page poses keep the thumb relaxed and do not reuse the ingredient grab pose", () => {
+  const fs = require("node:fs"),
+    vm = require("node:vm"),
+    THREE = require("../public/three.min.js");
+  const context = { window: {}, THREE };
+  vm.runInNewContext(
+    fs.readFileSync(require.resolve("../js/kitchen-hand"), "utf8"),
+    context,
+  );
+  const hand = context.window.KitchenHand.create();
+  hand.pose("pageDrag", 1);
+  hand.pose("page", 1);
+  const root = hand.group.children.find((o) => o.isBone),
+    thumb = root.children[4];
+  assert.ok(Math.abs(thumb.rotation.z + 0.1) < 1e-9);
+  assert.ok(Math.abs(thumb.rotation.x) < 0.1);
+  assert.ok(thumb.rotation.y < 0);
+  assert.ok(root.children[0].rotation.x < 0.1);
 });

@@ -1033,38 +1033,73 @@ window.CookieScene = class CookieScene {
     if (!this.hand) return;
     if (!this.readingHand) {
       this.readingHand = true;
+      this.handDepthFrame = null;
       this.handRenderState = [];
       this.handMaterialState = new Map();
       this.hand.group.traverse((o) => {
         if (!o.isMesh) return;
-        this.handRenderState.push([o, o.renderOrder, o.castShadow]);
+        const previousRender = o.onBeforeRender;
+        this.handRenderState.push([
+          o,
+          o.renderOrder,
+          o.castShadow,
+          previousRender,
+        ]);
+        const view = this;
+        o.onBeforeRender = function (renderer, ...args) {
+          if (view.handDepthFrame !== renderer.info.render.frame) {
+            renderer.clearDepth();
+            view.handDepthFrame = renderer.info.render.frame;
+          }
+          previousRender.call(this, renderer, ...args);
+        };
         o.renderOrder = 1100;
         o.castShadow = false;
         if (!this.handMaterialState.has(o.material))
           this.handMaterialState.set(o.material, {
             depth: o.material.depthTest,
+            write: o.material.depthWrite,
             transparent: o.material.transparent,
           });
-        o.material.depthTest = false;
+        o.material.depthTest = true;
+        o.material.depthWrite = true;
         o.material.transparent = true;
         o.material.needsUpdate = true;
       });
       this.renderer.shadowMap.needsUpdate = true;
     }
-    const shadowDirty = this.renderer.shadowMap.needsUpdate;
-    this.updateHand(event);
-    this.renderer.shadowMap.needsUpdate = shadowDirty;
-    this.hand.pose(grab ? "grab" : "press", 0.8);
+    // Pose de leitura própria: sem alternar a preensão de ingredientes com a página.
+    this.setRay(event);
+    const group = this.hand.group;
+    group.quaternion
+      .copy(this.camera.quaternion)
+      .multiply(
+        new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(1.35, Math.PI, 0.1, "XYZ"),
+        ),
+      );
+    group.scale.setScalar(0.9);
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(
+      group.quaternion,
+    );
+    group.position
+      .copy(this.ray.ray.origin)
+      .addScaledVector(this.ray.ray.direction, 4.35)
+      .addScaledVector(forward, -0.23 * 0.9);
+    group.visible = true;
+    this.hand.pose(grab ? "pageDrag" : "page", 1);
     this.needsRender = true;
   }
   endReadingHand() {
     if (!this.readingHand) return;
-    for (const [o, order, shadow] of this.handRenderState) {
+    for (const [o, order, shadow, previousRender] of this.handRenderState) {
       o.renderOrder = order;
       o.castShadow = shadow;
+      o.onBeforeRender = previousRender;
     }
     for (const [material, saved] of this.handMaterialState) {
       material.depthTest = saved.depth;
+      material.depthWrite = saved.write;
       material.transparent = saved.transparent;
       material.needsUpdate = true;
     }

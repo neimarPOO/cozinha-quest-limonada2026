@@ -75,3 +75,19 @@ A área de jogo usa a bancada em largura total e três painéis abaixo dela: aç
 O tempo padrão passou a **180 segundos (3 minutos)** para todas as receitas. Na área administrativa, **Tempo de cada receita** aceita de 180 a 1.800 segundos (3–30 minutos), aplicados às três receitas. Configurações antigas e backups com menos de três minutos são ajustados automaticamente; tempos personalizados maiores são preservados até o limite. As esperas continuam pausando o cronômetro geral.
 
 Na limonada, as oito metades formam um único objeto arrastável: leve o lote ao espremedor, informe oito metades e processe durante três segundos no jogo. Não há mais oito modais de extração. Depois, transfira os cerca de 150 ml de suco para a jarra de uma vez. Essa simplificação substitui a extração individual descrita no anexo original.
+
+## Leitura e acompanhamento do preparo
+
+O caderno usa texto de 17 px, maior contraste e textura renderizada em pelo menos
+2× a resolução lógica para manter letras e traços nítidos. Os procedimentos
+concluídos são tachados individualmente, inclusive quando o parágrafo ocupa mais
+de uma linha. A lista de ingredientes permanece disponível sem tachado.
+
+As marcas vêm do histórico do preparo: quantidades incorretas, tarefas em
+execução e passos futuros não são marcados como concluídos. Opcionais pulados
+continuam distintos de procedimentos realizados. A atualização preserva a rolagem.
+
+A mão tem poses exclusivas de leitura e arraste, com o polegar relaxado. Uma
+limpeza de profundidade antes de desenhá-la sobre o papel permite que os próprios
+dedos se ocultem corretamente, sem atravessar a palma. As propriedades originais
+da mão são restauradas ao voltar à bancada.

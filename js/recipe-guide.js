@@ -96,10 +96,26 @@
         title,
         introduction: guide.introduction,
         instructions,
+        taskIndices: definition.tasks.flatMap((t, index) =>
+          t.phase === phase ? [index] : [],
+        ),
         timing: guide.timing,
       };
     });
     return { title: definition.name, ingredients, chapters };
   }
-  return { build, notebook };
+  function procedureProgress(definition, state) {
+    return definition.tasks.map((task, index) => {
+      const entry = state.history?.[index];
+      if (
+        index >= state.index ||
+        !entry ||
+        entry.item !== task.item ||
+        entry.phase !== task.phase
+      )
+        return "pending";
+      return entry.skipped ? "skipped" : "done";
+    });
+  }
+  return { build, notebook, procedureProgress };
 });

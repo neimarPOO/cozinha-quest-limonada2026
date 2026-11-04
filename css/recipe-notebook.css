@@ -206,3 +206,14 @@
     visibility: hidden;
   }
 }
+.notebook-readable {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #2d261f;
+}
+.notebook-readable .is-completed {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.2px;
+  text-decoration-color: #736048;
+  color: #70604b;
+}
