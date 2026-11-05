@@ -17,6 +17,10 @@
         })[c],
     );
   const icons = {
+    bread: '<path d="M-20 9c-5-31 40-31 40 0v9h-40zM-8-6l-3 9M4-8l-3 10M15-4l-3 8"/>',
+    cake: '<path d="m-21 7 34-25 8 29-42 5zM-21 7l42 4M-21 16v7l42-5v-7M2-10c-5-11 8-17 10-8"/>',
+    brownie: '<path d="m-21-7 26-9 17 14-25 10zM-21-7v23l18 13 25-10V-2M-3 8v21M-10-4l8 4 4-8M7 0l6-2M-14 11l4 3M5 15l5-2"/>',
+    table: '<path d="M-24 8h48M-19 8v20M19 8v20M-17-13h12v14h-12zM-5-11h4v9h-4M4 1l6-18 13 18zM-21-19l2-5M-13-19l2-5"/>',
     drink:
       '<path d="M-14-12h24v21c0 10-24 10-24 0zM10-8h5c12 0 10 17-5 17M-7-20c-5-6 5-8 0-14M2-20c-5-6 5-8 0-14"/>',
     sweet:
@@ -47,15 +51,16 @@
           .join("; "),
       ) +
       '</desc><defs><linearGradient id="rewardMetal" x2="1" y2="1"><stop stop-color="#fff0b9"/><stop offset=".23" stop-color="#b58740"/><stop offset=".5" stop-color="#f4d38b"/><stop offset=".78" stop-color="#8b622c"/><stop offset="1" stop-color="#e8c47b"/></linearGradient><radialGradient id="rewardEnamel"><stop stop-color="#294a3b"/><stop offset="1" stop-color="#0b211a"/></radialGradient><radialGradient id="rewardGloss" cx=".3" cy=".1" r=".9"><stop stop-color="#fff" stop-opacity=".12"/><stop offset=".65" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient><linearGradient id="rewardPaper" x2="1" y2="1"><stop stop-color="#fff9df"/><stop offset="1" stop-color="#e9d6a4"/></linearGradient></defs><circle cx="250" cy="250" r="248" fill="#0a1914"/><circle cx="250" cy="250" r="242" fill="url(#rewardMetal)"/><circle cx="250" cy="250" r="232" fill="#132b20"/>';
+    const step = 360 / sectors.length;
     sectors.forEach((s, k) => {
-      const a = ((-112.5 + k * 45) * Math.PI) / 180,
-        b = a + Math.PI / 4,
+      const a = ((-90 - step / 2 + k * step) * Math.PI) / 180,
+        b = a + (step * Math.PI) / 180,
         r = 223;
       const path = `M250 250 L${250 + r * Math.cos(a)} ${250 + r * Math.sin(a)} A${r} ${r} 0 0 1 ${250 + r * Math.cos(b)} ${250 + r * Math.sin(b)} Z`;
       const digital = s.type === "miss",
         label = digital ? "INSÍGNIA" : s.label,
         sub = digital ? "DIGITAL" : s.sub;
-      result += `<g data-sector="${escape(s.id)}" data-index="${k}"><path d="${path}" fill="${colors[k % colors.length]}" stroke="#e9d090" stroke-opacity=".45" stroke-width="1.2"/><g transform="rotate(${k * 45} 250 250)" fill="${digital ? "#d9e6c6" : "#fff3d1"}" font-family="Outfit,system-ui,sans-serif" text-anchor="middle"><text x="250" y="82" font-size="${label.length > 11 ? 16 : 18}" font-weight="800">${escape(label)}</text><text x="250" y="101" font-size="11.5" font-weight="600" letter-spacing=".6">${escape(sub.toUpperCase())}</text><circle cx="250" cy="151" r="29" fill="#071d16" fill-opacity=".30" stroke="#efdb9f" stroke-opacity=".25"/><g transform="translate(250 151) scale(.76)" fill="none" stroke="${digital ? "#bcd39c" : "#f8e3a9"}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${icons[s.id] || icons.badge}</g></g></g>`;
+      result += `<g data-sector="${escape(s.id)}" data-index="${k}"><path d="${path}" fill="${colors[k % colors.length]}" stroke="#e9d090" stroke-opacity=".45" stroke-width="1.2"/><g transform="rotate(${k * step} 250 250)" fill="${digital ? "#d9e6c6" : "#fff3d1"}" font-family="Outfit,system-ui,sans-serif" text-anchor="middle"><text x="250" y="82" font-size="${label.length > 11 ? 16 : 18}" font-weight="800">${escape(label)}</text><text x="250" y="101" font-size="${sub.length > 16 ? 7.5 : 10.5}" font-weight="600" letter-spacing=".6">${escape(sub.toUpperCase())}</text><circle cx="250" cy="151" r="29" fill="#071d16" fill-opacity=".30" stroke="#efdb9f" stroke-opacity=".25"/><g transform="translate(250 151) scale(.76)" fill="none" stroke="${digital ? "#bcd39c" : "#f8e3a9"}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${icons[s.icon || s.id] || icons.badge}</g></g></g>`;
     });
     result +=
       '<circle cx="250" cy="250" r="223" fill="url(#rewardGloss)" pointer-events="none"/>';
