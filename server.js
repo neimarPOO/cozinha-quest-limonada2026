@@ -21,7 +21,10 @@ const MIME_TYPES = {
   ".ico": "image/x-icon",
   ".txt": "text/plain; charset=utf-8",
 };
-function createServer() {
+function createServer(options = {}) {
+  const {fileStore} = require("./lib/file-store.cjs");
+  const {createControlHandler} = require("./lib/control-service.cjs");
+  const control = createControlHandler(options.store || fileStore(path.join(ROOT, ".runtime")), {secure:false, ...options.control});
   const compressed = new Map();
   let bytes = 0;
   async function representation(file, stats, encoding) {
@@ -61,6 +64,23 @@ function createServer() {
       res.writeHead(400);
       res.end("Endereço inválido");
       return;
+    }
+    if (reqPath.startsWith("/api/control/")) {
+      try {
+        const chunks=[]; let length=0;
+        for await (const chunk of req) { length+=chunk.length; if(length>2*1024*1024){res.writeHead(413);res.end();return;}chunks.push(chunk); }
+        const request = new Request("http://" + (req.headers.host || "localhost") + req.url, {
+          method:req.method, headers:req.headers,
+          ...(!["GET","HEAD"].includes(req.method)?{body:Buffer.concat(chunks)}:{}),
+        });
+        const response=await control(request);
+        res.writeHead(response.status,Object.fromEntries(response.headers));
+        res.end(Buffer.from(await response.arrayBuffer()));
+      } catch { res.writeHead(503);res.end("Controle indisponível"); }
+      return;
+    }
+    if (!["/", "/index.html", "/desktop.html", "/admin.html", "/favicon.ico"].includes(reqPath) && !/^\/(?:js|css|public)\//.test(reqPath)) {
+      res.writeHead(404);res.end("Arquivo indisponível");return;
     }
     if (!["GET", "HEAD"].includes(req.method)) {
       res.writeHead(405, { Allow: "GET, HEAD" });

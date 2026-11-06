@@ -1,5 +1,5 @@
-'use strict'; const KEY = 'limonada-cozinha-quest-v2'; const ADMIN_USER = 'es5@calabria.com.br'; const ADMIN_PASS = 'limonada2026'; const ADMIN_AUTH_KEY = 'lq_admin_session'; const ADMIN_TABS = ['dashboard', 'prizes', 'sessions', 'history', 'settings']; function isAdminAuthenticated() { return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' } function updateAdminUI() { let authed = isAdminAuthenticated(); document.body.classList.toggle('is-admin', authed) } let pendingAdminTab = 'dashboard'; function openAdminLogin(targetTab) { pendingAdminTab = targetTab || 'dashboard'; let em = $('adminEmailInput'), pw = $('adminPasswordInput'), err = $('adminLoginError'); if (em) em.value = ''; if (pw) pw.value = ''; if (err) err.style.display = 'none'; $('adminLoginModal').classList.remove('hidden'); setTimeout(() => { if (em) em.focus() }, 120) } function closeAdminLogin() { $('adminLoginModal').classList.add('hidden'); if ($('adminLoginError')) $('adminLoginError').style.display = 'none' } function handleAdminLogin() { let u = ($('adminEmailInput')?.value || '').trim(); let p = ($('adminPasswordInput')?.value || '').trim(); if (u === ADMIN_USER && p === ADMIN_PASS) { sessionStorage.setItem(ADMIN_AUTH_KEY, 'true'); updateAdminUI(); closeAdminLogin(); showTab(pendingAdminTab || 'dashboard') } else { let err = $('adminLoginError'); if (err) { err.textContent = 'Credenciais incorretas. Verifique o usuário e a senha.'; err.style.display = 'block' } let pInput = $('adminPasswordInput'); if (pInput) { pInput.value = ''; pInput.focus() } } } function handleAdminLogout() { if (confirm('Encerrar sessão de monitor e bloquear a Área Administrativa?')) { sessionStorage.removeItem(ADMIN_AUTH_KEY); updateAdminUI(); showTab('play') } } const RECIPES = [{ id: 'cookie', name: 'Cookies de chocolate', emoji: '🍪', desc: 'Misture, modele e asse a massa na sequência certa.', steps: [['Manteiga', 'Misturar', 'Misture a manteiga para começar a massa.'], ['Açúcar', 'Misturar', 'Incorpore o açúcar à manteiga.'], ['Ovo', 'Bater', 'Bata o ovo na mistura.'], ['Farinha', 'Peneirar', 'Peneire a farinha antes de adicionar.'], ['Chocolate', 'Picar', 'Pique o chocolate em pequenos pedaços.'], ['Massa', 'Modelar', 'Modele os cookies.'], ['Cookies', 'Assar', 'Asse a 180°C por 12 segundos na assadeira (minutos em segundos no arcade).']], oven: { temp: 180, time: 12 } }, { id: 'lemonade', name: 'Limonada especial', emoji: '🍋', desc: 'Higienize, corte, esprema e misture uma limonada.', steps: [['Limão', 'Lavar', 'Higienize os limões.'], ['Limão', 'Cortar', 'Corte os limões ao meio.'], ['Limão', 'Espremer', 'Extraia o suco.'], ['Água', 'Adicionar', 'Acrescente água filtrada.'], ['Açúcar', 'Misturar', 'Misture o açúcar.'], ['Gelo', 'Adicionar', 'Finalize com gelo.']] }, { id: 'brownie', name: 'Brownie de chocolate', emoji: '🍫', desc: 'Manteiga noisette, chocolate 70% e casquinha crocante.', steps: [['Fôrma e forno','Preparar','180 °C, fôrma quadrada untada'],['Manteiga noisette','Preparar','Doure a manteiga e derreta o chocolate'],['Ovos e açúcar','Bater','Creme fofo e volumoso'],['Massa','Misturar','Incorpore e peneire os secos'],['Brownie','Assar','20–24 minutos reais'],['Descanso','Servir','Espere pelo menos 2 horas reais']], oven:{temp:180,time:22} }]; const INGREDIENTS = ['Manteiga', 'Açúcar', 'Ovo', 'Farinha', 'Chocolate', 'Cookies', 'Limão', 'Água', 'Gelo', 'Fermento', 'Azeite', 'Alecrim', 'Focaccia', 'Leite', 'Sal', 'Morango']; const ACTIONS = ['Misturar', 'Bater', 'Peneirar', 'Picar', 'Modelar', 'Assar', 'Lavar', 'Cortar', 'Espremer', 'Adicionar', 'Sovar', 'Aquecer']; const PRIZES = PrizeCatalog.defaults(); function fresh() { return { day: 1, settings: { seconds: GameSettings.DEFAULT_SECONDS, dailyCap: 15, wheelScore: 500 }, prizes: structuredClone(PRIZES), prizeCatalogVersion: PrizeCatalog.VERSION, archivedPrizes: [], sessions: [], games: [], audit: [], nextId: 1 } } function load() { try { let s = JSON.parse(localStorage.getItem(KEY)); if (!(s && s.games && s.prizes && s.sessions && s.settings)) return fresh(); s.settings.seconds = GameSettings.normalizeDuration(s.settings.seconds); if (!('wheelScore' in s.settings)) s.settings.wheelScore = 500; return PrizeCatalog.migrate(s) } catch { return fresh() } } let db = load(); try { localStorage.setItem(KEY, JSON.stringify(db)) } catch {} function save() { try { localStorage.setItem(KEY, JSON.stringify(db)) } catch (e) { alert('Não foi possível salvar. Exporte um backup e verifique o armazenamento do navegador.') } } const $ = id => document.getElementById(id), fmt = n => String(n).padStart(2, '0'); function audit(type, detail) { db.audit.push({ time: new Date().toISOString(), type, detail }) } function usedToday(id) { return db.games.filter(g => g.day === db.day && g.prize === id && g.status !== 'cancelado').length } function dailyPhysical() { return db.games.filter(g => g.day === db.day && g.prize && g.status !== 'cancelado').length } function available(p) { return Math.max(0, Math.min(p.qty - db.games.filter(g => g.prize === p.id && g.status !== 'cancelado').length, p.perDay - usedToday(p.id))) } function freeSessions() { return db.sessions.filter(s => s.day === db.day && s.capacity > db.games.filter(g => g.sessionId === s.id && g.status !== 'cancelado').length).sort((a, b) => a.time.localeCompare(b.time)) } function availablePrizes() { return db.prizes.filter(p => available(p) > 0 && (p.id !== 'ticket' || freeSessions().length > 0)) } function showTab(tab) { if (ADMIN_TABS.includes(tab) && !isAdminAuthenticated()) { openAdminLogin(tab); return } if (current && tab !== 'play' && !current.finished) { if (!confirm('Uma partida está em andamento. Encerrar a tentativa?')) return; finish(false) } document.querySelectorAll('.tab[data-tab]').forEach(e => e.classList.toggle('active', e.dataset.tab === tab)); document.querySelectorAll('.view').forEach(e => e.classList.toggle('active', e.id === tab)); renderAll() } document.querySelectorAll('.tab[data-tab]').forEach(e => e.onclick = () => showTab(e.dataset.tab)); let current = null, timerId = null, three = null, visual = {}, sceneHooks = null;
-    function renderRecipes() { $('recipeList').innerHTML = RECIPES.map(r => `<button class="recipe" data-recipe="${r.id}" aria-label="Jogar ${r.name}"><img class="recipe-art" src="public/${({ cookie: 'cookies.png', lemonade: 'limonada.png', brownie: 'brownie.svg' }[r.id] || r.id+'.png')}" alt="" width="400" height="267"><span class="recipe-kicker">${r.id === 'cookie' ? '01 · DOCE CONQUISTA' : r.id === 'lemonade' ? '02 · ENERGIA CÍTRICA' : '03 · MÃO NA MASSA'}</span><b>${r.name}</b><p class="muted">${r.desc}</p><span class="badge">${r.steps.length} etapas <span class="recipe-arrow" aria-hidden="true"></span></span></button>`).join(''); document.querySelectorAll('[data-recipe]').forEach(e => e.onclick = () => startGame(e.dataset.recipe)) } function startGame(id) { if(window.GameLoader){ void GameLoader.start(id); return } if (window.CookieGame && window.RecipeCatalog?.[id]) { CookieGame.start(id); return } let r = RECIPES.find(x => x.id === id); current = { recipe: r, step: 0, score: 0, wrong: 0, ingredient: null, action: null, remaining: db.settings.seconds, finished: false, gameId: null }; $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('wheelArea').classList.add('hidden'); $('game').classList.remove('hidden'); $('recipeName').textContent = r.emoji + ' ' + r.name; updateStep(); updateScene('start'); clearInterval(timerId); timerId = setInterval(() => { if (!current || current.finished) return; current.remaining--; renderTimer(); if (current.remaining <= 0) finish(false) }, 1000); renderTimer() } function renderTimer() { if (!current) return; $('timer').textContent = `${fmt(Math.floor(current.remaining / 60))}:${fmt(current.remaining % 60)}`; $('timer').style.color = current.remaining <= 20 ? '#ff8a7e' : '#ffc95e' } function updateStep() {
+'use strict'; const KEY = 'limonada-cozinha-quest-v2'; const ADMIN_AUTH_KEY = 'lq_admin_session'; const ADMIN_TABS = ['dashboard', 'prizes', 'sessions', 'history', 'settings']; function isAdminAuthenticated() { return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' } function updateAdminUI() { let authed = isAdminAuthenticated(); document.body.classList.toggle('is-admin', authed) } let pendingAdminTab = 'dashboard'; function openAdminLogin(targetTab) { pendingAdminTab = targetTab || 'dashboard'; let em = $('adminEmailInput'), pw = $('adminPasswordInput'), err = $('adminLoginError'); if (em) em.value = ''; if (pw) pw.value = ''; if (err) err.style.display = 'none'; $('adminLoginModal').classList.remove('hidden'); setTimeout(() => { if (em) em.focus() }, 120) } function closeAdminLogin() { $('adminLoginModal').classList.add('hidden'); if ($('adminLoginError')) $('adminLoginError').style.display = 'none' } async function handleAdminLogin() { /* A sessão é validada pelo serviço do evento. */ } function handleAdminLogout() { if (confirm('Encerrar sessão de monitor e bloquear a Área Administrativa?')) { sessionStorage.removeItem(ADMIN_AUTH_KEY); updateAdminUI(); showTab('play') } } const RECIPES = [{ id: 'cookie', name: 'Cookies de chocolate', emoji: '🍪', desc: 'Misture, modele e asse a massa na sequência certa.', steps: [['Manteiga', 'Misturar', 'Misture a manteiga para começar a massa.'], ['Açúcar', 'Misturar', 'Incorpore o açúcar à manteiga.'], ['Ovo', 'Bater', 'Bata o ovo na mistura.'], ['Farinha', 'Peneirar', 'Peneire a farinha antes de adicionar.'], ['Chocolate', 'Picar', 'Pique o chocolate em pequenos pedaços.'], ['Massa', 'Modelar', 'Modele os cookies.'], ['Cookies', 'Assar', 'Asse a 180°C por 12 segundos na assadeira (minutos em segundos no arcade).']], oven: { temp: 180, time: 12 } }, { id: 'lemonade', name: 'Limonada especial', emoji: '🍋', desc: 'Higienize, corte, esprema e misture uma limonada.', steps: [['Limão', 'Lavar', 'Higienize os limões.'], ['Limão', 'Cortar', 'Corte os limões ao meio.'], ['Limão', 'Espremer', 'Extraia o suco.'], ['Água', 'Adicionar', 'Acrescente água filtrada.'], ['Açúcar', 'Misturar', 'Misture o açúcar.'], ['Gelo', 'Adicionar', 'Finalize com gelo.']] }, { id: 'brownie', name: 'Brownie de chocolate', emoji: '🍫', desc: 'Manteiga noisette, chocolate 70% e casquinha crocante.', steps: [['Fôrma e forno','Preparar','180 °C, fôrma quadrada untada'],['Manteiga noisette','Preparar','Doure a manteiga e derreta o chocolate'],['Ovos e açúcar','Bater','Creme fofo e volumoso'],['Massa','Misturar','Incorpore e peneire os secos'],['Brownie','Assar','20–24 minutos reais'],['Descanso','Servir','Espere pelo menos 2 horas reais']], oven:{temp:180,time:22} }]; const INGREDIENTS = ['Manteiga', 'Açúcar', 'Ovo', 'Farinha', 'Chocolate', 'Cookies', 'Limão', 'Água', 'Gelo', 'Fermento', 'Azeite', 'Alecrim', 'Focaccia', 'Leite', 'Sal', 'Morango']; const ACTIONS = ['Misturar', 'Bater', 'Peneirar', 'Picar', 'Modelar', 'Assar', 'Lavar', 'Cortar', 'Espremer', 'Adicionar', 'Sovar', 'Aquecer']; const PRIZES = PrizeCatalog.defaults(); function fresh() { return { day: 1, settings: { seconds: GameSettings.DEFAULT_SECONDS, dailyCap: 15, wheelScore: 500, wheelMode: 'score' }, prizes: structuredClone(PRIZES), prizeCatalogVersion: PrizeCatalog.VERSION, archivedPrizes: [], sessions: [], games: [], audit: [], nextId: 1 } } function load() { try { let s = JSON.parse(localStorage.getItem(KEY)); if (!(s && s.games && s.prizes && s.sessions && s.settings)) return fresh(); s.settings = GameSettings.normalizeSettings(s.settings); if (!('wheelScore' in s.settings)) s.settings.wheelScore = 500; return PrizeCatalog.migrate(s) } catch { return fresh() } } let db = load(); try { localStorage.setItem(KEY, JSON.stringify(db)) } catch {} function save() { try { localStorage.setItem(KEY, JSON.stringify(db)) } catch {} return window.ControlSync ? ControlSync.submit(db) : Promise.resolve(false) } const $ = id => document.getElementById(id), fmt = n => String(n).padStart(2, '0'); function audit(type, detail) { db.audit.push({ time: new Date().toISOString(), type, detail }) } function usedToday(id) { return db.games.filter(g => g.day === db.day && g.prize === id && g.status !== 'cancelado').length } function dailyPhysical() { return db.games.filter(g => g.day === db.day && g.prize && g.status !== 'cancelado').length } function available(p) { return Math.max(0, Math.min(p.qty - db.games.filter(g => g.prize === p.id && g.status !== 'cancelado').length, p.perDay - usedToday(p.id))) } function freeSessions() { return db.sessions.filter(s => s.day === db.day && s.capacity > db.games.filter(g => g.sessionId === s.id && g.status !== 'cancelado').length).sort((a, b) => a.time.localeCompare(b.time)) } function availablePrizes() { return db.prizes.filter(p => available(p) > 0 && (p.id !== 'ticket' || freeSessions().length > 0)) } function showTab(tab) { if (ADMIN_TABS.includes(tab) && !isAdminAuthenticated()) { openAdminLogin(tab); return } if (current && tab !== 'play' && !current.finished) { if (!confirm('Uma partida está em andamento. Encerrar a tentativa?')) return; finish(false) } document.querySelectorAll('.tab[data-tab]').forEach(e => e.classList.toggle('active', e.dataset.tab === tab)); document.querySelectorAll('.view').forEach(e => e.classList.toggle('active', e.id === tab)); renderAll() } document.querySelectorAll('.tab[data-tab]').forEach(e => e.onclick = () => showTab(e.dataset.tab)); let current = null, timerId = null, three = null, visual = {}, sceneHooks = null;
+    function renderRecipes() { $('recipeList').innerHTML = RECIPES.map(r => `<button class="recipe" data-recipe="${r.id}" aria-label="Jogar ${r.name}"><img class="recipe-art" src="public/${({ cookie: 'cookies.png', lemonade: 'limonada.png', brownie: 'brownie.svg' }[r.id] || r.id+'.png')}" alt="" width="400" height="267"><span class="recipe-kicker">${r.id === 'cookie' ? '01 · DOCE CONQUISTA' : r.id === 'lemonade' ? '02 · ENERGIA CÍTRICA' : '03 · MÃO NA MASSA'}</span><b>${r.name}</b><p class="muted">${r.desc}</p><span class="badge">${r.steps.length} etapas <span class="recipe-arrow" aria-hidden="true"></span></span></button>`).join(''); document.querySelectorAll('[data-recipe]').forEach(e => e.onclick = () => startGame(e.dataset.recipe)) } async function startGame(id) { if (!(await ControlSync.refresh())) { alert("Conecte-se ao evento antes de iniciar a receita."); return; } if(window.GameLoader){ void GameLoader.start(id); return } if (window.CookieGame && window.RecipeCatalog?.[id]) { CookieGame.start(id); return } let r = RECIPES.find(x => x.id === id); current = { recipe: r, step: 0, score: 0, wrong: 0, ingredient: null, action: null, remaining: db.settings.seconds, finished: false, gameId: null }; $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('wheelArea').classList.add('hidden'); $('game').classList.remove('hidden'); $('recipeName').textContent = r.emoji + ' ' + r.name; updateStep(); updateScene('start'); clearInterval(timerId); timerId = setInterval(() => { if (!current || current.finished) return; current.remaining--; renderTimer(); if (current.remaining <= 0) finish(false) }, 1000); renderTimer() } function renderTimer() { if (!current) return; $('timer').textContent = `${fmt(Math.floor(current.remaining / 60))}:${fmt(current.remaining % 60)}`; $('timer').style.color = current.remaining <= 20 ? '#ff8a7e' : '#ffc95e' } function updateStep() {
       if (!current) return; let r = current.recipe, step = r.steps[current.step]; $('stepTitle').textContent = `Etapa ${current.step + 1}: ${step[0]}`; $('stepHint').textContent = step[2]; $('stepCount').textContent = `${current.step + 1} de ${r.steps.length}`; $('progressBar').style.width = `${current.step / r.steps.length * 100}%`; $('score').textContent = `${current.score} pontos`; $('feedback').textContent = three ? 'Arraste o ingrediente correto até a tigela.' : 'Selecione o ingrediente e o preparo correspondente.'; if (three) {
         let dest = step[1] === 'Lavar' ? 'pia' : step[1] === 'Assar' ? 'assadeira' : (step[1] === 'Cortar' || step[1] === 'Picar') ? 'tábua' : (step[1] === 'Modelar' || step[1] === 'Sovar') ? 'massa na tigela' : 'tigela';
         let meta = step[1] === 'Assar' && r.oven ? ` • meta ${r.oven.temp}°C / ${r.oven.time} seg` : '';
@@ -493,8 +493,8 @@ function renderResultCard(data) {
     if (heroEl) heroEl.innerHTML = CHEF_HERO_SVG;
     if (titleEl) titleEl.textContent = data.won ? 'Receita Concluída!' : 'Tempo Esgotado!';
     if (descEl) descEl.textContent = data.won
-      ? `Receita concluída, mas a roleta libera a partir de ${data.meta} pontos.`
-      : `Você fez ${data.score} pontos. A roleta da bancada libera a partir de ${data.meta} pontos.`;
+      ? `Receita concluída. Regra da roleta: ${GameSettings.wheelRequirement(db.settings)}.`
+      : `Você fez ${data.score} pontos. Para liberar a roleta: ${GameSettings.wheelRequirement(db.settings)}.`;
     if (awardBox) awardBox.classList.remove('hidden');
     if (iconEl) iconEl.innerHTML = DIGITAL_ICON_SVG;
     if (awardTitle) awardTitle.textContent = 'Passaporte de Aprendiz';
@@ -508,18 +508,18 @@ function renderResultCard(data) {
   }
 }
 
-    function finish(won) {
+    async function finish(won) {
       if (!current || current.finished) return;
       const cookieDetails = window.CookieGame?.active ? CookieGame.stop() : null;
       current.finished = true; clearInterval(timerId); sceneHooks = null;
       if (three && three.reset) three.reset();
-      let id = db.nextId++,
+      let id = Date.now() * 1000 + Math.floor(random() * 1000),
         game = { id, day: db.day, time: new Date().toISOString(), recipe: current.recipe.name, score: current.score, seconds: db.settings.seconds - current.remaining, completed: won, prize: null, sessionId: null, status: won ? 'aguardando_roleta' : 'sem_premio' };
       if (cookieDetails) { game.recipeDetails = cookieDetails; if(current.recipe.id === 'cookie') game.cookieDetails = cookieDetails; }
       db.games.push(game); current.gameId = id;
-      let meta = Math.max(0, Number(db.settings.wheelScore) || 0), unlock = current.score >= meta;
+      let meta = Math.max(0, Number(db.settings.wheelScore) || 0), unlock = GameSettings.wheelEligible(db.settings, game);
       if (!unlock) game.status = 'sem_premio'; else game.status = 'aguardando_roleta';
-      save();
+      if (!(await save())) unlock = false;
       $('game').classList.add('hidden');
       $('end').classList.remove('hidden');
       $('award').classList.add('hidden');
@@ -560,10 +560,16 @@ function renderResultCard(data) {
       return { prize, session, targetIndex, isRespin: ROLET_SECTORS[targetIndex].type === 'respin', sector: ROLET_SECTORS[targetIndex].id };
     }
 
-    function spin() {
+    async function spin() {
+      if (!(await ControlSync.refresh())) { alert("Conecte-se ao evento para girar a roleta."); return; }
       if (!current || !current.finished) return;
       let game = db.games.find(g => g.id === current.gameId);
       if (!game || game.status !== 'aguardando_roleta') return;
+      if (!GameSettings.wheelEligible(db.settings, game)) {
+        $('wheelArea').classList.add('hidden');
+        alert('A regra do evento mudou. Para liberar a roleta: ' + GameSettings.wheelRequirement(db.settings) + '.');
+        return;
+      }
       if (isRoletaSpinning) return;
       $('spinBtn').disabled = true;
       $('spinBtn').textContent='Revelando sua recompensa…';
@@ -573,7 +579,7 @@ function renderResultCard(data) {
       let prize = pick.prize, session = pick.session, targetIndex = pick.targetIndex, isRespin = pick.isRespin;
       if (isRespin) current.hadRespin = true;
       let missCopy = prize ? null : (MISS_COPY[pick.sector] || MISS_COPY.miss_2);
-      spinWheelPhysics(targetIndex, (idx) => {
+      spinWheelPhysics(targetIndex, async (idx) => {
         $("spinBtn").textContent="RECOMPENSA REVELADA";
         if (isRespin) {
           WheelDesign.state("again");
@@ -585,16 +591,16 @@ function renderResultCard(data) {
         }
         if (prize) {
           game.prize = prize.id; game.sessionId = session?.id || null; game.status = 'reservado';
-          audit('premio_reservado', `Partida ${game.id}: ${prize.name} (setor ${pick.sector})`);
+          audit('premio_reservado', `Partida ${game.id}: ${escapeAdmin(prize.name)} (setor ${pick.sector})`);
           playRoletaJingle(true);
-          if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = `🎉 <b>PARABÉNS!</b> Você conquistou: <b>${prize.name}</b>!`;
+          if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = `🎉 <b>PARABÉNS!</b> Você conquistou: <b>${escapeAdmin(prize.name)}</b>!`;
         } else {
           game.status = 'digital'; game.missSector = pick.sector;
           audit('roleta_digital', `Partida ${game.id}: setor ${pick.sector}`);
           playRoletaJingle(false);
           if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = missCopy.status;
         }
-        save();
+        if (!(await save())) { $('spinBtn').disabled = false; $('spinBtn').textContent = 'TENTAR NOVAMENTE'; return; }
         setTimeout(() => {
           $('wheelArea').classList.add('hidden');
           let codeStr = prize 
@@ -627,22 +633,21 @@ function renderResultCard(data) {
     $('wheelArea').addEventListener('keydown' ,event=>{if(event.key==='Tab'&&!$('wheelArea').classList.contains('hidden')){event.preventDefault();if(!$('spinBtn').disabled)$('spinBtn').focus();}});
     document.querySelector('.reward-action-slot').append($('wheelArea').querySelector('.roleta-foot'));
     $('spinBtn').onclick = spin; $('nextBtn').onclick = () => { if (current) { let g = db.games.find(x => x.id === current.gameId); if (g?.status === 'aguardando_roleta') { alert('Gire a roleta antes de iniciar outra partida.'); return } } current = null; $('end').classList.add('hidden'); $('intro').classList.remove('hidden'); renderAll() };
-    function renderAll() { buildRoletaSvg(); $('currentDay').value = db.day; $('durationSetting').value = db.settings.seconds; $('dailyCap').value = db.settings.dailyCap; $('wheelScore').value = db.settings.wheelScore; let f = $('dayFilter'); if (f.options.length < 22) for (let i = 1; i <= 21; i++)f.add(new Option(`Dia ${i}`, String(i))); renderStats(); renderPrizes(); renderSessions(); renderHistory() } function renderStats() { let filter = $('dayFilter').value, items = db.games.filter(g => filter === 'all' || g.day === Number(filter)), physical = items.filter(g => g.prize), delivered = items.filter(g => g.status === 'entregue'); $('stats').innerHTML = [['Partidas', items.length], ['Receitas concluídas', items.filter(g => g.completed).length], ['Prêmios físicos', physical.length], ['Prêmios entregues', delivered.length]].map(([a, b]) => `<div class="stat"><b>${b}</b><span>${a}</span></div>`).join(''); $('stockSummary').innerHTML = db.prizes.map(p => `<p><b>${p.name}</b> — saldo total: ${Math.max(0, p.qty - db.games.filter(g => g.prize === p.id && g.status !== 'cancelado').length)} • disponível hoje: ${available(p)}</p>`).join(''); $('latest').innerHTML = tableGames(items.slice(-6).reverse()) } function tableGames(arr) { return `<table><thead><tr><th>Código</th><th>Dia</th><th>Receita</th><th>Pontos</th><th>Prêmio</th><th>Status</th><th>Ação</th></tr></thead><tbody>${arr.map(g => `<tr><td>LQ-${fmt(g.day)}-${String(g.id).padStart(5, '0')}</td><td>${g.day}</td><td>${g.recipe}</td><td>${g.score}</td><td>${[...db.prizes, ...(db.archivedPrizes || [])].find(p => p.id === g.prize)?.name || 'Digital / nenhum'}</td><td>${g.status}</td><td>${g.status === 'reservado' ? `<button class="btn" data-deliver="${g.id}">Entregar</button> <button class="btn" data-cancel="${g.id}">Cancelar</button>` : '—'}</td></tr>`).join('')}</tbody></table>` } function renderHistory() { $('historyTable').innerHTML = tableGames([...db.games].reverse()); document.querySelectorAll('[data-deliver]').forEach(e => e.onclick = () => { let g = db.games.find(x => x.id === Number(e.dataset.deliver)); if (g && g.status === 'reservado') { g.status = 'entregue'; audit('entrega', `Partida ${g.id}`); save(); renderAll() } }); document.querySelectorAll('[data-cancel]').forEach(e => e.onclick = () => { let g = db.games.find(x => x.id === Number(e.dataset.cancel)); if (g && g.status === 'reservado' && confirm('Cancelar reserva e devolver a disponibilidade ao estoque?')) { g.status = 'cancelado'; audit('cancelamento', `Partida ${g.id}`); save(); renderAll() } }) } function renderPrizes() { $('prizeTable').innerHTML = `<table><thead><tr><th>Prêmio</th><th>Estoque total</th><th>Limite/dia</th><th>Disponível hoje</th><th>Ajustar limite</th></tr></thead><tbody>${db.prizes.map(p => `<tr><td>${p.name}</td><td>${p.qty}</td><td>${p.perDay}</td><td>${available(p)}</td><td><input type="number" min="0" value="${p.perDay}" style="max-width:85px" data-limit="${p.id}"></td></tr>`).join('')}</tbody></table>`; $('prizeSelect').innerHTML = db.prizes.map(p => `<option value="${p.id}">${p.name}</option>`).join(''); document.querySelectorAll('[data-limit]').forEach(e => e.onchange = () => { let p = db.prizes.find(x => x.id === e.dataset.limit); p.perDay = Math.max(0, Number(e.value) || 0); audit('limite', `${p.id} = ${p.perDay}`); save(); renderAll() }) } function renderSessions() { $('sessionTable').innerHTML = `<table><thead><tr><th>Dia</th><th>Hora</th><th>Duração</th><th>Vagas</th><th>Ocupadas</th><th>Ação</th></tr></thead><tbody>${db.sessions.slice().sort((a, b) => a.day - b.day || a.time.localeCompare(b.time)).map(s => { let used = db.games.filter(g => g.sessionId === s.id && g.status !== 'cancelado').length; return `<tr><td>${s.day}</td><td>${s.time}</td><td>${s.duration} min</td><td>${s.capacity}</td><td>${used}</td><td><button class="btn" data-remove-session="${s.id}" ${used ? 'disabled' : ''}>Excluir</button></td></tr>` }).join('')}</tbody></table>`; document.querySelectorAll('[data-remove-session]').forEach(e => e.onclick = () => { if (confirm('Excluir sessão sem reservas?')) { db.sessions = db.sessions.filter(s => s.id !== e.dataset.removeSession); save(); renderAll() } }) } $('restockBtn').onclick = () => { let p = db.prizes.find(x => x.id === $('prizeSelect').value), n = Number($('addStock').value); if (!Number.isInteger(n) || n <= 0) return alert('Informe uma quantidade positiva.'); p.qty += n; audit('reposicao', `${p.id} +${n}`); save(); renderAll() }; $('addSessionBtn').onclick = () => { let day = Number($('sessionDay').value), time = $('sessionTime').value, capacity = Number($('sessionSeats').value), duration = Number($('sessionDuration').value); if (!Number.isInteger(day) || day < 1 || day > 21 || !time || capacity < 1 || duration < 10) return alert('Verifique os dados da sessão.'); if (db.sessions.some(s => s.day === day && s.time === time)) return alert('Já existe uma sessão nesse dia e horário.'); db.sessions.push({ id: 'S' + Date.now() + '-' + Math.floor(random() * 100000), day, time, capacity, duration }); audit('sessao', `Dia ${day} ${time} ${capacity} vagas`); save(); renderAll() }; $('currentDay').onchange = e => { let d = Number(e.target.value); if (d >= 1 && d <= 21) { db.day = d; audit('dia', `Alterado para ${d}`); save(); renderAll() } }; $('dayFilter').onchange = renderStats; $('saveSettings').onclick = () => { let seconds = Number($('durationSetting').value), cap = Number($('dailyCap').value), meta = Number($('wheelScore').value); if (!GameSettings.isValidDuration(seconds) || cap < 0 || meta < 0 || meta > 1000) return alert('Valores inválidos.'); db.settings = { seconds, dailyCap: cap, wheelScore: meta }; audit('configuracoes', JSON.stringify(db.settings)); save(); renderAll(); alert('Configurações salvas.') }; function download(name, content, type) { let a = document.createElement('a'), url = URL.createObjectURL(new Blob([content], { type })); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) } $('exportJson').onclick = () => download('limonada-backup-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(db, null, 2), 'application/json'); $('exportCsv').onclick = () => { let rows = [['codigo', 'dia', 'data_hora', 'receita', 'pontos', 'concluida', 'premio', 'sessao', 'status'], ...db.games.map(g => [g.id, g.day, g.time, g.recipe, g.score, g.completed, g.prize || '', g.sessionId || '', g.status])]; download('limonada-partidas.csv', '\ufeff' + rows.map(r => r.map(x => '"' + String(x).replaceAll('"', '""') + '"').join(';')).join('\r\n'), 'text/csv;charset=utf-8') }; $('importBtn').onclick = () => $('importFile').click(); $('importFile').onchange = async e => { let file = e.target.files[0]; if (!file) return; try { let obj = JSON.parse(await file.text()); if (!obj.games || !obj.prizes || !obj.sessions || !obj.settings) throw Error('Formato inválido'); if (confirm('Substituir todos os dados locais pelo backup selecionado?')) { obj.settings.seconds = GameSettings.normalizeDuration(obj.settings.seconds); db = PrizeCatalog.migrate(obj); save(); renderAll(); alert('Backup importado.') } } catch (err) { alert('Falha na importação: ' + err.message) } e.target.value = '' }; $('resetBtn').onclick = () => { if (prompt('Digite APAGAR para eliminar os dados:') === 'APAGAR') { db = fresh(); save(); renderAll() } };
-    // Visualização: usa Three.js quando a biblioteca estiver acessível; a lógica do jogo é independente do 3D.
+        // Visualização: usa Three.js quando a biblioteca estiver acessível; a lógica do jogo é independente do 3D.
     // Cena aprimorada: materiais PBR, reflexos de ambiente, texturas procedurais, sombras suaves,
     // vapor sobre a tigela e objetos arrastáveis (ingredientes, faca e colher) via raycasting.
     function init3D() {
       if (typeof THREE === 'undefined') { fallback(); return }
       try {
         let root = $('threeRoot');
-        const mobileQuality = matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 600;
+        // O jogo é exclusivo para desktop.
 
         /* ---------- Pré-validação silenciosa de WebGL para evitar spam de erros do Three.js ---------- */
         function probeWebGLContext() {
           if (typeof window === 'undefined' || !window.WebGLRenderingContext) return null;
           try {
             const canvas = document.createElement('canvas');
-            const opts = { antialias: !mobileQuality, alpha: false, powerPreference: mobileQuality ? 'low-power' : 'default', failIfMajorPerformanceCaveat: false };
+            const opts = { antialias: true, alpha: false, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false };
             const gl = canvas.getContext('webgl2', opts) ||
                        canvas.getContext('webgl', opts) ||
                        canvas.getContext('experimental-webgl', opts);
@@ -664,7 +669,7 @@ function renderResultCard(data) {
           renderer = new THREE.WebGLRenderer({
             canvas: probe.canvas,
             context: probe.gl,
-            antialias: !mobileQuality,
+            antialias: true,
             alpha: false,
             powerPreference: 'default'
           });
@@ -705,8 +710,8 @@ function renderResultCard(data) {
           requestAnimationFrame(frame)
         }, false);
         renderer.setSize(root.clientWidth || 960, root.clientHeight || 560);
-        renderer.setPixelRatio(Math.min(devicePixelRatio, mobileQuality ? 1 : 1.75));
-        renderer.shadowMap.enabled = !mobileQuality;
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+        renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.06;
@@ -740,7 +745,7 @@ function renderResultCard(data) {
         function canvasTex(paint, size = 512, rx = 1, ry = 1) {
           let cv = document.createElement('canvas'); cv.width = cv.height = size; paint(cv.getContext('2d'), size);
           let t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
-          t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = mobileQuality ? 1 : 8; return t
+          t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t
         }
         function woodPaint(g, s, base = '#916134') {
           g.fillStyle = base; g.fillRect(0, 0, s, s);
@@ -1253,7 +1258,7 @@ function renderResultCard(data) {
           let p = dec.then(o => {
             let t = new THREE.Texture(o.src);
             URL.revokeObjectURL(o.url);
-            t.flipY = false; t.colorSpace = colorSpace; t.needsUpdate = true; t.anisotropy = mobileQuality ? 1 : 4;
+            t.flipY = false; t.colorSpace = colorSpace; t.needsUpdate = true; t.anisotropy = 4;
             let smp = info.sampler != null ? G.json.samplers[info.sampler] : null;
             let wrap = v => v === 33071 ? THREE.ClampToEdgeWrapping : v === 33648 ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
             t.wrapS = smp ? wrap(smp.wrapS) : THREE.RepeatWrapping;
@@ -2026,7 +2031,6 @@ function renderResultCard(data) {
           if (glLost) return;
           requestAnimationFrame(frame);
           if (document.hidden || window.CookieGame?.active || !current || current.finished || !root.clientWidth) { last = now; return }
-          if (mobileQuality && now - last < 1000 / 30) return;
           const elapsed = Math.max(0, (now - last) / 1000);
           let dt = Math.min(.05, elapsed); last = now; T += dt;
           if (drag && dragPointer && portraitViewport) {
@@ -2335,8 +2339,8 @@ function renderResultCard(data) {
             s.m.scale.setScalar(.6 + s.ph * .9)
           });
           if (ring.visible) ring.scale.setScalar(ringBase * (1 + Math.sin(T * 5) * .05));
-          camera.position.x += (camBase.x + (mobileQuality ? 0 : ndc.x * .4) - camera.position.x) * Math.min(1, dt * 3);
-          camera.position.y += (camBase.y + (mobileQuality ? 0 : ndc.y * .22) - camera.position.y) * Math.min(1, dt * 3);
+          camera.position.x += (camBase.x + (ndc.x * .4) - camera.position.x) * Math.min(1, dt * 3);
+          camera.position.y += (camBase.y + (ndc.y * .22) - camera.position.y) * Math.min(1, dt * 3);
           camera.lookAt(0, .55, 0);
           if (sceneVisible && (drag || now >= scrollingUntil)) renderer.render(scene, camera)
         }
@@ -2412,4 +2416,4 @@ function renderResultCard(data) {
     if ($('adminLoginForm')) $('adminLoginForm').onsubmit = e => { e.preventDefault(); handleAdminLogin() };
     window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('adminLoginModal').classList.contains('hidden')) closeAdminLogin() });
     updateAdminUI();
-    renderRecipes(); renderAll();
+    document.addEventListener("DOMContentLoaded", () => { renderRecipes(); renderAll(); });

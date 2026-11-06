@@ -16,7 +16,28 @@
     const n = Number(value);
     return Number.isInteger(n) && n >= MIN_SECONDS && n <= MAX_SECONDS;
   }
+  function normalizeSettings(settings = {}) {
+    const score = Number(settings.wheelScore);
+    return {
+      ...settings,
+      seconds: normalizeDuration(settings.seconds),
+      dailyCap: Number.isInteger(Number(settings.dailyCap)) && Number(settings.dailyCap) >= 0 ? Number(settings.dailyCap) : 15,
+      wheelScore: Number.isFinite(score) ? Math.max(0, Math.min(1000, Math.round(score))) : 500,
+      wheelMode: settings.wheelMode === "completion" ? "completion" : "score",
+    };
+  }
+  function wheelEligible(settings, game) {
+    const rule = normalizeSettings(settings);
+    return rule.wheelMode === "completion"
+      ? game.completed === true
+      : Number.isFinite(Number(game.score)) && Number(game.score) >= rule.wheelScore;
+  }
+  function wheelRequirement(settings) {
+    const rule = normalizeSettings(settings);
+    return rule.wheelMode === "completion" ? "Concluir a receita inteira" : `${rule.wheelScore} pontos`;
+  }
   return {
+    normalizeSettings, wheelEligible, wheelRequirement,
     MIN_SECONDS,
     MAX_SECONDS,
     DEFAULT_SECONDS,

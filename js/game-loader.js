@@ -8,7 +8,7 @@ window.GameLoader = (() => {
     "js/kitchen-environment.js?v=3",
     "js/kitchen-assets.js?v=3",
     "js/kitchen-lighting.js?v=2",
-    "js/cookie-scene.js?v=10",
+    "js/cookie-scene.js?v=11",
     "js/recipe-scene.js?v=4",
     "js/brownie-scene.js?v=1",
     "js/recipe-notebook.js?v=2",

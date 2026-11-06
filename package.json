@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "build": "echo Site pronto para publicacao",
+    "build": "node scripts/build.cjs",
     "test": "node tests/run.cjs",
-    "test:server": "node --test tests/server.test.cjs"
+    "test:server": "node --test tests/server.test.cjs",
+    "test:control": "node --test tests/control-service.test.cjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.13"
+  }
 }

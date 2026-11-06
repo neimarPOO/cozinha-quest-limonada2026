@@ -9,8 +9,9 @@
     unit.textContent = 'pts';
     document.getElementById('questScore').append(unit);
     document.getElementById('questRecipes').textContent = `${new Set(completed.map(game => game.recipe)).size} / ${RECIPES.length}`;
-    document.getElementById('questGoal').textContent = `${db.settings.wheelScore.toLocaleString('pt-BR')} pts`;
+    document.getElementById('questGoal').textContent = GameSettings.wheelRequirement(db.settings);
   }
+  document.addEventListener("control-state", updateQuestProgress);
   updateQuestProgress();
   // Atualiza quando o jogador retorna à seleção, inclusive após uma partida.
   new MutationObserver(updateQuestProgress).observe(document.getElementById('intro'), { attributes: true, attributeFilter: ['class'] });

@@ -1,0 +1,25 @@
+/* Painel móvel: apenas formulários e dados, sem imagens ou recursos 3D. */
+body.admin-only { background: radial-gradient(ellipse at top, #233c2d, #0b1711 70%); min-height:100dvh; }
+.admin-only .shell { max-width:1100px; padding:18px 14px 32px; }
+.admin-only .top { align-items:flex-start; flex-wrap:wrap; gap:10px; }
+.admin-only .logo { font-size:21px; }
+.admin-only .sub { font-size:11px; letter-spacing:2px; }
+.admin-only .sync-status { font-size:12px; color:var(--muted); }
+.admin-only .tabs { position:sticky; top:0; z-index:10; background:#0d1d16f5; display:flex; overflow-x:auto; flex-wrap:nowrap; padding:10px 0; gap:7px; }
+.admin-only .tab { flex:0 0 auto; min-height:44px; font-size:13px; padding:10px 13px; }
+.admin-only .view .panel { padding:20px 16px; }
+.admin-only .formrow { grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); }
+.admin-only input, .admin-only select { font-size:16px; min-height:46px; }
+.admin-only .btn { min-height:44px; }
+.admin-only label { display:block; margin-bottom:7px; }
+.admin-only small { display:block; line-height:1.5; color:var(--muted); margin-top:8px; }
+.admin-only .tablewrap { overflow:auto; max-width:100%; }
+.admin-only th,.admin-only td { padding:12px 10px; }
+.admin-only td:first-child { min-width:150px; white-space:normal; }
+.admin-only .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.admin-only .admin-modal-overlay { position:static; min-height:65dvh; padding:20px 0; background:none; backdrop-filter:none; display:flex; align-items:center; justify-content:center; }
+.admin-only .admin-modal-card { width:100%; max-width:430px; }
+.admin-only .admin-modal-title { font-size:22px; }
+.admin-only [hidden], .admin-only .hidden { display:none!important; }
+.admin-only .foot { line-height:1.6; font-size:12px; }
+@media(max-width:500px){.admin-only .formrow{grid-template-columns:1fr}.admin-only .flex{flex-wrap:wrap}.admin-only h2{font-size:23px}}

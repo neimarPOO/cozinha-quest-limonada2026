@@ -14,7 +14,7 @@ window.CookieScene = class CookieScene {
     this.labels = [];
     this.zoom = 1;
     this.viewTarget = new THREE.Vector3(0, 0.65, 0);
-    this.mobile = matchMedia("(pointer: coarse)").matches || innerWidth < 700;
+    this.mobile = false; // O jogo é exclusivo do desktop; celular entra em admin.html.
     this.onFailure = onFailure;
     this.labelLayer = document.createElement("div");
     this.labelLayer.className = "cookie-world-labels";
@@ -22,13 +22,13 @@ window.CookieScene = class CookieScene {
     const T = THREE;
     this.T = T;
     this.renderer = new T.WebGLRenderer({
-      antialias: !this.mobile,
-      powerPreference: this.mobile ? "low-power" : "high-performance",
+      antialias: true,
+      powerPreference: "high-performance",
     });
     this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio, this.mobile ? 1.25 : 1.75),
+      Math.min(devicePixelRatio, 1.75),
     );
-    this.renderer.shadowMap.enabled = !this.mobile;
+    this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = T.PCFSoftShadowMap;
     this.renderer.toneMapping = T.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.06;
@@ -47,7 +47,7 @@ window.CookieScene = class CookieScene {
     this.scene.add(new T.HemisphereLight(0xe9ffe3, 0x29362a, 1.3));
     const light = new T.DirectionalLight(0xffe4b3, 3);
     light.position.set(-4, 9, 5);
-    light.castShadow = !this.mobile;
+    light.castShadow = true;
     light.shadow.mapSize.set(2048, 2048);
     Object.assign(light.shadow.camera, {
       left: -10,
@@ -81,7 +81,7 @@ window.CookieScene = class CookieScene {
     }
     const woodMap = new T.CanvasTexture(wood);
     woodMap.colorSpace = T.SRGBColorSpace;
-    woodMap.anisotropy = this.mobile ? 2 : 8;
+    woodMap.anisotropy = 8;
     desk.material.map = woodMap;
     desk.material.bumpMap = woodMap;
     desk.material.bumpScale = 0.025;

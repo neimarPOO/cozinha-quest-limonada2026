@@ -54,6 +54,9 @@ test("static delivery preserves bytes with Brotli/gzip, revalidates and keeps HT
     });
     assert.equal(cached.status, 304);
     assert.equal(cached.body.length, 0);
+    assert.equal((await request(port, "/lib/control-service.cjs")).status,404);
+    assert.equal((await request(port, "/.runtime/test.json")).status,404);
+    assert.equal((await request(port, "/node_modules/@netlify/blobs/package.json")).status,404);
     const html = await request(port, "/");
     assert.equal(html.headers["cache-control"], "no-cache");
     const image = await request(
