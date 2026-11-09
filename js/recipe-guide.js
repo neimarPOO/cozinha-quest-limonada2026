@@ -34,7 +34,7 @@
             `${t.procedure}: ${t.durationRange ? t.durationRange.join("–") : t.duration} segundos de jogo.${/reais?|minutos?|horas?/.test(t.note || "") ? " " + t.note : ""}`,
           ];
         if (t.kind === "repeat")
-          return [`${t.count} ações: ${t.actionLabel.toLowerCase()}.`];
+          return [`${t.count} ${t.count === 1 ? "ação" : "ações"}: ${t.actionLabel.toLowerCase()}.`];
         return [];
       })
       .join(" ");
@@ -85,7 +85,7 @@
           const action =
             t.quantity && /^Adicionar.*(quantidade|tigela)/i.test(t.procedure)
               ? `Adicione ${t.quantityRange ? t.quantityRange.join(" a ") : t.quantity} ${t.unit} de ${ingredient}${t.target ? " na " + definition.items[t.target][0] : ""}.`
-              : `${ingredient}${amount}: ${t.procedure}${t.target ? " na " + definition.items[t.target][0] : ""}${t.temperature ? " a " + t.temperature + " °C" : ""}${t.count ? " (" + t.count + " ações)" : ""}.`;
+              : `${ingredient}${amount}: ${t.procedure}${t.target ? " na " + definition.items[t.target][0] : ""}${t.temperature ? " a " + t.temperature + " °C" : ""}${t.count ? " (" + t.count + (t.count === 1 ? " ação)" : " ações)") : ""}.`;
           return (
             action +
             (t.optional ? " Opcional." : "") +

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/recipe-notebook.css?v=3">
   <link rel="stylesheet" href="css/wheel-design.css?v=1">
 <link rel="stylesheet" href="css/admin-wheel.css?v=1">
-  <link rel="stylesheet" href="css/lobby-premium.css?v=1">
+  <link rel="stylesheet" href="css/lobby-premium.css?v=2">
 </head>
 
 <body>
@@ -33,7 +33,7 @@
       <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge sync-status" role="status">Conectando ao evento…</span><button
         class="tab admin-unlock-btn" id="btnAdminUnlock" type="button" title="Acesso restrito ao monitor" aria-label="Área administrativa">⚙</button></div>
     </header>
-    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">⌂ Início</button><button class="tab lobby-link" type="button" data-lobby-target="recipeList"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg> Receitas</button><button class="tab lobby-link" type="button" data-lobby-target="chefDiary">♛ Conquistas</button><button class="tab lobby-link" type="button" data-lobby-target="howToPlay">ⓘ Regras</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
+    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">⌂ Início</button><button class="tab lobby-link" type="button" data-lobby-target="recipeList"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg> Receitas</button><button class="tab lobby-link" type="button" data-lobby-target="howToPlay">ⓘ Regras</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
         data-tab="prizes">🎁 Prêmios</button><button class="tab admin-tab" data-tab="sessions">☕ Sessões</button><button
         class="tab admin-tab" data-tab="history">📜 Histórico</button><button class="tab admin-tab"
         data-tab="settings">⚙️ Configurações</button><button class="tab admin-logout-btn" id="btnAdminLogout"
@@ -54,24 +54,7 @@
         </div>
         <div class="lobby-grid">
           <div class="recipe-list" id="recipeList"></div>
-          <aside class="quest-progress" id="chefDiary" tabindex="-1" aria-label="Progresso do evento">
-            <span class="diary-emblem" aria-hidden="true"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg></span>
-            <div class="eyebrow">DIÁRIO DO CHEF</div>
-            <h2>Seu progresso</h2>
-            <div class="quest-metric">
-              <span aria-hidden="true">⭐</span>
-              <div><small>Pontuação do evento</small><strong id="questScore">0 <em>pts</em></strong></div>
-            </div>
-            <div class="quest-metric">
-              <span aria-hidden="true">✓</span>
-              <div><small>Receitas concluídas</small><strong id="questRecipes">0 / 3</strong></div>
-            </div>
-            <div class="quest-metric">
-              <span aria-hidden="true">🎁</span>
-              <div><small>Meta da roleta por partida</small><strong id="questGoal">500 pts</strong></div>
-            </div>
-            <p class="quest-note">Cada receita é uma nova chance de conquistar.</p>
-          </aside>
+
         </div>
         <div class="howto" id="howToPlay">
           <div>🖱️<b>Arraste</b><span>o ingrediente correto até a tigela</span></div>
@@ -457,7 +440,7 @@
     </div>
     <footer class="foot">Limonada Summit • Protótipo educacional • Configurações e histórico sincronizados com o evento.</footer>
   </div>
-  <script src="js/game-loader.js?v=7"></script>
+  <script src="js/game-loader.js?v=8"></script>
   <script src="js/game-settings.js?v=2"></script>
   <script src="js/prize-catalog.js?v=1"></script><script src="js/wheel-rules.js?v=1"></script>
   <script src="js/wheel-design.js?v=2"></script>
@@ -467,9 +450,9 @@
   <script src="js/control-client.js?v=1"></script>
 <script src="js/admin-wheel.js?v=1"></script>
   <script src="js/cookie-recipe.js?v=4"></script>
-  <script src="js/recipe-catalog.js?v=3"></script>
-  <script src="js/recipe-guide.js?v=3"></script>
-  <script src="js/interface.js?v=3"></script>
+  <script src="js/recipe-catalog.js?v=4"></script>
+  <script src="js/recipe-guide.js?v=4"></script>
+  <script src="js/interface.js?v=4"></script>
   <script src="js/lobby-motion.js?v=1"></script>
 </body>
 

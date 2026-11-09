@@ -75,3 +75,6 @@ body.lobby-screen .lobby-link svg { width:19px; height:19px; fill:none; stroke:c
   body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading{margin-bottom:18px}
   body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto{margin-top:20px}
 }
+
+/* A abertura agora dedica toda a linha aos três cards de receitas. */
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid { grid-template-columns:minmax(0,1fr); }

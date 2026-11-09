@@ -45,7 +45,7 @@ O resultado mantém a integração com a roleta e com o histórico existente. `c
 
 As especificações atuais estão em `docs/recipes/limonada.txt` e `docs/recipes/brownie.txt`. A focaccia foi substituída pelo [brownie do documento anexado](brownie.md); sua transcrição permanece arquivada para referência histórica.
 
-- Limonada: quatro limões e oito metades espremidas juntas; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de açúcar, gelo e apresentação.
+- Limonada: quatro limões cortados em uma ação e oito metades transferidas juntas para a jarra; cerca de 150 ml de suco, 1 L de água, 4–6 colheres de açúcar, gelo e apresentação.
 - Brownie: manteiga noisette, chocolate 70%, ovos e açúcar aerados, secos peneirados e incorporados delicadamente, forno a 180 °C por 20–24 minutos e descanso mínimo de duas horas. Os tempos abreviados do jogo aparecem ao lado dos tempos reais no caderno.
 
 As ações de corte/espalhamento/cavidades têm botões equivalentes por teclado e toque. A aba sem WebGL continua recolhida, com abertura automática se a visualização falhar. O histórico registra `recipeDetails` para todas as receitas e preserva `cookieDetails` para compatibilidade com cookies.
@@ -124,3 +124,14 @@ elevação e retorno da faca. Cortes rápidos são enfileirados visualmente. O �
 corte continua até o fim mesmo quando a receita já avançou para a próxima tarefa.
 Uma ação recusada não anima um corte. A quantidade de cortes e a validação da
 receita permanecem sob controle da máquina de estados; a animação não as altera.
+
+
+## Limonada em lote
+
+O jogador informa quatro limões na tábua e realiza uma única ação de corte para
+obter oito metades. As metades formam um único item arrastável, transferido de
+uma vez para a jarra. A extração do lote é uma animação automática de três segundos
+(cerca de 150 ml de suco), sem segurar o comando nem transferir o suco separadamente.
+A água gelada (1 L) fica em uma jarra de vidro cheia, com alça, bico e condensação,
+com o mesmo contorno da jarra de servir. A estação antiga do espremedor fica oculta.
+A abertura apresenta somente os cards das receitas; o Diário do Chef foi removido.

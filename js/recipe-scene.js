@@ -29,6 +29,7 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     if (definition.id === "lemonade") this.lemonadeAssets();
     else this.focacciaAssets();
     window.KitchenAssets?.enhanceRecipe?.(this);
+    if (definition.id === "lemonade") this.coldWaterPitcher();
     this.highlights.clear();
     for (const [id, g] of this.objects) {
       if (!this.highlights.has(id)) {
@@ -43,6 +44,32 @@ window.RecipeScene = class RecipeScene extends CookieScene {
         this.highlights.set(id, { materials, amount: 0 });
       }
     }
+  }
+  coldWaterPitcher() {
+    const T = THREE, water = this.objects.get("water");
+    for (const child of [...water.children]) {
+      water.remove(child);
+      child.traverse(o => { if (o.geometry && !o.geometry.userData.kitchenShared) o.geometry.dispose(); if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose(); });
+    }
+    // Reutiliza o contorno aprimorado da jarra de servir, com recursos independentes.
+    for (const child of this.wet.children) {
+      if (!child.isMesh || !["LatheGeometry", "TubeGeometry", "TorusGeometry"].includes(child.geometry.type)) continue;
+      const copy = child.clone(); copy.geometry = child.geometry.clone();
+      copy.material = Array.isArray(child.material) ? child.material.map(m => m.clone()) : child.material.clone();
+      water.add(copy);
+    }
+    this.waterFill = new T.Mesh(new T.CylinderGeometry(.55, .49, 1.2, 40),
+      new T.MeshPhysicalMaterial({color:0xa7dcf1,roughness:.12,transparent:true,opacity:.72,transmission:.25,ior:1.33,clearcoat:1,depthWrite:false}));
+    this.waterFill.position.y = .72; water.add(this.waterFill);
+    const drops = new T.InstancedMesh(new T.SphereGeometry(.017, 8, 6), new T.MeshPhysicalMaterial({color:0xd9f4ff,roughness:.08,transparent:true,opacity:.55,clearcoat:1}), 22);
+    const transform = new T.Object3D();
+    for (let i=0;i<22;i++) { const a=i*2.4; transform.position.set(Math.cos(a)*.6,.25+(i%7)*.17,Math.sin(a)*.6); transform.scale.set(1,1.5,1); transform.updateMatrix(); drops.setMatrixAt(i,transform.matrix); }
+    water.add(drops); water.position.set(-.7,0,-1.1);
+    this.objects.get("ice").position.x = .8;
+    for (const record of this.labels.filter(r=>r.id==='water')) {record.label.textContent='Jarra de água gelada';record.anchor.position.set(0,1.95,0);water.add(record.anchor);}
+    this.dry.visible=false;
+    for (const record of this.labels.filter(r=>r.id==='dry')) record.label.remove();
+    this.labels=this.labels.filter(r=>r.id!=='dry');
   }
   removeEntity(id) {
     const g = this.objects.get(id);
@@ -63,7 +90,7 @@ window.RecipeScene = class RecipeScene extends CookieScene {
     });
   }
   tag(g, id, y = 1) {
-    this.label(g, this.definition.items[id][0], y, 1.8);
+    this.label(g, this.definition.items[id]?.[0] || "Espremedor", y, 1.8);
     return g;
   }
   jar(id, x, z, color) {
@@ -364,13 +391,13 @@ window.RecipeScene = class RecipeScene extends CookieScene {
       const cuts = cut
         ? 4
         : t.kind === "repeat" && t.item === "knife"
-          ? state.repetitions.length
+          ? state.repetitions.length * 4
           : 0;
       this.objects.get("lemon").visible = !cut;
       if (done("lemon") && this.drag?.id !== "lemon")
         this.objects.get("lemon").position.set(-4.2, 0, -0.35);
       this.wholeLemons.forEach((m, i) => (m.visible = i >= cuts));
-      this.halvesBatch.visible = cuts > 0 && !done("halves");
+      this.halvesBatch.visible = cuts > 0 && !done("wet");
       this.halves.forEach((g, i) => (g.visible = i < cuts * 2));
       const processing = t.item === "halves" && state.status === "running";
       const extracted = done("halves")
@@ -381,10 +408,14 @@ window.RecipeScene = class RecipeScene extends CookieScene {
       if (this.drag?.id !== "halves") {
         this.halvesBatch.position.set(-3.4, 0, 0);
         this.halvesBatch.scale.setScalar(1);
+        if (done("halves")) {
+          this.halvesBatch.position.copy(this.wet.position).add(new THREE.Vector3(0,.45,0));
+          this.halvesBatch.scale.setScalar(.3);
+        }
         if (processing) {
           const progress = Math.min(1, state.elapsed / state.target);
           this.halvesBatch.position.lerp(
-            this.dry.position.clone().add(new THREE.Vector3(0, 0.6, 0)),
+            this.wet.position.clone().add(new THREE.Vector3(0, 0.75, 0)),
             progress,
           );
           this.halvesBatch.scale.setScalar(1 - progress * 0.7);
@@ -392,10 +423,10 @@ window.RecipeScene = class RecipeScene extends CookieScene {
       }
       this.juice.scale.y = done("dry") ? 0.1 : Math.max(0.1, extracted);
       this.juice.position.y = 0.23 + extracted * 0.013;
-      const poured = done("dry");
+      const poured = done("halves") || processing;
       const water = done("water");
       this.wetMix.visible = poured;
-      this.wetMix.scale.y = water ? 18 : 3;
+      this.wetMix.scale.y = water ? 18 : processing ? Math.max(.1, (state.elapsed / state.target) * 3) : 3;
       this.wetMix.position.y = water ? 0.8 : 0.3;
       this.wetMix.material.color.set(done("spoon") ? 0xdbe88a : 0xd2cc76);
       this.condensation.forEach(

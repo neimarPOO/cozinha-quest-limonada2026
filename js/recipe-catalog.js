@@ -38,11 +38,11 @@
     phases: [
       [
         "Preparo das frutas",
-        "Leve 4 limões à tábua e corte transversalmente: serão 8 metades.",
+        "Leve os 4 limões juntos à tábua e corte todo o lote com uma única ação: serão 8 metades.",
       ],
       [
-        "Extração do suco",
-        "Leve as 8 metades juntas ao espremedor e processe o lote para obter aproximadamente 150 ml de suco.",
+        "Limões na jarra",
+        "Transfira as 8 metades juntas para a jarra. A extração do lote é automática por 3 segundos no jogo, produzindo aproximadamente 150 ml de suco.",
       ],
       [
         "Base na jarra",
@@ -61,10 +61,9 @@
     items: {
       lemon: ["Limões frescos", "4 unidades", "🍋"],
       board: ["Tábua de corte", "Corte transversal", "▤"],
-      knife: ["Faca de cozinha", "4 cortes · 8 metades", "🔪"],
-      dry: ["Espremedor manual", "Reservatório de 150 ml", "◉"],
+      knife: ["Faca de cozinha", "Um corte em lote · 8 metades", "🔪"],
       wet: ["Jarra de vidro", "Capacidade: 1,5 L", "🫙"],
-      water: ["Água gelada", "1 litro = 1000 ml", "💧"],
+      water: ["Jarra de água gelada", "1 litro = 1000 ml", "💧"],
       white: ["Açúcar", "4–6 colheres de sopa", "🍚"],
       spoon: ["Colher comprida", "Mistura circular", "🥄"],
       ice: ["Gelo", "8–10 na jarra + 2 no copo", "🧊"],
@@ -82,23 +81,18 @@
   ];
   lemonade.tasks = [
     add(0, "lemon", 4, "unidades", "board"),
-    t(0, "knife", "Cortar transversalmente no centro", {
+    t(0, "knife", "Cortar os 4 limões juntos na tábua", {
       kind: "repeat",
-      count: 4,
+      count: 1,
       target: "board",
-      actionLabel: "Cortar o próximo limão",
+      actionLabel: "Cortar os 4 limões de uma vez",
     }),
-    add(1, "halves", 8, "metades", "dry", {
+    add(1, "halves", 8, "metades", "wet", {
       duration: 3,
-      hold: true,
-      procedure: "Espremer todas as metades em conjunto",
-      note: "Arraste as 8 metades juntas. Pressione e gire por 3 segundos no jogo para obter cerca de 150 ml de suco; depois transfira todo o suco à jarra de uma vez.",
+      procedure: "Adicionar todas as metades à jarra de uma vez",
+      note: "Arraste o lote de 8 metades para a jarra em uma única transferência. A animação automática de 3 segundos extrai aproximadamente 150 ml de suco; não é necessário espremer nem adicionar uma metade por vez.",
     }),
-    add(2, "dry", 150, "ml de suco", "wet", {
-      procedure: "Despejar o suco concentrado na jarra",
-      ingredientName: "Suco de limão",
-    }),
-    add(2, "water", 1000, "ml", "wet"),
+    add(2, "water", 1000, "ml", "wet", { ingredientName: "Água gelada", procedure: "Despejar 1 litro de água gelada na jarra de limonada" }),
     add(2, "white", 4, "colheres de sopa", "wet", { quantityRange: [4, 6] }),
     t(3, "spoon", "Misturar em movimentos circulares", {
       duration: 5,

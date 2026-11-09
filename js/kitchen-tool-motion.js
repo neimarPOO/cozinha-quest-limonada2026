@@ -15,8 +15,14 @@
       center.copy(target.localToWorld(local));
       height=target.getWorldPosition(new T.Vector3()).y+.19;
     }
+    const batch = task.target === 'board' && task.count === 1 && v.wholeLemons?.length > 1;
+    if (batch) {
+      center.set(0,0,0);
+      for (const lemon of v.wholeLemons) center.add(lemon.getWorldPosition(new T.Vector3()));
+      center.multiplyScalar(1/v.wholeLemons.length);
+    }
     if(!Number.isFinite(height))height=.1;
-    this.cuts.push({center,height,tray:task.target==='tray',edgeLift:v.definition?.id === 'brownie' ? 0.14 : 0.08,yaw:task.target==='tray'&&index>=2?Math.PI/2:0,elapsed:0});
+    this.cuts.push({center,height,batch,tray:task.target==='tray',edgeLift:v.definition?.id === 'brownie' ? 0.14 : 0.08,yaw:task.target==='tray'&&index>=2?Math.PI/2:0,elapsed:0});
     if(!this.knifeRest)this.knifeRest=this.save(knife);
     v.needsRender=true;return true;
   }
@@ -49,7 +55,9 @@
       cut.elapsed=Math.min(1.05,cut.elapsed+dt);const p=cut.elapsed/1.05;
       const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
       const descend=smooth((p-.15)/.45),lift=smooth((p-.73)/.27);
-      const point=cut.center.clone();point.y=cut.height+cut.edgeLift+.5*(1-descend)+.5*lift;
+      const point=cut.center.clone();
+      if (cut.batch) point.x += -.4 + .8 * smooth((p-.32)/.4);
+      point.y=cut.height+cut.edgeLift+.5*(1-descend)+.5*lift;
       const draw=cut.tray?-.8+1.6*smooth((p-.32)/.4):.25*smooth((p-.32)/.4);
       const travel=draw+(cut.tray ? 0.53 : 0.2);point.x+=Math.sin(cut.yaw)*travel;point.z+=Math.cos(cut.yaw)*travel;
       if(knife.parent)knife.parent.worldToLocal(point);
