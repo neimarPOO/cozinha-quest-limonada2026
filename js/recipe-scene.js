@@ -326,7 +326,8 @@ window.RecipeScene = class RecipeScene extends CookieScene {
       );
     return this.state.repetitions.length;
   }
-  press() {
+  press(info) {
+    if (info?.task?.item === "knife") return super.press(info);
     if (this.hand) {
       const g = this.objects.get(this.state.task?.target || "tray");
       if (g) {

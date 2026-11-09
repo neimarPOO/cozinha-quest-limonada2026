@@ -108,3 +108,19 @@ Trechos concluídos recebem traço verde de 2,4 px tanto no texto acessível qua
 na textura do caderno 3D. Cada partida restaura a rolagem no início ao abrir o
 caderno e novamente após preparar a cena. O avanço da receita continua sem forçar
 a rolagem: o jogador controla a leitura ou usa “Ir ao preparo atual”.
+
+
+## Animação dos utensílios
+
+`KitchenToolMotion` movimenta a própria colher ou espátula dentro do recipiente
+selecionado pela tarefa. A colher mistura em círculos; a espátula dobra e raspa
+suavemente, incluindo o espalhamento na fôrma. A animação para ao soltar o controle
+de mistura, e o objeto recupera posição, orientação e escala originais ao terminar.
+A mão permanece disponível para ler o caderno, sem substituir o utensílio na bancada.
+A batedeira mantém a animação de seu batedor durante seu próprio procedimento.
+
+Os cortes da limonada e do brownie usam aproximação, descida, movimento de lâmina,
+elevação e retorno da faca. Cortes rápidos são enfileirados visualmente. O último
+corte continua até o fim mesmo quando a receita já avançou para a próxima tarefa.
+Uma ação recusada não anima um corte. A quantidade de cortes e a validação da
+receita permanecem sob controle da máquina de estados; a animação não as altera.

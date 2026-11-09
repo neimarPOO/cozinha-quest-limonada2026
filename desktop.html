@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="css/recipe-notebook.css?v=3">
   <link rel="stylesheet" href="css/wheel-design.css?v=1">
 <link rel="stylesheet" href="css/admin-wheel.css?v=1">
+  <link rel="stylesheet" href="css/lobby-premium.css?v=1">
 </head>
 
 <body>
@@ -29,11 +30,10 @@
         <div class="logo"><span class="brand-lemon" aria-hidden="true">🍋</span><div>LIMONADA <span>COZINHA QUEST</span></div></div>
         <div class="sub">SUMMIT · ARCADE GASTRONÔMICO</div>
       </div>
-      <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge sync-status" role="status">Conectando ao evento…</span></div>
+      <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge sync-status" role="status">Conectando ao evento…</span><button
+        class="tab admin-unlock-btn" id="btnAdminUnlock" type="button" title="Acesso restrito ao monitor" aria-label="Área administrativa">⚙</button></div>
     </header>
-    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">🎮 Jogar</button><button
-        class="tab admin-unlock-btn" id="btnAdminUnlock" type="button" title="Acesso restrito ao monitor">🔒 Área
-        Admin</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
+    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">⌂ Início</button><button class="tab lobby-link" type="button" data-lobby-target="recipeList"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg> Receitas</button><button class="tab lobby-link" type="button" data-lobby-target="chefDiary">♛ Conquistas</button><button class="tab lobby-link" type="button" data-lobby-target="howToPlay">ⓘ Regras</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
         data-tab="prizes">🎁 Prêmios</button><button class="tab admin-tab" data-tab="sessions">☕ Sessões</button><button
         class="tab admin-tab" data-tab="history">📜 Histórico</button><button class="tab admin-tab"
         data-tab="settings">⚙️ Configurações</button><button class="tab admin-logout-btn" id="btnAdminLogout"
@@ -41,15 +41,22 @@
     <section class="view active" id="play">
       <div id="intro" class="panel">
         <div class="lobby-mobile-art" aria-hidden="true"></div>
-        <div class="intro-heading"><span class="eyebrow">SUA PRÓXIMA CONQUISTA COMEÇA NA COZINHA</span>
-        <h1>Prepare. Acerte. <span class="accent">Conquiste.</span></h1>
-        <p class="muted">Escolha uma receita e arraste os ingredientes até a tigela, lave na pia, corte na tábua e asse
-          no fogão. Siga a receita e cumpra a regra do evento para liberar a roleta de recompensas!</p>
+        <div class="intro-heading">
+          <div class="lobby-hero">
+            <div class="lobby-sign">
+              <div class="lobby-sign-crown" aria-hidden="true"><span>✦ ★</span><svg viewBox="0 0 64 56"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg><span>★ ✦</span></div>
+              <h1>Prepare <i>•</i> Acerte <i>•</i> <span class="accent">Conquiste</span></h1>
+              <span class="eyebrow">SUA PRÓXIMA CONQUISTA COMEÇA NA COZINHA</span>
+            </div>
+            <button type="button" class="lobby-play-now" id="lobbyPlayNow" aria-controls="recipeList"><span aria-hidden="true">🎮</span> JOGAR AGORA<small>Escolha sua receita</small></button>
+          </div>
+          <p class="muted">Escolha uma receita, arraste os ingredientes até a tigela e prepare na bancada.<br>Siga a receita e cumpra a regra do evento para liberar a <strong>roleta de recompensas!</strong></p>
         </div>
         <div class="lobby-grid">
           <div class="recipe-list" id="recipeList"></div>
-          <aside class="quest-progress" aria-label="Progresso do evento">
-            <div class="eyebrow">SEU DIÁRIO DE CHEF</div>
+          <aside class="quest-progress" id="chefDiary" tabindex="-1" aria-label="Progresso do evento">
+            <span class="diary-emblem" aria-hidden="true"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg></span>
+            <div class="eyebrow">DIÁRIO DO CHEF</div>
             <h2>Seu progresso</h2>
             <div class="quest-metric">
               <span aria-hidden="true">⭐</span>
@@ -450,11 +457,11 @@
     </div>
     <footer class="foot">Limonada Summit • Protótipo educacional • Configurações e histórico sincronizados com o evento.</footer>
   </div>
-  <script src="js/game-loader.js?v=6"></script>
+  <script src="js/game-loader.js?v=7"></script>
   <script src="js/game-settings.js?v=2"></script>
   <script src="js/prize-catalog.js?v=1"></script><script src="js/wheel-rules.js?v=1"></script>
   <script src="js/wheel-design.js?v=2"></script>
-  <script src="js/app.js?v=admin-wheel-1"></script>
+  <script src="js/app.js?v=lobby-premium-1"></script>
   <script src="js/admin-controls.js?v=3"></script>
   <script src="js/event-state.js?v=1"></script>
   <script src="js/control-client.js?v=1"></script>
@@ -462,7 +469,7 @@
   <script src="js/cookie-recipe.js?v=4"></script>
   <script src="js/recipe-catalog.js?v=3"></script>
   <script src="js/recipe-guide.js?v=3"></script>
-  <script src="js/interface.js?v=2"></script>
+  <script src="js/interface.js?v=3"></script>
   <script src="js/lobby-motion.js?v=1"></script>
 </body>
 

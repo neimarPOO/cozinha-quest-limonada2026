@@ -500,6 +500,7 @@ window.CookieScene = class CookieScene {
     this.observer.observe(root);
     this.resize();
     this.setZoom(1);
+    this.toolMotion = new KitchenToolMotion(this);
     this.last = performance.now();
     this.frame = (t) => {
       if (this.disposed) return;
@@ -522,23 +523,17 @@ window.CookieScene = class CookieScene {
         ["mixer", "spoon", "spatula"].includes(this.state.task.item) &&
         (!this.state.requiresStir || this.state.working)
       ) {
-        this.wetMix.rotation.y += 4.5 * this.frameDelta;
-        this.wetMix.scale.setScalar(1 + Math.sin(t / 100) * 0.015);
-        this.whisk.rotation.y += 9 * this.frameDelta;
+        const mixture = this.state.task.target === "dry" ? this.dryMix : this.wetMix;
+        if (this.state.task.item === "mixer") mixture.rotation.y += 4.5 * this.frameDelta;
+        if (this.state.task.item === "mixer") this.whisk.rotation.y += 9 * this.frameDelta;
       }
-      if (this.hand && this.state?.working && this.state?.requiresStir) {
+      const toolAnimated = this.toolMotion.update(this.frameDelta);
+      if (this.hand && this.state?.working && this.state?.requiresStir &&
+          !["spoon", "spatula"].includes(this.state.task.item) && !this.readingHand && !this.toolMotion.hidesHand) {
         const bowl = this.objects.get(this.state.task.target) || this.wet;
         this.hand.group.visible = true;
-        this.hand.group.position
-          .copy(bowl.position)
-          .add(
-            new T.Vector3(
-              Math.sin(t / 220) * 0.3,
-              0.9,
-              Math.cos(t / 220) * 0.2,
-            ),
-          );
-        this.hand.pose("grab", 1 - Math.pow(0.85, this.frameDelta * 30));
+        this.hand.group.position.copy(bowl.position).add(new T.Vector3(Math.sin(t / 220) * .3, .9, Math.cos(t / 220) * .2));
+        this.hand.pose("grab", 1 - Math.pow(.85, this.frameDelta * 30));
       }
       const highlightChanged = this.updateHighlights();
       const animated =
@@ -546,7 +541,7 @@ window.CookieScene = class CookieScene {
         ((["mixer", "spoon", "spatula"].includes(this.state.task.item) &&
           (!this.state.requiresStir || this.state.working)) ||
           (this.state.working && this.state.requiresStir));
-      if (!this.needsRender && !highlightChanged && !this.drag && !animated)
+      if (!this.needsRender && !highlightChanged && !this.drag && !animated && !toolAnimated)
         return;
       this.needsRender = false;
       const shadowKey = [
@@ -979,8 +974,12 @@ window.CookieScene = class CookieScene {
       y: rect.top + ((1 - v.y) * rect.height) / 2,
     };
   }
+  press(info) {
+    return this.toolMotion?.queueCut(info?.task, info?.point, info?.index);
+  }
   updateHand(e) {
     if (!this.hand) return;
+    if (this.toolMotion?.hidesHand && !this.readingHand) { this.hand.group.visible = false; return; }
     this.needsRender = true;
     this.renderer.shadowMap.needsUpdate = true;
     this.setRay(e);

@@ -382,7 +382,8 @@ window.BrownieScene = class BrownieScene extends CookieScene {
       return this.state.repetitions.length;
     return (local.x >= 0 ? 1 : 0) + (local.z >= 0 ? 2 : 0);
   }
-  press() {
+  press(info) {
+    if (info?.task?.item === "knife") return super.press(info);
     this.needsRender = true;
     if (this.hand) {
       this.hand.pose("press", 1);

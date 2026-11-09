@@ -458,13 +458,14 @@
         state.task.item === "knife" &&
         id === "lemon";
       if (id === state.task.item || id === state.task.target || fruitCut) {
+        const actionTask = state.task, actionIndex = state.repetitions.length;
         const result = state.repeat(
           contact && scene?.repeatPosition
             ? scene.repeatPosition(contact, state.task)
             : state.repetitions.length,
         );
         tell(result.ok ? "Procedimento executado." : result.message);
-        scene?.press?.();
+        if (result.ok) scene?.press?.({task:actionTask, point:contact, index:actionIndex});
         render();
       } else tell("Use o objeto indicado no status da receita.");
       return;
@@ -772,9 +773,10 @@
           button.className = "btn";
           button.textContent = `${t.actionLabel} ${i + 1}`;
           button.onclick = () => {
+            const actionTask = state.task, actionIndex = state.repetitions.length;
             const result = state.repeat(i);
             tell(result.ok ? "Procedimento correto." : result.message);
-            scene?.press?.();
+            if (result.ok) scene?.press?.({task:actionTask, index:actionIndex});
             render();
           };
           $("recipeRepeatButtons").append(button);
