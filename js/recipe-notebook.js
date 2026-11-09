@@ -140,9 +140,13 @@ window.RecipeNotebook = class RecipeNotebook {
       this.readable.append(section);
     });
     this.show(innerWidth >= 900);
-    this.page.scrollTop = 0;
+    this.resetScroll();
     this.phase = -1;
     this.setPhase(0);
+  }
+  resetScroll() {
+    this.page.scrollTop = 0;
+    this.schedulePaint();
   }
   show(open) {
     if (!open && this.drag) {
@@ -379,12 +383,13 @@ window.RecipeNotebook = class RecipeNotebook {
       ctx.font = line.font;
       const completed =
         line.taskIndex !== null && this.progress?.[line.taskIndex] === "done";
-      ctx.fillStyle = completed ? "#70604b" : line.color;
+      ctx.fillStyle = completed ? "#355d43" : line.color;
       ctx.fillText(line.text, line.x, y);
       if (completed) {
         const size = parseFloat(line.font.match(/[\d.]+px/)[0]);
-        ctx.strokeStyle = "#736048";
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "#128447";
+        ctx.lineWidth = 2.4;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(line.x - 1, y - size * 0.32);
         ctx.lineTo(

@@ -1,15 +1,16 @@
-/* Mesmo rig e poses da mão original, sem inicializar a cozinha legada. */
+/* Mão articulada compartilhada pelas três receitas, com superfícies suaves e pele negra. */
 window.KitchenHand = {
   create() {
     const mat = (options) => new THREE.MeshStandardMaterial(options);
     let skinMat = mat({
-      color: 0xd9af8f,
-      roughness: 0.8,
+      color: 0xffffff,
+      vertexColors: true,
+      roughness: 0.57,
       metalness: 0,
       emissive: 0x000000,
       emissiveIntensity: 0,
     });
-    let nailMat = mat({ color: 0xf0d9c4, roughness: 0.34, metalness: 0.03 });
+    let nailMat = mat({ color: 0xb98b7c, roughness: 0.3, metalness: 0 });
     let sleeveMat = mat({ color: 0xb9cdb4, roughness: 0.9 });
     function addPart(parent, geo, m) {
       let x = new THREE.Mesh(geo, m);
@@ -93,17 +94,17 @@ window.KitchenHand = {
         palmUV = [],
         palmIndices = [];
       const profile = [
-        [-0.193, 0.055, 0.037],
-        [-0.14, 0.052, 0.033],
+        [-0.193, 0.05, 0.033],
+        [-0.14, 0.048, 0.03],
         [-0.065, 0.048, 0.029],
-        [0, 0.057, 0.031],
-        [0.045, 0.078, 0.034],
-        [0.095, 0.08, 0.031],
-        [0.135, 0.067, 0.024],
+        [0, 0.055, 0.029],
+        [0.045, 0.074, 0.033],
+        [0.095, 0.079, 0.032],
+        [0.135, 0.072, 0.024],
         [0.158, 0.038, 0.012],
         [0.165, 0, 0],
       ];
-      const palmSides = 24;
+      const palmSides = 36;
       profile.forEach(([z, width, depth], ring) => {
         for (let j = 0; j <= palmSides; j++) {
           const a = (j / palmSides) * Math.PI * 2;
@@ -129,6 +130,12 @@ window.KitchenHand = {
       palm.setIndex(palmIndices);
       palm.computeVertexNormals();
       skin(palm);
+      // Eminência tenar: transição carnosa entre a palma e a base do polegar.
+      const thenar = new THREE.SphereGeometry(1, 20, 14);
+      thenar.scale(0.029, 0.027, 0.061);
+      thenar.rotateY(-side * 0.3);
+      thenar.translate(-side * 0.047, -0.005, 0.051);
+      skin(thenar);
       const cuff = addPart(
         g,
         new THREE.CylinderGeometry(0.06, 0.064, 0.09, 24, 1),
@@ -165,8 +172,8 @@ window.KitchenHand = {
           index = [],
           skinIds = [],
           skinWeights = [];
-        const rings = 18,
-          sides = 12;
+        const rings = 28,
+          sides = 20;
         for (let j = 0; j <= rings; j++) {
           const t = j / rings,
             localZ = -0.01 + t * (length + 0.01);
@@ -174,7 +181,9 @@ window.KitchenHand = {
             start = Math.min(1, t / 0.06);
           const r =
             radius *
-            (1 - 0.23 * t) *
+            (1 - 0.25 * t) *
+            (1 + 0.07 * Math.exp(-Math.pow((t - 0.44) / 0.08, 2)) +
+              0.045 * Math.exp(-Math.pow((t - 0.76) / 0.07, 2))) *
             Math.sqrt(Math.max(0, tip * (2 - tip))) *
             Math.sqrt(start);
           let bone = 0,
@@ -229,27 +238,34 @@ window.KitchenHand = {
         surfaces.push(geo);
         const nail = addPart(
           chain[chain.length - 1],
-          new THREE.SphereGeometry(1, 10, 6),
+          new THREE.SphereGeometry(1, 18, 12),
           nailMat,
         );
         nail.scale.set(
-          radius * 0.54,
-          0.003,
-          lengths[lengths.length - 1] * 0.32,
+          radius * 0.5,
+          0.0016,
+          lengths[lengths.length - 1] * 0.44,
         );
-        nail.position.set(0, radius * 0.67, lengths[lengths.length - 1] * 0.55);
+        nail.position.set(0, radius * 0.74, lengths[lengths.length - 1] * 0.48);
         return chain;
       }
       [
-        [-0.058, 0.129, 0.13, 0.02],
-        [-0.019, 0.14, 0.148, 0.021],
-        [0.02, 0.135, 0.138, 0.02],
-        [0.057, 0.12, 0.112, 0.018],
+        [-0.058, 0.129, 0.139, 0.015],
+        [-0.019, 0.14, 0.16, 0.0165],
+        [0.02, 0.135, 0.148, 0.015],
+        [0.057, 0.12, 0.115, 0.013],
       ].forEach(([x, z, len, r]) => {
         rig.fingers.push(
           finger(x * side, z, len, r, [len * 0.44, len * 0.32, len * 0.24]),
         );
       });
+      // Pequenas comissuras suavizam a ligação entre os dedos e a palma.
+      for (const [x,z] of [[-0.039,0.129],[0,0.132],[0.039,0.122]]) {
+        const web = new THREE.SphereGeometry(1, 16, 10);
+        web.scale(0.014,0.016,0.022);
+        web.translate(x * side,0,z);
+        skin(web);
+      }
       // Index is fingers[0] on -X: the right thumb belongs on that same side.
       // CMC, MCP and IP get independent controls; opposition starts at the CMC.
       rig.thumb = finger(
@@ -261,10 +277,35 @@ window.KitchenHand = {
         [0.12, -side * 0.7, side * 0.12],
         true,
       );
-      const mesh = new THREE.SkinnedMesh(
-        mergeSurfaces(surfaces, true),
-        skinMat,
-      );
+      let geometry;
+      if (window.KitchenHandSurface) {
+        const asset = window.KitchenHandSurface;
+        const decode = (value, Type) => {
+          const text = atob(value), bytes = new Uint8Array(text.length);
+          for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
+          return new Type(bytes.buffer);
+        };
+        geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute(
+          Float32Array.from(decode(asset.position, Int16Array), n => n / 100000), 3));
+        geometry.setAttribute("normal", new THREE.Float32BufferAttribute(
+          Float32Array.from(decode(asset.normal, Int16Array), n => n / 32767), 3));
+        geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(decode(asset.skinIndex, Uint8Array), 4));
+        geometry.setAttribute("skinWeight", new THREE.BufferAttribute(decode(asset.skinWeight, Uint8Array), 4, true));
+        geometry.setIndex(new THREE.BufferAttribute(decode(asset.index, Uint16Array), 1));
+        for (const surface of surfaces) surface.dispose();
+      } else geometry = mergeSurfaces(surfaces, true);
+      const colors = [], normal = geometry.attributes.normal;
+      const dorsal = new THREE.Color(0x573421), palmar = new THREE.Color(0x936446);
+      // A palma é naturalmente mais clara; a pigmentação acompanha a superfície.
+      for (let i = 0; i < normal.count; i++) {
+        const amount = THREE.MathUtils.smoothstep(-normal.getY(i), -0.15, 0.85);
+        const color = dorsal.clone().lerp(palmar, amount);
+        colors.push(color.r,color.g,color.b);
+      }
+      geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      const mesh = new THREE.SkinnedMesh(geometry, skinMat);
+      mesh.name = "Mão articulada — pele negra";
       g.add(mesh);
       g.updateMatrixWorld(true);
       mesh.bind(new THREE.Skeleton(bones));
@@ -285,7 +326,7 @@ window.KitchenHand = {
           [0.12, 0.18, 0.12],
           [0.16, 0.23, 0.15],
         ],
-        spread: [-0.08, -0.02, 0.035, 0.085],
+        spread: [-0.18, -0.03, 0.08, 0.23],
         thumb: { cmc: [0.12, -0.7, 0.12], mcp: 0.12, ip: 0.1 },
       },
       grab: {

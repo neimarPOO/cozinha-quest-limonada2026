@@ -998,6 +998,7 @@
         )
           return false;
       }
+      notebook.resetScroll();
       lastTime = performance.now();
       timerId = setInterval(tick, 100);
       return true;

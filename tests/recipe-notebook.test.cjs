@@ -233,3 +233,25 @@ test("page poses keep the thumb relaxed and do not reuse the ingredient grab pos
   assert.ok(thumb.rotation.y < 0);
   assert.ok(root.children[0].rotation.x < 0.1);
 });
+
+test('continuous hand asset keeps finite deformations, normalized skin weights and dark skin colors in all poses', () => {
+  const fs=require('node:fs'),vm=require('node:vm'),THREE=require('../public/three.min.js');
+  const context={window:{},THREE,atob,Uint8Array,Uint16Array,Int16Array,Float32Array};
+  for(const file of ['../public/models/hand-surface.js','../js/kitchen-hand.js'])
+    vm.runInNewContext(fs.readFileSync(require.resolve(file),'utf8'),context);
+  const hand=context.window.KitchenHand.create();let mesh;
+  hand.group.traverse(o=>{if(o.isSkinnedMesh)mesh=o});
+  const geometry=mesh.geometry,weights=geometry.attributes.skinWeight;
+  assert.equal(geometry.attributes.color.count,geometry.attributes.position.count);
+  assert.equal(mesh.material.vertexColors,true);
+  assert.ok(geometry.attributes.position.count<25000);
+  for(let i=0;i<weights.count;i++)assert.ok(Math.abs(weights.getX(i)+weights.getY(i)+weights.getZ(i)+weights.getW(i)-1)<1e-6);
+  for(const pose of ['open','grab','pinch','press','page','pageDrag','knead']) {
+    hand.pose(pose,1);hand.group.updateMatrixWorld(true);mesh.skeleton.update();
+    for(let i=0;i<geometry.attributes.position.count;i+=137) {
+      const v=mesh.getVertexPosition(i,new THREE.Vector3());
+      assert.ok([v.x,v.y,v.z].every(Number.isFinite),pose);
+      assert.ok(v.length()<.6,pose);
+    }
+  }
+});

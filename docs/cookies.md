@@ -92,3 +92,19 @@ A mão tem poses exclusivas de leitura e arraste, com o polegar relaxado. Uma
 limpeza de profundidade antes de desenhá-la sobre o papel permite que os próprios
 dedos se ocultem corretamente, sem atravessar a palma. As propriedades originais
 da mão são restauradas ao voltar à bancada.
+
+## Mão e leitura do caderno
+
+A mão compartilhada por cookies, limonada e brownie usa uma superfície contínua
+quantizada em `public/models/hand-surface.js`, com 16 ossos e cerca de 19 mil
+vértices. A palma tem variação de pigmentação mais clara que o dorso de pele negra;
+formas de dedos, comissuras, polegar e unhas são articuladas. As poses de leitura,
+arraste, pinça e trabalho continuam no mesmo rig. A superfície fica no mesmo mesh
+esquelético e não aumenta as chamadas de desenho da mão. O gerador reproduzível
+`scripts/build-hand-surface.py` usa Python e NumPy; não roda no carregamento do jogo
+nem no build do site. O asset gerado é carregado uma vez e reutilizado nas receitas.
+
+Trechos concluídos recebem traço verde de 2,4 px tanto no texto acessível quanto
+na textura do caderno 3D. Cada partida restaura a rolagem no início ao abrir o
+caderno e novamente após preparar a cena. O avanço da receita continua sem forçar
+a rolagem: o jogador controla a leitura ou usa “Ir ao preparo atual”.

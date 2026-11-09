@@ -86,6 +86,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  overflow-anchor: none;
   touch-action: none;
   scrollbar-width: thin;
   scrollbar-color: #a38860 #f6edda;
@@ -213,7 +214,7 @@
 }
 .notebook-readable .is-completed {
   text-decoration: line-through;
-  text-decoration-thickness: 1.2px;
-  text-decoration-color: #736048;
-  color: #70604b;
+  text-decoration-thickness: 2.4px;
+  text-decoration-color: #128447;
+  color: #355d43;
 }
