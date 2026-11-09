@@ -2,12 +2,12 @@
 
 A URL raiz detecta celulares e tablets antes de carregar a interface e abre
 `admin.html`. Computadores abrem `desktop.html`. A página móvel contém somente
-login, painel, prêmios, sessões, histórico e configurações: não inclui Three.js,
+login, painel, roleta, prêmios, sessões, histórico e configurações: não inclui Three.js,
 modelos, texturas, caderno 3D, roleta ou código do jogo. O desktop conserva a
 apresentação e a qualidade gráfica. Abrir `/admin.html` no computador também é
 permitido para administrar o evento.
 
-Em **Configurações → Como liberar a roleta**, o monitor escolhe:
+Em **Roleta → Critério para liberar a roleta**, o monitor escolhe:
 
 - **Atingir pontuação mínima:** 0–1.000 pontos, incluindo zero. Preserva o
   comportamento anterior de liberar pela pontuação da tentativa.

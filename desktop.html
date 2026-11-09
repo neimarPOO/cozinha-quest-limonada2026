@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/game-loading.css?v=1">
   <link rel="stylesheet" href="css/recipe-notebook.css?v=2">
   <link rel="stylesheet" href="css/wheel-design.css?v=1">
+<link rel="stylesheet" href="css/admin-wheel.css?v=1">
 </head>
 
 <body>
@@ -32,7 +33,7 @@
     </header>
     <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">🎮 Jogar</button><button
         class="tab admin-unlock-btn" id="btnAdminUnlock" type="button" title="Acesso restrito ao monitor">🔒 Área
-        Admin</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab"
+        Admin</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
         data-tab="prizes">🎁 Prêmios</button><button class="tab admin-tab" data-tab="sessions">☕ Sessões</button><button
         class="tab admin-tab" data-tab="history">📜 Histórico</button><button class="tab admin-tab"
         data-tab="settings">⚙️ Configurações</button><button class="tab admin-logout-btn" id="btnAdminLogout"
@@ -310,8 +311,8 @@
     </section>
     <section class="view" id="dashboard">
       <div class="panel">
-        <h2>Painel do evento</h2>
-        <p class="muted">Estatísticas acumuladas e por dia; não requer internet.</p>
+        <h2>Painel do evento</h2><button class="btn primary" id="openAdminWheel">🎡 Configurar e testar a roleta</button>
+        <p class="muted">Estatísticas e controles compartilhados do evento.</p>
         <div class="formrow">
           <div><label>Visualizar</label><select id="dayFilter">
               <option value="all">Todos os dias</option>
@@ -368,17 +369,46 @@
         <div class="tablewrap" id="historyTable"></div>
       </div>
     </section>
+    <section class="view" id="wheel">
+      <div class="panel">
+        <h2>🎡 Administração da roleta</h2>
+        <p class="muted">Defina como o jogador libera a roleta e confira os prêmios cadastrados.</p>
+        <div class="formrow">
+          <div><label for="wheelMode">Critério para liberar a roleta</label><select id="wheelMode"><option value="score">Atingir pontuação mínima</option><option value="completion">Concluir a receita inteira</option></select><small id="wheelRuleHelp"></small></div>
+          <div><label for="wheelScore">Pontuação mínima</label><input id="wheelScore" type="number" min="0" max="1000" step="1"><small>De 0 a 1.000 pontos. Zero libera sem meta de pontos.</small></div>
+          <div><label for="dailyCap">Máximo de prêmios físicos por dia</label><input id="dailyCap" type="number" min="0" max="999" step="1"><small>Os limites individuais e o estoque são ajustados na aba Prêmios.</small></div>
+        </div>
+        <button class="btn primary" id="saveWheelSettings">Salvar regras da roleta</button>
+        <p id="wheelSavedRule" class="notice" aria-live="polite"></p>
+      </div>
+      <div class="panel admin-wheel-test">
+        <h2>Roleta de teste</h2>
+        <p class="muted">Simulação sem consumir estoque, reservar prêmios ou registrar partidas. Usa os dados salvos no evento.</p>
+        <div class="admin-wheel-grid">
+          <div class="admin-wheel-visual"><span class="admin-wheel-pointer" aria-hidden="true">▼</span><svg id="adminWheelSvg" viewBox="0 0 500 500" role="img" aria-label="Prêmios cadastrados na roleta de teste"></svg></div>
+          <div>
+            <div class="formrow">
+              <div><label for="adminWheelMode">Tipo de teste</label><select id="adminWheelMode"><option value="catalog">Conferir os itens cadastrados</option><option value="rules">Simular regras e disponibilidade reais</option></select></div>
+              <div><label for="adminWheelTarget">Item para conferir</label><select id="adminWheelTarget"></select></div>
+              <div><label for="adminWheelScore">Pontuação simulada</label><input id="adminWheelScore" type="number" min="0" max="10000" step="1" value="800"></div>
+            </div>
+            <label class="admin-wheel-check"><input id="adminWheelCompleted" type="checkbox" checked> Receita integralmente concluída</label>
+            <p id="adminWheelHelp" class="muted"></p>
+            <button id="adminWheelSpin" class="btn primary" type="button">Girar teste</button>
+            <p id="adminWheelResult" class="notice" role="status" aria-live="polite">Escolha um item para conferir ou simule uma partida.</p>
+          </div>
+        </div>
+        <h3>Itens cadastrados e disponibilidade de hoje</h3>
+        <div id="adminWheelItems" class="admin-wheel-items"></div>
+      </div>
+    </section>
+
     <section class="view" id="settings">
       <div class="panel">
         <h2>Configurações do evento</h2>
         <div class="formrow">
           <div><label for="durationSetting">Tempo de cada receita (segundos)</label><input id="durationSetting" type="number" min="180" max="1800" step="1" aria-describedby="durationHelp"><small id="durationHelp">De 3 a 30 minutos (180–1800 segundos). Aplica-se às três receitas.</small>
           </div>
-          <div><label>Máximo de prêmios físicos por dia</label><input id="dailyCap" type="number" min="0" max="999">
-          </div>
-          <div><label for="wheelMode">Como liberar a roleta</label><select id="wheelMode"><option value="score">Atingir pontuação mínima</option><option value="completion">Concluir a receita inteira</option></select><small id="wheelRuleHelp"></small></div>
-          <div><label for="wheelScore">Pontuação mínima (0 libera sem meta de pontos)</label><input id="wheelScore"
-              type="number" min="0" max="1000"></div>
         </div><button class="btn primary" id="saveSettings">Salvar configurações</button>
         <div class="divider"></div>
         <div class="notice">Os controles e o histórico são compartilhados pelo evento. As alterações feitas no celular chegam ao desktop em até cinco segundos. É necessário estar conectado para salvar. Exporte backups regularmente.</div>
@@ -422,12 +452,13 @@
   </div>
   <script src="js/game-loader.js?v=5"></script>
   <script src="js/game-settings.js?v=2"></script>
-  <script src="js/prize-catalog.js?v=1"></script>
+  <script src="js/prize-catalog.js?v=1"></script><script src="js/wheel-rules.js?v=1"></script>
   <script src="js/wheel-design.js?v=2"></script>
-  <script src="js/app.js?v=admin-2"></script>
-  <script src="js/admin-controls.js?v=2"></script>
+  <script src="js/app.js?v=admin-wheel-1"></script>
+  <script src="js/admin-controls.js?v=3"></script>
   <script src="js/event-state.js?v=1"></script>
   <script src="js/control-client.js?v=1"></script>
+<script src="js/admin-wheel.js?v=1"></script>
   <script src="js/cookie-recipe.js?v=4"></script>
   <script src="js/recipe-catalog.js?v=3"></script>
   <script src="js/recipe-guide.js?v=3"></script>

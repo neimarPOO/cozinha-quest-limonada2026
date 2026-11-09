@@ -1,0 +1,17 @@
+/* Compartilhado pelo admin desktop e pelo controle móvel. */
+#openAdminWheel { margin-bottom:18px; }
+#wheel .panel + .panel { margin-top:20px; }
+#wheel small { display:block; color:var(--muted); line-height:1.5; margin-top:7px; }
+#wheel label { display:block; margin-bottom:7px; }
+.admin-wheel-grid { display:grid; grid-template-columns:minmax(240px,1fr) minmax(260px,1fr); gap:28px; align-items:center; }
+.admin-wheel-visual { position:relative; width:100%; max-width:460px; margin:12px auto; }
+#adminWheelSvg { display:block; width:100%; height:auto; filter:drop-shadow(0 12px 16px #0005); }
+.admin-wheel-pointer { position:absolute; z-index:1; top:-12px; left:50%; transform:translateX(-50%); color:var(--gold); font-size:36px; line-height:1; text-shadow:0 3px 3px #000; }
+#wheel .admin-wheel-check { display:flex; align-items:center; gap:10px; margin:18px 0; }
+#wheel .admin-wheel-check input { width:22px; min-height:22px; height:22px; flex-shrink:0; accent-color:var(--lime); }
+.admin-wheel-items { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr)); gap:10px; }
+.admin-wheel-item { border:1px solid var(--line); border-radius:14px; padding:14px; background:#0c201555; }
+.admin-wheel-item strong,.admin-wheel-item small { display:block; }
+#wheel .formrow { grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); }
+#wheel .notice { overflow-wrap:anywhere; }
+@media(max-width:760px){.admin-wheel-grid{grid-template-columns:1fr;gap:12px}.admin-wheel-visual{max-width:340px}#wheel .panel{padding:20px 14px}}
