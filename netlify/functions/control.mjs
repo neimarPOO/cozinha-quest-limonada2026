@@ -11,7 +11,7 @@ export default async function(request, context) {
     store=provider==='supabase'
       ? storage.createSupabaseStore({url:process.env.SUPABASE_URL,key:process.env.SUPABASE_SERVICE_ROLE_KEY})
       : getStore({name:'cozinha-quest-control',consistency:'strong'});
-  } catch {return Response.json({error:'Armazenamento do evento indisponível. Confira a configuração do servidor.'},{status:503});}
+  } catch(error) {return Response.json({error:'Armazenamento do evento indisponível. Confira a configuração do servidor.',code:error.code||'STORAGE_SETUP_FAILED',missingVariables:error.missingVariables||[]},{status:503});}
   if(provider==='supabase') {
     if(!initialization)initialization=migration.ensureSupabaseEvent(store,getStore({name:'cozinha-quest-control',consistency:'strong'})).catch(error=>{initialization=null;throw error;});
     try {await initialization;} catch {return Response.json({error:'Não foi possível preparar a migração dos dados anteriores. Nenhum estado existente foi substituído.'},{status:503});}

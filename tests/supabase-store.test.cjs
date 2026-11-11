@@ -54,3 +54,12 @@ test('migration leaves an empty source untouched and refuses malformed source st
  assert.equal((await ensureSupabaseEvent(target,{async get(){return null}})).migrated,false);
  await assert.rejects(ensureSupabaseEvent(target,{async get(){return {db:{},revision:1}}}),/conferido/);
 });
+
+
+test('configuration diagnostics expose only missing variable names and accept the project REST URL',async()=>{
+ assert.throws(()=>createSupabaseStore({url:'https://project.supabase.co'}),error=>error.code==='SUPABASE_CONFIG_MISSING'&&error.missingVariables.join(',')==='SUPABASE_SERVICE_ROLE_KEY');
+ let called;
+ const store=createSupabaseStore({url:' https://project.supabase.co/rest/v1/ ',key:'fake-key',fetch:async url=>{called=url;return new Response('[]')}});
+ await store.get('event');assert.ok(called.startsWith('https://project.supabase.co/rest/v1/cozinha_control_records?'));
+ assert.ok(!called.includes('/rest/v1/rest/v1/'));
+});
