@@ -10,6 +10,10 @@
       archivedPrizes:[], games:[], sessions:[], audit:[], nextId:1};
   }
   function normalize(db) {
+    if (!db || typeof db !== 'object' || !Array.isArray(db.games) || !Array.isArray(db.prizes) || !Array.isArray(db.sessions)) throw new Error('Estado do evento inválido.');
+    db.audit = Array.isArray(db.audit) ? db.audit : [];
+    db.archivedPrizes = Array.isArray(db.archivedPrizes) ? db.archivedPrizes : [];
+    db.nextId = db.games.reduce((n,g)=>Math.max(n,Number(g.id)+1||1),Number(db.nextId)||1);
     db.settings = Settings.normalizeSettings(db.settings);
     return Prizes.migrate(db);
   }
@@ -18,8 +22,9 @@
     const settings = Object.fromEntries(Object.entries(after.settings).filter(([k,v])=>!equal(before.settings[k],v)));
     if (Object.keys(settings).length) patch.settings=settings;
     if (before.day!==after.day) patch.day=after.day;
+    const oldPrizes = new Map(before.prizes.map(p=>[p.id,p]));
     const prizes = after.prizes.flatMap(p=>{
-      const old=before.prizes.find(x=>x.id===p.id); if(!old) return [];
+      const old=oldPrizes.get(p.id); if(!old) return [];
       const edit={id:p.id}; if(p.qty!==old.qty) edit.qtyDelta=p.qty-old.qty;
       if(p.perDay!==old.perDay) edit.perDay=p.perDay;
       if(p.weight!==old.weight) edit.weight=p.weight;
@@ -27,16 +32,19 @@
     });
     if(prizes.length) patch.prizes=prizes;
     for(const key of ['games','sessions']) {
+      const previous = new Map(before[key].map(item=>[item.id,item]));
+      const present = new Set(after[key].map(item=>item.id));
       const edits=after[key].flatMap(item=>{
-        const old=before[key].find(x=>x.id===item.id);
+        const old=previous.get(item.id);
         if(!old) return [{id:item.id, create:clone(item)}];
         const set=Object.fromEntries(Object.entries(item).filter(([k,v])=>k!=='id'&&!equal(old[k],v)));
         return Object.keys(set).length?[{id:item.id,set}]:[];
       });
-      const removed=before[key].filter(item=>!after[key].some(x=>x.id===item.id)).map(item=>({id:item.id,remove:true}));
+      const removed=before[key].filter(item=>!present.has(item.id)).map(item=>({id:item.id,remove:true}));
       if(edits.length||removed.length) patch[key]=[...edits,...removed];
     }
-    const audit=after.audit.filter(item=>!before.audit.some(x=>equal(x,item)));
+    const previousAudit = new Set(before.audit.map(item=>JSON.stringify(item)));
+    const audit=after.audit.filter(item=>!previousAudit.has(JSON.stringify(item)));
     if(audit.length) patch.audit=clone(audit);
     return patch;
   }
@@ -58,7 +66,7 @@
       else if(edit.set&&index>=0) Object.assign(result[key][index],clone(edit.set));
     }
     if(patch.audit) result.audit.push(...clone(patch.audit));
-    result.nextId=Math.max(result.nextId,...result.games.map(g=>Number(g.id)+1));
+    result.nextId=result.games.reduce((n,g)=>Math.max(n,Number(g.id)+1||1),Number(result.nextId)||1);
     return result;
   }
   return {fresh, normalize, diff, merge, clone};

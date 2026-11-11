@@ -1,5 +1,6 @@
-'use strict'; const KEY = 'limonada-cozinha-quest-v2'; const ADMIN_AUTH_KEY = 'lq_admin_session'; const ADMIN_TABS = ['dashboard', 'wheel', 'prizes', 'sessions', 'history', 'settings']; function isAdminAuthenticated() { return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' } function updateAdminUI() { let authed = isAdminAuthenticated(); document.body.classList.toggle('is-admin', authed) } let pendingAdminTab = 'dashboard'; function openAdminLogin(targetTab) { pendingAdminTab = targetTab || 'dashboard'; let em = $('adminEmailInput'), pw = $('adminPasswordInput'), err = $('adminLoginError'); if (em) em.value = ''; if (pw) pw.value = ''; if (err) err.style.display = 'none'; $('adminLoginModal').classList.remove('hidden'); setTimeout(() => { if (em) em.focus() }, 120) } function closeAdminLogin() { $('adminLoginModal').classList.add('hidden'); if ($('adminLoginError')) $('adminLoginError').style.display = 'none' } async function handleAdminLogin() { /* A sessão é validada pelo serviço do evento. */ } function handleAdminLogout() { if (confirm('Encerrar sessão de monitor e bloquear a Área Administrativa?')) { sessionStorage.removeItem(ADMIN_AUTH_KEY); updateAdminUI(); showTab('play') } } const RECIPES = [{ id: 'cookie', name: 'Cookies de chocolate', emoji: '🍪', desc: 'Misture, modele e asse a massa na sequência certa.', steps: [['Manteiga', 'Misturar', 'Misture a manteiga para começar a massa.'], ['Açúcar', 'Misturar', 'Incorpore o açúcar à manteiga.'], ['Ovo', 'Bater', 'Bata o ovo na mistura.'], ['Farinha', 'Peneirar', 'Peneire a farinha antes de adicionar.'], ['Chocolate', 'Picar', 'Pique o chocolate em pequenos pedaços.'], ['Massa', 'Modelar', 'Modele os cookies.'], ['Cookies', 'Assar', 'Asse a 180°C por 12 segundos na assadeira (minutos em segundos no arcade).']], oven: { temp: 180, time: 12 } }, { id: 'lemonade', name: 'Limonada especial', emoji: '🍋', desc: 'Higienize, corte, esprema e misture uma limonada.', steps: [['Limão', 'Lavar', 'Higienize os limões.'], ['Limão', 'Cortar', 'Corte os limões ao meio.'], ['Limão', 'Espremer', 'Extraia o suco.'], ['Água', 'Adicionar', 'Acrescente água filtrada.'], ['Açúcar', 'Misturar', 'Misture o açúcar.'], ['Gelo', 'Adicionar', 'Finalize com gelo.']] }, { id: 'brownie', name: 'Brownie de chocolate', emoji: '🍫', desc: 'Manteiga noisette, chocolate 70% e casquinha crocante.', steps: [['Fôrma e forno','Preparar','180 °C, fôrma quadrada untada'],['Manteiga noisette','Preparar','Doure a manteiga e derreta o chocolate'],['Ovos e açúcar','Bater','Creme fofo e volumoso'],['Massa','Misturar','Incorpore e peneire os secos'],['Brownie','Assar','20–24 minutos reais'],['Descanso','Servir','Espere pelo menos 2 horas reais']], oven:{temp:180,time:22} }]; const INGREDIENTS = ['Manteiga', 'Açúcar', 'Ovo', 'Farinha', 'Chocolate', 'Cookies', 'Limão', 'Água', 'Gelo', 'Fermento', 'Azeite', 'Alecrim', 'Focaccia', 'Leite', 'Sal', 'Morango']; const ACTIONS = ['Misturar', 'Bater', 'Peneirar', 'Picar', 'Modelar', 'Assar', 'Lavar', 'Cortar', 'Espremer', 'Adicionar', 'Sovar', 'Aquecer']; const PRIZES = PrizeCatalog.defaults(); function fresh() { return { day: 1, settings: { seconds: GameSettings.DEFAULT_SECONDS, dailyCap: 15, wheelScore: 500, wheelMode: 'score' }, prizes: structuredClone(PRIZES), prizeCatalogVersion: PrizeCatalog.VERSION, archivedPrizes: [], sessions: [], games: [], audit: [], nextId: 1 } } function load() { try { let s = JSON.parse(localStorage.getItem(KEY)); if (!(s && s.games && s.prizes && s.sessions && s.settings)) return fresh(); s.settings = GameSettings.normalizeSettings(s.settings); if (!('wheelScore' in s.settings)) s.settings.wheelScore = 500; return PrizeCatalog.migrate(s) } catch { return fresh() } } let db = load(); try { localStorage.setItem(KEY, JSON.stringify(db)) } catch {} function save() { try { localStorage.setItem(KEY, JSON.stringify(db)) } catch {} return window.ControlSync ? ControlSync.submit(db) : Promise.resolve(false) } const $ = id => document.getElementById(id), fmt = n => String(n).padStart(2, '0'); function audit(type, detail) { db.audit.push({ time: new Date().toISOString(), type, detail }) } function usedToday(id) { return db.games.filter(g => g.day === db.day && g.prize === id && g.status !== 'cancelado').length } function dailyPhysical() { return db.games.filter(g => g.day === db.day && g.prize && g.status !== 'cancelado').length } function available(p) { return Math.max(0, Math.min(p.qty - db.games.filter(g => g.prize === p.id && g.status !== 'cancelado').length, p.perDay - usedToday(p.id))) } function freeSessions() { return db.sessions.filter(s => s.day === db.day && s.capacity > db.games.filter(g => g.sessionId === s.id && g.status !== 'cancelado').length).sort((a, b) => a.time.localeCompare(b.time)) } function availablePrizes() { return db.prizes.filter(p => available(p) > 0 && (p.id !== 'ticket' || freeSessions().length > 0)) } function showTab(tab) { if (ADMIN_TABS.includes(tab) && !isAdminAuthenticated()) { openAdminLogin(tab); return } if (current && tab !== 'play' && !current.finished) { if (!confirm('Uma partida está em andamento. Encerrar a tentativa?')) return; finish(false) } document.querySelectorAll('.tab[data-tab]').forEach(e => e.classList.toggle('active', e.dataset.tab === tab)); document.querySelectorAll('.view').forEach(e => e.classList.toggle('active', e.id === tab)); renderAll() } document.querySelectorAll('.tab[data-tab]').forEach(e => e.onclick = () => showTab(e.dataset.tab)); let current = null, timerId = null, three = null, visual = {}, sceneHooks = null;
-    function renderRecipes() { $('recipeList').innerHTML = RECIPES.map(r => `<button class="recipe" data-recipe="${r.id}" aria-label="Jogar ${r.name}"><img class="recipe-art" src="public/${({ cookie: 'cookies.png', lemonade: 'limonada.png', brownie: 'Brownies_tela_inicial.png' }[r.id] || r.id+'.png')}" alt="" width="400" height="267"><span class="recipe-kicker"><span class="recipe-crown" aria-hidden="true">♛</span>${r.id === 'cookie' ? '01 · DOCE CONQUISTA' : r.id === 'lemonade' ? '02 · ENERGIA CÍTRICA' : '03 · MÃO NA MASSA'}</span><b>${r.name}</b><p class="muted">${r.desc}</p><span class="badge"><span class="recipe-step-icon" aria-hidden="true"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg></span>${window.RecipeCatalog?.[r.id]?.phases.length || r.steps.length} ETAPAS <span class="recipe-arrow" aria-hidden="true"></span></span></button>`).join(''); document.querySelectorAll('[data-recipe]').forEach(e => e.onclick = () => startGame(e.dataset.recipe)) } async function startGame(id) { if (!(await ControlSync.refresh())) { alert("Conecte-se ao evento antes de iniciar a receita."); return; } if(window.GameLoader){ void GameLoader.start(id); return } if (window.CookieGame && window.RecipeCatalog?.[id]) { CookieGame.start(id); return } let r = RECIPES.find(x => x.id === id); current = { recipe: r, step: 0, score: 0, wrong: 0, ingredient: null, action: null, remaining: db.settings.seconds, finished: false, gameId: null }; $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('wheelArea').classList.add('hidden'); $('game').classList.remove('hidden'); $('recipeName').textContent = r.emoji + ' ' + r.name; updateStep(); updateScene('start'); clearInterval(timerId); timerId = setInterval(() => { if (!current || current.finished) return; current.remaining--; renderTimer(); if (current.remaining <= 0) finish(false) }, 1000); renderTimer() } function renderTimer() { if (!current) return; $('timer').textContent = `${fmt(Math.floor(current.remaining / 60))}:${fmt(current.remaining % 60)}`; $('timer').style.color = current.remaining <= 20 ? '#ff8a7e' : '#ffc95e' } function updateStep() {
+'use strict';
+const RECIPES = [{ id: 'cookie', name: 'Cookies de chocolate', emoji: '🍪', desc: 'Misture, modele e asse a massa na sequência certa.', steps: [['Manteiga', 'Misturar', 'Misture a manteiga para começar a massa.'], ['Açúcar', 'Misturar', 'Incorpore o açúcar à manteiga.'], ['Ovo', 'Bater', 'Bata o ovo na mistura.'], ['Farinha', 'Peneirar', 'Peneire a farinha antes de adicionar.'], ['Chocolate', 'Picar', 'Pique o chocolate em pequenos pedaços.'], ['Massa', 'Modelar', 'Modele os cookies.'], ['Cookies', 'Assar', 'Asse a 180°C por 12 segundos na assadeira (minutos em segundos no arcade).']], oven: { temp: 180, time: 12 } }, { id: 'lemonade', name: 'Limonada especial', emoji: '🍋', desc: 'Higienize, corte, esprema e misture uma limonada.', steps: [['Limão', 'Lavar', 'Higienize os limões.'], ['Limão', 'Cortar', 'Corte os limões ao meio.'], ['Limão', 'Espremer', 'Extraia o suco.'], ['Água', 'Adicionar', 'Acrescente água filtrada.'], ['Açúcar', 'Misturar', 'Misture o açúcar.'], ['Gelo', 'Adicionar', 'Finalize com gelo.']] }, { id: 'brownie', name: 'Brownie de chocolate', emoji: '🍫', desc: 'Manteiga noisette, chocolate 70% e casquinha crocante.', steps: [['Fôrma e forno','Preparar','180 °C, fôrma quadrada untada'],['Manteiga noisette','Preparar','Doure a manteiga e derreta o chocolate'],['Ovos e açúcar','Bater','Creme fofo e volumoso'],['Massa','Misturar','Incorpore e peneire os secos'],['Brownie','Assar','20–24 minutos reais'],['Descanso','Servir','Espere pelo menos 2 horas reais']], oven:{temp:180,time:22} }]; const INGREDIENTS = ['Manteiga', 'Açúcar', 'Ovo', 'Farinha', 'Chocolate', 'Cookies', 'Limão', 'Água', 'Gelo', 'Fermento', 'Azeite', 'Alecrim', 'Focaccia', 'Leite', 'Sal', 'Morango']; const ACTIONS = ['Misturar', 'Bater', 'Peneirar', 'Picar', 'Modelar', 'Assar', 'Lavar', 'Cortar', 'Espremer', 'Adicionar', 'Sovar', 'Aquecer']; function showTab(tab) { if (ADMIN_TABS.includes(tab) && !isAdminAuthenticated()) { openAdminLogin(tab); return } if (current && tab !== 'play' && !current.finished) { if (!confirm('Uma partida está em andamento. Encerrar a tentativa?')) return; finish(false) } document.querySelectorAll('.tab[data-tab]').forEach(e => e.classList.toggle('active', e.dataset.tab === tab)); document.querySelectorAll('.view').forEach(e => e.classList.toggle('active', e.id === tab)); renderAll() } document.querySelectorAll('.tab[data-tab]').forEach(e => e.onclick = () => showTab(e.dataset.tab)); let current = null, timerId = null, three = null, visual = {}, sceneHooks = null;
+    function renderRecipes() { $('recipeList').innerHTML = RECIPES.map(r => `<button class="recipe" data-recipe="${r.id}" aria-label="Jogar ${r.name}"><img class="recipe-art" src="public/${({ cookie: 'cookies.png', lemonade: 'limonada.png', brownie: 'Brownies_tela_inicial.png' }[r.id] || r.id+'.png')}" alt="" width="400" height="267"><span class="recipe-kicker"><span class="recipe-crown" aria-hidden="true">♛</span>${r.id === 'cookie' ? '01 · DOCE CONQUISTA' : r.id === 'lemonade' ? '02 · ENERGIA CÍTRICA' : '03 · MÃO NA MASSA'}</span><b>${r.name}</b><p class="muted">${r.desc}</p><span class="badge"><span class="recipe-step-icon" aria-hidden="true"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg></span>${window.RecipeCatalog?.[r.id]?.phases.length || r.steps.length} ETAPAS <span class="recipe-arrow" aria-hidden="true"></span></span></button>`).join(''); document.querySelectorAll('[data-recipe]').forEach(e => e.onclick = () => startGame(e.dataset.recipe)) } async function startGame(id) { if (!(await ControlSync.refresh())) { alert("Conecte-se ao evento antes de iniciar a receita."); return; } if(window.GameLoader){ void GameLoader.start(id); return } if (window.CookieGame && window.RecipeCatalog?.[id]) { CookieGame.start(id); return } let r = RECIPES.find(x => x.id === id); current = { recipe: r, step: 0, score: 0, wrong: 0, ingredient: null, action: null, remaining: db.settings.seconds, duration: db.settings.seconds, finished: false, gameId: null }; $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('wheelArea').classList.add('hidden'); $('game').classList.remove('hidden'); $('recipeName').textContent = r.emoji + ' ' + r.name; updateStep(); updateScene('start'); clearInterval(timerId); timerId = setInterval(() => { if (!current || current.finished) return; current.remaining--; renderTimer(); if (current.remaining <= 0) finish(false) }, 1000); renderTimer() } function renderTimer() { if (!current) return; $('timer').textContent = `${fmt(Math.floor(current.remaining / 60))}:${fmt(current.remaining % 60)}`; $('timer').style.color = current.remaining <= 20 ? '#ff8a7e' : '#ffc95e' } function updateStep() {
       if (!current) return; let r = current.recipe, step = r.steps[current.step]; $('stepTitle').textContent = `Etapa ${current.step + 1}: ${step[0]}`; $('stepHint').textContent = step[2]; $('stepCount').textContent = `${current.step + 1} de ${r.steps.length}`; $('progressBar').style.width = `${current.step / r.steps.length * 100}%`; $('score').textContent = `${current.score} pontos`; $('feedback').textContent = three ? 'Arraste o ingrediente correto até a tigela.' : 'Selecione o ingrediente e o preparo correspondente.'; if (three) {
         let dest = step[1] === 'Lavar' ? 'pia' : step[1] === 'Assar' ? 'assadeira' : (step[1] === 'Cortar' || step[1] === 'Picar') ? 'tábua' : (step[1] === 'Modelar' || step[1] === 'Sovar') ? 'massa na tigela' : 'tigela';
         let meta = step[1] === 'Assar' && r.oven ? ` • meta ${r.oven.temp}°C / ${r.oven.time} seg` : '';
@@ -511,16 +512,18 @@ function renderResultCard(data) {
 
     async function finish(won) {
       if (!current || current.finished) return;
+      const finishedGame = current;
       const cookieDetails = window.CookieGame?.active ? CookieGame.stop() : null;
       current.finished = true; clearInterval(timerId); sceneHooks = null;
       if (three && three.reset) three.reset();
       let id = Date.now() * 1000 + Math.floor(random() * 1000),
-        game = { id, day: db.day, time: new Date().toISOString(), recipe: current.recipe.name, score: current.score, seconds: db.settings.seconds - current.remaining, completed: won, prize: null, sessionId: null, status: won ? 'aguardando_roleta' : 'sem_premio' };
+        game = { id, day: db.day, time: new Date().toISOString(), recipe: current.recipe.name, score: current.score, seconds: Math.max(0, (current.duration ?? db.settings.seconds) - current.remaining), completed: won, prize: null, sessionId: null, status: won ? 'aguardando_roleta' : 'sem_premio' };
       if (cookieDetails) { game.recipeDetails = cookieDetails; if(current.recipe.id === 'cookie') game.cookieDetails = cookieDetails; }
       db.games.push(game); current.gameId = id;
       let meta = Math.max(0, Number(db.settings.wheelScore) || 0), unlock = GameSettings.wheelEligible(db.settings, game);
       if (!unlock) game.status = 'sem_premio'; else game.status = 'aguardando_roleta';
       if (!(await save())) unlock = false;
+      if (current !== finishedGame) return;
       $('game').classList.add('hidden');
       $('end').classList.remove('hidden');
       $('award').classList.add('hidden');
@@ -543,9 +546,7 @@ function renderResultCard(data) {
       renderAll();
     }
 
-    function chance(score) { if (score < 250) return .08; if (score < 500) return .15; if (score < 750) return .25; if (score < 900) return .35; return .45 }
     function random() { let a = new Uint32Array(1); if (window.crypto && crypto.getRandomValues) { crypto.getRandomValues(a); return a[0] / 4294967296 } return Math.random() }
-    function weighted(list) { let sum = list.reduce((s, p) => s + p.weight, 0), r = random() * sum; return list.find(p => (r -= p.weight) < 0) || list[list.length - 1] }
 
     /* Sorteio puro (sem tocar no DOM): decide prêmio, sessão, setor e respin.
        Fica separado da animação para poder ser testado e auditado. */
@@ -568,11 +569,15 @@ function renderResultCard(data) {
       $('spinBtn').textContent='Revelando sua recompensa…';
       let cap = db.settings.dailyCap, today = dailyPhysical();
       if ($('wheelStatusMsg')) $('wheelStatusMsg').textContent = today >= cap ? 'Limite diário de prêmios físicos atingido — hoje a roleta entrega a Insígnia Digital.' : availablePrizes().length ? 'Girando a roleta... boa sorte! 🍀' : 'Estoque de prêmios físicos esgotado — hoje a roleta entrega a Insígnia Digital.';
+      const drawingGameId = game.id;
       let pick = wheelPick();
       let prize = pick.prize, session = pick.session, targetIndex = pick.targetIndex, isRespin = pick.isRespin;
       if (isRespin) current.hadRespin = true;
       let missCopy = prize ? null : (MISS_COPY[pick.sector] || MISS_COPY.miss_2);
       spinWheelPhysics(targetIndex, async (idx) => {
+        if (!current || current.gameId !== drawingGameId) return;
+        game = db.games.find(g => g.id === drawingGameId);
+        if (!game || game.status !== 'aguardando_roleta') return;
         $("spinBtn").textContent="RECOMPENSA REVELADA";
         if (isRespin) {
           WheelDesign.state("again");
@@ -585,20 +590,21 @@ function renderResultCard(data) {
         if (prize) {
           game.prize = prize.id; game.sessionId = session?.id || null; game.status = 'reservado';
           audit('premio_reservado', `Partida ${game.id}: ${escapeAdmin(prize.name)} (setor ${pick.sector})`);
-          playRoletaJingle(true);
-          if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = `🎉 <b>PARABÉNS!</b> Você conquistou: <b>${escapeAdmin(prize.name)}</b>!`;
+
         } else {
           game.status = 'digital'; game.missSector = pick.sector;
           audit('roleta_digital', `Partida ${game.id}: setor ${pick.sector}`);
-          playRoletaJingle(false);
-          if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = missCopy.status;
+
         }
         if (!(await save())) { $('spinBtn').disabled = false; $('spinBtn').textContent = 'TENTAR NOVAMENTE'; return; }
+        if ($('wheelStatusMsg')) $('wheelStatusMsg').innerHTML = prize ? `🎉 <b>PARABÉNS!</b> Você conquistou: <b>${escapeAdmin(prize.name)}</b>!` : missCopy.status;
+        playRoletaJingle(!!prize);
         setTimeout(() => {
+          if (!current || current.gameId !== drawingGameId) return;
           $('wheelArea').classList.add('hidden');
           let codeStr = prize 
-            ? `Código LQ-${fmt(db.day)}-${String(game.id).padStart(5, '0')}-${prize.id.toUpperCase()}`
-            : `Código LQ-${fmt(db.day)}-${String(game.id).padStart(5, '0')}-DIGITAL`;
+            ? `Código LQ-${fmt(game.day)}-${String(game.id).padStart(5, '0')}-${prize.id.toUpperCase()}`
+            : `Código LQ-${fmt(game.day)}-${String(game.id).padStart(5, '0')}-DIGITAL`;
           let detailStr = prize?.id === 'ticket'
             ? `Dia ${session.day}, às ${session.time}. Duração: ${session.duration} minutos. Apresente este código ao monitor.`
             : prize
@@ -622,6 +628,21 @@ function renderResultCard(data) {
         }, 2400);
       });
     }
+    document.addEventListener('control-recovered', () => {
+      if (!current?.finished) return;
+      const game = db.games.find(g => g.id === current.gameId);
+      if (!game) return;
+      if (game.status === 'aguardando_roleta') {
+        $('wheelArea').classList.toggle('hidden', !GameSettings.wheelEligible(db.settings, game));
+        $('spinBtn').disabled = false;
+        $('spinBtn').textContent = '🍋 GIRAR ROLETA';
+        buildRoletaSvg();
+      } else if (['reservado', 'entregue', 'digital'].includes(game.status)) {
+        const prize = db.prizes.find(p => p.id === game.prize);
+        $('wheelArea').classList.add('hidden');
+        renderResultCard({isWinner:!!prize,isTimeout:false,prizeId:game.prize||'digital',prizeName:prize?.name||'Insígnia Digital de Chef',detail:'Envio confirmado. Apresente o código ao monitor para conferir o resultado.',code:`Código LQ-${fmt(game.day)}-${String(game.id).padStart(5,'0')}-${(game.prize||'digital').toUpperCase()}`,score:game.score,meta:db.settings.wheelScore,gameId:game.id,missSector:game.missSector});
+      }
+    });
     document.addEventListener('focusin',event=>{const area=$('wheelArea');if(!area.classList.contains('hidden')&&!area.contains(event.target)){if($('spinBtn').disabled)area.focus({preventScroll:true});else $('spinBtn').focus({preventScroll:true});}});
     $('wheelArea').addEventListener('keydown' ,event=>{if(event.key==='Tab'&&!$('wheelArea').classList.contains('hidden')){event.preventDefault();if(!$('spinBtn').disabled)$('spinBtn').focus();}});
     document.querySelector('.reward-action-slot').append($('wheelArea').querySelector('.roleta-foot'));

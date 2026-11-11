@@ -840,6 +840,7 @@
     }
     notebook.setPhase(t.phase);
     scene?.sync(state);
+    scene?.syncProtection(state);
     if (scene && scene.revealedStep !== statusKey) {
       scene.revealedStep = statusKey;
       scene.revealCurrentObject(t.item);
@@ -917,6 +918,7 @@
         score: 0,
         wrong: 0,
         remaining: db.settings.seconds,
+        duration: db.settings.seconds,
         finished: false,
         gameId: null,
       };

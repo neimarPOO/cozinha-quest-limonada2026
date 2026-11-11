@@ -1,0 +1,3 @@
+.control-recovery { position:relative; z-index:1200; display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:10px 0 16px; padding:14px 18px; border:1px solid #d4b85d; border-radius:14px; background:#292012; color:#fff1c0; }
+.control-recovery p { flex:1 1 280px; margin:0; line-height:1.5; font-size:14px; }
+.control-recovery[hidden] { display:none!important; }

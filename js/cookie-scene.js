@@ -1133,6 +1133,17 @@ window.CookieScene = class CookieScene {
     }
     return null;
   }
+  syncProtection(state) {
+    const equipped=Boolean(state.gloves);
+    const changed=this.hand?.setGloved?.(equipped);
+    const pair=this.objects.get("gloves")?.userData.thermalPair;
+    if(pair){pair[0].visible=!equipped;pair[1].visible=true;}
+    if(changed&&equipped&&!this.readingHand){
+      const anchor=this.getObjectAnchor("gloves");
+      if(anchor)this.updateHand({clientX:anchor.x,clientY:anchor.y});
+    }
+    if(changed)this.needsRender=true;
+  }
   sync(state) {
     this.needsRender = true;
     this.state = state;
@@ -1239,12 +1250,13 @@ window.CookieScene = class CookieScene {
       "webglcontextlost",
       this.contextLost,
     );
-    if (this.hand) this.hand.group.traverse((o) => o.skeleton?.dispose());
     this.grain?.dispose();
-    const textures = new Set(),
+    const skeletons = new Set(),
+      textures = new Set(),
       materials = new Set(),
       geometries = new Set();
     this.scene.traverse((o) => {
+      if (o.skeleton) skeletons.add(o.skeleton);
       if (o.geometry) geometries.add(o.geometry);
       for (const m of o.material
         ? Array.isArray(o.material)
@@ -1256,6 +1268,7 @@ window.CookieScene = class CookieScene {
           if (value?.isTexture) textures.add(value);
       }
     });
+    for (const skeleton of skeletons) skeleton.dispose();
     for (const texture of textures) texture.dispose();
     for (const material of materials) material.dispose();
     for (const geometry of geometries)

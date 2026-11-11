@@ -135,3 +135,18 @@ uma vez para a jarra. A extração do lote é uma animação automática de trê
 A água gelada (1 L) fica em uma jarra de vidro cheia, com alça, bico e condensação,
 com o mesmo contorno da jarra de servir. A estação antiga do espremedor fica oculta.
 A abertura apresenta somente os cards das receitas; o Diário do Chef foi removido.
+
+
+## Luvas térmicas roxas
+
+`KitchenMitts` gera uma luva acolchoada de palma única e polegar separado, com
+painel antiderrapante em relevo, borda costurada, punho de tecido e alça de pendurar.
+A paleta roxa acompanha a identidade da Escola Startup. O par na bancada tem lados
+espelhados. Cada luva usa quatro superfícies agrupadas e um pequeno rig próprio,
+sem novas imagens, modelos externos ou contexto WebGL.
+
+Ao confirmar “Equipar luvas térmicas antes de retirar”, a proteção cobre a mão 3D
+(incluindo pele, unhas e manga) e acompanha suas poses. Uma luva some da bancada
+e a outra permanece. A regra de exigir luvas antes da retirada da assadeira é a
+mesma; a aparência deriva do estado `gloves`, compartilhado por cookies e brownie.
+Uma nova partida começa com a mão descoberta e o par completo na bancada.

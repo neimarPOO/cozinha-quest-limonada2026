@@ -62,3 +62,35 @@ test('cross-origin changes and invalid settings are rejected',async()=>{
  const response=await handler(new Request('https://example.test/api/control/login',{method:'POST',headers:{origin:'https://other.test'},body:'{}'}));assert.equal(response.status,403);
  for(const settings of [{seconds:2},{wheelMode:'anything'},{wheelScore:-1},{dailyCap:0.5}])assert.equal((await admin('changes',change({settings}))).status,400);
 });
+test('malformed changes and mismatched identities are rejected without altering state',async()=>{
+ const {admin,game:player}=await fixture();
+ for(const patch of [{games:[{id:1,create:null}]},{games:{}},{games:[{id:1,create:game(2)}]},{games:[{id:1,set:{status:'digital'}}]}])assert.ok([400,409].includes((await player('changes',change(patch))).status));
+ assert.equal((await player('changes',change({games:[{id:1,create:{...game(1),status:'reservado',prize:'cha'}}]}))).status,400);
+ assert.equal((await player('state')).data.db.games.length,0);
+ const backup=State.fresh();backup.games=[{id:1}];
+ assert.equal((await admin('replace',{id:crypto.randomUUID(),db:backup})).status,400);
+ assert.equal((await player('state')).data.db.games.length,0);
+});
+test('operation acknowledgement supports recovery and completed results cannot reopen',async()=>{
+ const {game:player}=await fixture();const id=crypto.randomUUID();
+ assert.equal((await player('changes',change({games:[{id:1,create:game(1)}]},id))).status,200);
+ assert.equal((await player('state?operation='+id)).data.acknowledged,true);
+ assert.equal((await player('changes',change({games:[{id:1,set:{status:'digital'}}]}))).status,200);
+ assert.equal((await player('changes',change({games:[{id:1,set:{status:'aguardando_roleta'}}]}))).status,409);
+});
+test('session time validation also rejects duplicate times in a single atomic batch',async()=>{
+ const {admin}=await fixture();const session={day:1,time:'10:30',duration:30,capacity:4};
+ assert.equal((await admin('changes',change({sessions:[{id:'a',create:{...session,id:'a',time:'25:00'}}]}))).status,400);
+ assert.equal((await admin('changes',change({sessions:['a','b'].map(id=>({id,create:{...session,id}}))}))).status,409);
+});
+test('large game histories normalize without spreading all records onto the stack',()=>{
+ const value=State.fresh();value.games=Array.from({length:150000},(_,i)=>({id:i+1}));
+ assert.equal(State.normalize(value).nextId,150001);
+});
+test('optimized state diff preserves creates, edits, removals, stock deltas and appended audit',()=>{
+ const before=State.fresh();before.games=[game(1),game(2)];before.sessions=[{id:'old',day:1,time:'10:00',capacity:3,duration:30}];
+ const after=clone(before);after.games=[{...game(1),status:'digital'},game(3)];after.sessions=[];after.prizes[0].qty+=2;after.audit.push({time:new Date().toISOString(),type:'test',detail:'diff'});
+ const patch=State.diff(before,after);const merged=State.merge(before,patch);
+ assert.deepEqual(merged.games,after.games);assert.deepEqual(merged.sessions,after.sessions);assert.deepEqual(merged.prizes,after.prizes);assert.deepEqual(merged.audit,after.audit);
+ assert.deepEqual(State.diff(merged,after),{});
+});

@@ -420,10 +420,26 @@ window.KitchenHand = {
     rig.group.traverse((o) => {
       if (o.isMesh) o.castShadow = true;
     });
+    const bareMeshes=[];
+    rig.group.traverse(o=>{if(o.isMesh)bareMeshes.push([o,o.visible]);});
+    const protection=window.KitchenMitts?.create();
+    if(protection){protection.group.visible=false;rig.group.add(protection.group);}
+    let gloved=false;
     return {
       group: rig.group,
+      setGloved(value) {
+        if(!protection)return false;
+        value=Boolean(value);
+        if(value===gloved)return false;
+        gloved=value;
+        for(const [mesh,visible] of bareMeshes)mesh.visible=value?false:visible;
+        if(protection)protection.group.visible=value;
+        return true;
+      },
+      get gloved(){return gloved;},
       pose(name, amount) {
         poseHand(rig, name, amount);
+        protection?.pose(name, amount);
       },
     };
   },

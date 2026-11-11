@@ -717,47 +717,9 @@ window.KitchenAssets = (() => {
       oven.add(warmth);
     }
     const gloves = c.objects.get("gloves");
-    if (gloves) {
+    if (gloves && window.KitchenMitts) {
       clear(gloves);
-      const fabric = mat(0xaf242c, {
-        roughness: 0.96,
-        clearcoat: 0,
-        bumpMap: texture("grain"),
-        bumpScale: 0.016,
-      });
-      const seam = mat(0x6f1520, { roughness: 1, clearcoat: 0 });
-      for (const x of [-0.23, 0.23]) {
-        sculpted(gloves, 0.37, 0.19, 0.63, 0.085, fabric, [x, 0.15, 0]);
-        const fingers = ball(gloves, 0.182, fabric, [x, 0.14, -0.31]);
-        fingers.scale.y = 0.43;
-        const thumb = ball(gloves, 0.11, fabric, [x + 0.18, 0.13, -0.12]);
-        thumb.scale.set(0.8, 0.65, 1.5);
-        rounded(gloves, 0.39, 0.035, 0.08, seam, [x, 0.218, 0.23]);
-        for (let n = 0; n < 6; n++) {
-          const points = [];
-          for (let i = 0; i <= 6; i++) {
-            const dx = -0.145 + (i * 0.29) / 6;
-            points.push(
-              new T.Vector3(
-                x + dx,
-                0.252 + 0.012 * Math.cos(dx * 10),
-                -0.23 + n * 0.075 + dx * 0.3,
-              ),
-            );
-          }
-          mesh(
-            gloves,
-            new T.TubeGeometry(
-              new T.CatmullRomCurve3(points),
-              8,
-              0.006,
-              4,
-              false,
-            ),
-            seam,
-          );
-        }
-      }
+      KitchenMitts.bench(gloves);
     }
     const plate = c.objects.get("plate");
     if (plate) {

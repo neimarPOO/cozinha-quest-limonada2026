@@ -21,9 +21,10 @@
   function freeSessions(db) {
     return db.sessions.filter(s=>s.day===db.day&&s.capacity>db.games.filter(g=>g.sessionId===s.id&&g.status!=='cancelado').length).sort((a,b)=>a.time.localeCompare(b.time));
   }
+  function availablePrizes(db) {return db.prizes.filter(p=>available(db,p)>0&&(p.id!=='ticket'||freeSessions(db).length>0));}
   function pick(db,game,random=Math.random) {
     if(!Settings.wheelEligible(db.settings,game))return {ok:false,reason:'Para liberar a roleta: '+Settings.wheelRequirement(db.settings)+'.'};
-    const list=sectors(db.prizes),pool=db.prizes.filter(p=>available(db,p)>0&&(p.id!=='ticket'||freeSessions(db).length));
+    const list=sectors(db.prizes),pool=availablePrizes(db);
     const cap=dailyPhysical(db)>=db.settings.dailyCap;
     let prize=null,session=null;
     if(pool.length&&!cap&&random()<chance(game.score)) {
@@ -36,5 +37,5 @@
     return {ok:true,prize,session,targetIndex,isRespin:type==='respin',sector:list[targetIndex].id,
       reason:cap?'Limite diário geral de prêmios atingido.':!pool.length?'Nenhum prêmio disponível no estoque e nos limites de hoje.':prize?'Prêmio físico disponível.':type==='respin'?'Giro extra.':'Insígnia digital: o sorteio não selecionou um prêmio físico.'};
   }
-  return {available,dailyPhysical,chance,sectors,pick};
+  return {available,dailyPhysical,chance,sectors,pick,freeSessions,availablePrizes};
 });
