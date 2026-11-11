@@ -14,7 +14,7 @@ export default async function(request, context) {
   } catch(error) {return Response.json({error:'Armazenamento do evento indisponível. Confira a configuração do servidor.',code:error.code||'STORAGE_SETUP_FAILED',missingVariables:error.missingVariables||[]},{status:503});}
   if(provider==='supabase') {
     if(!initialization)initialization=migration.ensureSupabaseEvent(store,getStore({name:'cozinha-quest-control',consistency:'strong'})).catch(error=>{initialization=null;throw error;});
-    try {await initialization;} catch {return Response.json({error:'Não foi possível preparar a migração dos dados anteriores. Nenhum estado existente foi substituído.'},{status:503});}
+    try {await initialization;} catch(error) {return Response.json({error:'Não foi possível preparar a migração dos dados anteriores. Nenhum estado existente foi substituído.',stage:error.stage||'prepare',upstreamStatus:error.upstreamStatus||null,providerCode:error.providerCode||null},{status:503});}
   }
   return service.createControlHandler(store, {localAddress:context.ip,storageProvider:provider})(request);
 }
