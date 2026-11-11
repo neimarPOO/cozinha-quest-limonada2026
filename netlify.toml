@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Nome público do provedor; credenciais continuam sob varredura.
+  SECRETS_SCAN_OMIT_KEYS = "CONTROL_STORAGE"
 
 [functions]
   directory = "netlify/functions"

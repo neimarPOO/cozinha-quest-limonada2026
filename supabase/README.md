@@ -76,3 +76,11 @@ Para validar por aqui, uma credencial de servidor precisa ser configurada nas
 configurações seguras deste ambiente, e a migração deve ter sido aplicada ao banco.
 Para aplicar a migração automaticamente também seria necessário acesso de banco
 ou acesso de gerenciamento Supabase; a chave da API de dados não executa DDL.
+
+## Varredura de segredos no Netlify
+
+`CONTROL_STORAGE` contém apenas o nome público do provedor (`supabase` ou
+`netlify`). Se a variável tiver sido marcada como secreta no painel, seu valor
+coincide com nomes de arquivos e referências normais do projeto. O `netlify.toml`
+exclui somente essa variável com `SECRETS_SCAN_OMIT_KEYS=CONTROL_STORAGE`. A
+varredura permanece ativa para a chave de serviço e todas as demais credenciais.
