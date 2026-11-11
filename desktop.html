@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="css/wheel-design.css?v=1">
 <link rel="stylesheet" href="css/admin-wheel.css?v=1">
   <link rel="stylesheet" href="css/lobby-premium.css?v=2">
+  <link rel="stylesheet" href="css/lobby-information.css?v=1">
 </head>
 
 <body>
@@ -30,10 +31,10 @@
         <div class="logo"><span class="brand-lemon" aria-hidden="true">🍋</span><div>LIMONADA <span>COZINHA QUEST</span></div></div>
         <div class="sub">SUMMIT · ARCADE GASTRONÔMICO</div>
       </div>
-      <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><span class="badge sync-status" role="status">Conectando ao evento…</span><button
+      <div class="engine-status flex"><span class="badge" id="engine">Iniciando visualização...</span><button
         class="tab admin-unlock-btn" id="btnAdminUnlock" type="button" title="Acesso restrito ao monitor" aria-label="Área administrativa">⚙</button></div>
     </header>
-    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">⌂ Início</button><button class="tab lobby-link" type="button" data-lobby-target="recipeList"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg> Receitas</button><button class="tab lobby-link" type="button" data-lobby-target="howToPlay">ⓘ Regras</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
+    <nav class="tabs" id="mainTabs"><button class="tab active" data-tab="play">⌂ Início</button><button class="tab lobby-link" type="button" data-lobby-panel="recipes" aria-haspopup="dialog" aria-controls="lobbyInformationDialog"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M16 40V26C-1 23 3 5 17 8 22-5 40-2 43 8 61 4 67 25 49 28v12zM16 39h33M22 32v-8M42 32v-8"/></svg> Receitas</button><button class="tab lobby-link" type="button" data-lobby-panel="rules" aria-haspopup="dialog" aria-controls="lobbyInformationDialog">ⓘ Regras</button><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
         data-tab="prizes">🎁 Prêmios</button><button class="tab admin-tab" data-tab="sessions">☕ Sessões</button><button
         class="tab admin-tab" data-tab="history">📜 Histórico</button><button class="tab admin-tab"
         data-tab="settings">⚙️ Configurações</button><button class="tab admin-logout-btn" id="btnAdminLogout"
@@ -452,7 +453,7 @@
   <script src="js/cookie-recipe.js?v=4"></script>
   <script src="js/recipe-catalog.js?v=4"></script>
   <script src="js/recipe-guide.js?v=4"></script>
-  <script src="js/interface.js?v=4"></script>
+  <script src="js/interface.js?v=5"></script>
   <script src="js/lobby-motion.js?v=1"></script>
 </body>
 
