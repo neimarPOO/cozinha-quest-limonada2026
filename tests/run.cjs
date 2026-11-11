@@ -5,3 +5,4 @@ require('./prize-catalog.test.cjs');
 require('./control-service.test.cjs');
 require('./wheel-rules.test.cjs');
 require('./kitchen-tool-motion.test.cjs');
+require('./supabase-store.test.cjs');

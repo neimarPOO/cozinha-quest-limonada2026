@@ -5,3 +5,7 @@ Thumbs.db
 
 .runtime/
 dist/
+
+.env
+.env.*
+!.env.example

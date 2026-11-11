@@ -24,7 +24,10 @@ const MIME_TYPES = {
 function createServer(options = {}) {
   const {fileStore} = require("./lib/file-store.cjs");
   const {createControlHandler} = require("./lib/control-service.cjs");
-  const control = createControlHandler(options.store || fileStore(path.join(ROOT, ".runtime")), {secure:false, ...options.control});
+  const store = options.store || (process.env.CONTROL_STORAGE === 'supabase'
+    ? require('./lib/supabase-store.cjs').createSupabaseStore({url:process.env.SUPABASE_URL,key:process.env.SUPABASE_SERVICE_ROLE_KEY})
+    : fileStore(path.join(ROOT, ".runtime")));
+  const control = createControlHandler(store, {secure:false, ...options.control});
   const compressed = new Map();
   let bytes = 0;
   async function representation(file, stats, encoding) {
