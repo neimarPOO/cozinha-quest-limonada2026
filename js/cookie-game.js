@@ -854,16 +854,14 @@
     }
     positionOverlays();
   }
-  const qualityButton=document.createElement('button');
-  qualityButton.type='button';qualityButton.className='btn';qualityButton.id='cookieQuality';
-  qualityButton.title='Automático preserva os detalhes e adapta a nitidez sob carga. Máxima mantém a resolução original.';
-  function refreshQualityButton(){
-    const native=scene?.performance.mode==='native';
-    qualityButton.textContent=native?'Visual: máxima nitidez':'Visual: automático';
-    qualityButton.setAttribute('aria-pressed',String(native));
-  }
-  qualityButton.onclick=()=>{if(scene){scene.setGraphicsMode(scene.performance.mode==='native'?'auto':'native');refreshQualityButton()}};
-  viewportTools.append(qualityButton);
+  const qualityControl=document.createElement('select');
+  qualityControl.className='btn';qualityControl.id='cookieQuality';
+  qualityControl.setAttribute('aria-label','Qualidade gráfica');
+  qualityControl.title='Leve prioriza fluidez; Automático equilibra nitidez e desempenho; Máxima preserva todos os efeitos.';
+  for(const [value,label] of [['light','Visual: leve'],['auto','Visual: automático'],['native','Visual: máxima']]){const option=document.createElement('option');option.value=value;option.textContent=label;qualityControl.append(option)}
+  function refreshQualityControl(){qualityControl.value=scene?.performance.mode||'light'}
+  qualityControl.onchange=()=>{if(scene){scene.setGraphicsMode(qualityControl.value);refreshQualityControl()}};
+  viewportTools.append(qualityControl);
   function tick() {
     if (!active) return;
     const now = performance.now(),
@@ -973,7 +971,7 @@
                   useFallback,
                   definition,
                 );
-        refreshQualityButton();
+        refreshQualityControl();
         notebook.attach(scene);
         scene.onViewChange = positionOverlays;
         scene.onHoverChange = onHover;

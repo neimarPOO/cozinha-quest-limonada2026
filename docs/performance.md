@@ -1,10 +1,11 @@
 # Carregamento e desempenho
 
-As três receitas preservam modelos, contornos, texturas, materiais, iluminação e
-sombras. O modo automático pode reduzir temporariamente a resolução interna sob
-carga: isso favorece a fluidez, mas pode diminuir a nitidez. “Visual: máxima
-nitidez”, na barra da bancada, mantém a resolução original configurada. A escolha
-vale para a sessão daquele navegador; não altera as regras do evento.
+As três receitas oferecem três perfis no seletor da bancada. O padrão novo é
+**Visual: leve**: mantém os modelos, cores, materiais e iluminação, mas reduz a
+nitidez interna, a resolução das sombras e a refração do vidro. **Visual:
+automático** oferece resolução adaptativa e sombras intermediárias. **Visual:
+máxima** restaura a nitidez e os efeitos anteriores. A opção vale para a sessão
+daquele navegador e não altera regras, quantidades ou tempos da receita.
 
 ## Downloads e cache
 
@@ -43,10 +44,10 @@ vale para a sessão daquele navegador; não altera as regras do evento.
   receita. O cache contém no máximo um renderizador ocioso e expira em 60 segundos.
   Materiais, sombras, texturas e eventos da cena anterior são liberados. Contextos
   perdidos são descartados e o modo sem WebGL continua disponível.
-- A resolução automática começa na mesma configuração anterior, até 1,75 vezes a
+- A resolução automática começa em até 1,25 vezes a
   densidade de pixels. Reduz o esforço quando medições sucessivas indicam carga
-  alta e recupera a nitidez com margem para evitar oscilações. Nunca remove assets,
-  troca materiais ou reduz os mapas de sombra. “Máxima nitidez” desativa a adaptação.
+  alta e recupera a nitidez com margem para evitar oscilações. Não remove assets nem modifica a geometria. A resolução das sombras e a
+  refração seguem o perfil escolhido. “Máxima nitidez” desativa a adaptação.
 - A preparação ainda aguarda texturas, compilação e primeiro quadro. O relógio só
   começa depois. Fences WebGL2 evitam enfileirar vários quadros numa GPU ocupada.
 
@@ -69,7 +70,7 @@ houve ganho relevante no tempo dessa primeira transferência. Cache, imagens men
 e seleção mais barata oferecem ganhos distintos. A compilação inicial dos shaders
 continua dependendo da GPU: estas medições não estabelecem uma meta universal de FPS.
 
-`npm test`: 69 testes de receitas, armazenamento, cache, seleção, adaptação de
+`npm test`: 72 testes de receitas, armazenamento, cache, seleção, adaptação de
 resolução, liberação de recursos e integridade do build. `npm run test:server`:
 compressão HTTP, revalidação, HEAD, erros e cache. O build mantém dados privados e
 código de servidor fora de `dist`.
@@ -128,3 +129,54 @@ avisos de descontinuação no console do navegador. Uma falha de download do mó
 pode ser tentada novamente, sem recarregar a página nem depender de uma CDN durante
 a partida; a identidade de módulo da nova tentativa evita reutilizar a falha
 registrada pelo navegador, preservando o cache HTTP do arquivo.
+
+
+## Perfil leve e correção do brownie
+
+O perfil leve começa imediatamente em razão de pixels 0,9 e sombras de 1024².
+Desabilita a refração física (`transmission`) mantendo vidro transparente e seus
+reflexos. Isso elimina um passe adicional que redesenhava o cenário para refratar
+o fundo. Não há simplificação de geometria nem remoção de objetos interativos.
+O perfil automático limita a razão inicial a 1,25, usa sombras de 1536² e a mesma
+simplificação do vidro. Máxima restaura a refração original, a razão anterior (até
+1,75) e os mapas de sombra originais, sem reiniciar a partida.
+
+A preferência desses perfis usa `lq_graphics_mode_v2`, para que uma preferência
+antiga de máxima qualidade não impeça a adoção do novo padrão leve. A seleção
+feita no novo controle permanece durante a sessão.
+
+Medição em Chromium/SwiftShader a 1024 × 700, sem mudar a câmera ou a receita.
+Cada configuração aqueceu seus shaders antes de duas amostras. Uma leitura de
+pixel após cada desenho aguardou a conclusão da GPU. São tempos deste renderizador
+por software, não estimativas de FPS em computadores físicos.
+
+| Receita | Chamadas máxima → leve | Tempo médio máxima → leve | Redução do custo |
+| --- | ---: | ---: | ---: |
+| Brownie | 432 → 238 | 4000,5 → 1668 ms | 58% |
+| Cookies | 486 → 272 | 4550 → 1965,5 ms | 57% |
+| Limonada | 144 → 90 | 3135,5 → 1250 ms | 60% |
+
+A quantidade de triângulos **desenhados** também cai porque o passe de refração
+é eliminado; os modelos mantêm a mesma geometria. A imagem pode ficar menos
+nítida, as sombras menos detalhadas e o vidro mais simples. Caderno, legendas e
+modais mantêm suas fontes e dimensões; o texto desenhado no canvas também está
+sujeito à resolução do perfil.
+
+O desaparecimento da mão no brownie tinha uma causa concreta: `BrownieScene.pan`
+identifica a panela, mas o controle de movimento da câmera também usava `pan`.
+O movimento do mouse tentava ler `pan.target.x` na panela, interrompendo a
+atualização antes de posicionar a mão. O controle da câmera agora usa
+`cameraPan`, preservando o objeto panela em cliques, arrastes e cancelamentos.
+Há teste de regressão para a coexistência dos dois estados.
+
+O rastreamento do cursor foi delegado à área da cena para acompanhar também
+legendas sobrepostas, e a mão é restaurada após o término da animação de um
+utensílio quando o cursor ainda está na bancada. Durante o trabalho, colher,
+espátula e faca continuam substituindo a mão na animação conforme a mecânica.
+
+Validação final em Chromium com renderização ativa no brownie: mão visível sobre
+a bancada; arraste da câmera com botão direito sem substituir a panela;
+pré-aquecimento a 180 °C; entrega da manteiga na fôrma e avanço ao papel-manteiga;
+rolagem do caderno com a mão visível; troca Máxima → Leve restaurando os parâmetros
+corretos. Sem erros de JavaScript nesses cenários. O ganho medido em renderização
+por software não garante a mesma taxa de quadros em toda GPU ou computador.

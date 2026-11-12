@@ -366,7 +366,7 @@ window.CookieScene = class CookieScene {
     this.down = (e) => {
       this.pendingPointer=null;
       if (e.button === 2) {
-        this.pan = {
+        this.cameraPan = {
           x: e.clientX,
           y: e.clientY,
           target: this.viewTarget.clone(),
@@ -389,52 +389,17 @@ window.CookieScene = class CookieScene {
       this.onDragStart?.();
       this.updateHand(e);
     };
+    this.processMove = (e) => this.processPointerMove(e);
     this.move = (e) => {
-      if (this.pan) {
-        this.viewTarget.x = THREE.MathUtils.clamp(
-          this.pan.target.x - ((e.clientX - this.pan.x) * 0.012) / this.zoom,
-          -6,
-          6,
-        );
-        this.viewTarget.z = THREE.MathUtils.clamp(
-          this.pan.target.z - ((e.clientY - this.pan.y) * 0.018) / this.zoom,
-          -3,
-          3,
-        );
-        this.updateCamera();
-        return;
-      }
-      this.setHovered(this.hit(e)?.id || null, e.pointerType);
-      this.updateHand(e);
-      if (!this.drag) return;
-      const d = this.drag;
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
-      d.moved = true;
-      this.setRay(e);
-      const v = new T.Vector3();
-      if (
-        this.ray.ray.intersectPlane(
-          new T.Plane(new T.Vector3(0, 1, 0), -0.8),
-          v,
-        )
-      ) {
-        d.g.position.set(
-          THREE.MathUtils.clamp(v.x, -7, 7),
-          0.8,
-          THREE.MathUtils.clamp(v.z, -3.5, 3.8),
-        );
-      }
-    };
-    this.processMove = this.move;
-    this.move = (e) => {
+      this.pointerInside=true;
       this.cursorDirty=true;
-      this.pendingPointer = {clientX:e.clientX,clientY:e.clientY,pointerType:e.pointerType};
+      this.pendingPointer = {clientX:e.clientX,clientY:e.clientY,pointerType:e.pointerType,labelId:e.target?.closest?.(".cookie-world-label")?.dataset.objectId};
     };
     this.up = (e) => {
       this.pendingPointer=null;
-      if(this.drag||this.pan)this.processMove(e);
-      if (this.pan) {
-        this.pan = null;
+      if(this.drag||this.cameraPan)this.processMove(e);
+      if (this.cameraPan) {
+        this.cameraPan = null;
         return;
       }
       if (!this.drag) return;
@@ -470,10 +435,11 @@ window.CookieScene = class CookieScene {
       this.renderer.shadowMap.needsUpdate = true;
       if (this.drag) this.drag.g.position.copy(this.drag.home);
       this.drag = null;
-      this.pan = null;
+      this.cameraPan = null;
       if (this.hand) this.hand.group.visible = false;
     };
     this.leave = () => {
+      this.pointerInside=false;
       this.pendingPointer=null;
       this.needsRender = true;
       this.renderer.shadowMap.needsUpdate = true;
@@ -490,10 +456,11 @@ window.CookieScene = class CookieScene {
     };
     this.contextMenu = (e) => e.preventDefault();
     canvas.addEventListener("pointerdown", this.down);
-    canvas.addEventListener("pointermove", this.move);
+    root.addEventListener("pointermove", this.move);
+    root.addEventListener("pointerenter", this.move);
     canvas.addEventListener("pointerup", this.up);
     canvas.addEventListener("pointercancel", this.cancel);
-    canvas.addEventListener("pointerleave", this.leave);
+    root.addEventListener("pointerleave", this.leave);
     canvas.addEventListener("wheel", this.wheel, { passive: false });
     canvas.addEventListener("contextmenu", this.contextMenu);
     this.contextLost = (e) => {
@@ -544,6 +511,7 @@ window.CookieScene = class CookieScene {
         if (this.state.task.item === "mixer") this.whisk.rotation.y += 9 * this.frameDelta;
       }
       const toolAnimated = this.toolMotion.update(this.frameDelta);
+      this.restoreCursorHand();
       if (this.hand && this.state?.working && this.state?.requiresStir &&
           !["spoon", "spatula"].includes(this.state.task.item) && !this.readingHand && !this.toolMotion.hidesHand) {
         const bowl = this.objects.get(this.state.task.target) || this.wet;
@@ -591,6 +559,7 @@ window.CookieScene = class CookieScene {
     this.raf = requestAnimationFrame(this.frame);
   }
   async prepare() {
+    this.performance.apply(this);
     await Promise.all(this.pendingAssets);
     if (this.disposed) return false;
     if (this.renderer.compileAsync)
@@ -637,6 +606,7 @@ window.CookieScene = class CookieScene {
   }
   setGraphicsMode(mode) {
     this.renderer.setPixelRatio(this.performance.setMode(mode));
+    this.performance.apply(this);
     this.needsRender=true;
   }
   material(color) {
@@ -816,6 +786,7 @@ window.CookieScene = class CookieScene {
     label.title = text;
     this.labelLayer.append(label);
     const id = parent.userData.entity;
+    label.dataset.objectId=id;
     label.addEventListener("pointerenter", (e) => {
       if (id === this.state?.task?.item) this.setHovered(id, e.pointerType);
     });
@@ -1001,7 +972,49 @@ window.CookieScene = class CookieScene {
   press(info) {
     return this.toolMotion?.queueCut(info?.task, info?.point, info?.index);
   }
+  processPointerMove(e) {
+    const T=this.T||THREE;
+      if (this.cameraPan) {
+        this.viewTarget.x = THREE.MathUtils.clamp(
+          this.cameraPan.target.x - ((e.clientX - this.cameraPan.x) * 0.012) / this.zoom,
+          -6,
+          6,
+        );
+        this.viewTarget.z = THREE.MathUtils.clamp(
+          this.cameraPan.target.z - ((e.clientY - this.cameraPan.y) * 0.018) / this.zoom,
+          -3,
+          3,
+        );
+        this.updateCamera();
+        return;
+      }
+      this.setHovered((e.labelId===this.state?.task?.item?e.labelId:null) || this.hit(e)?.id || null, e.pointerType);
+      this.updateHand(e);
+      if (!this.drag) return;
+      const d = this.drag;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+      d.moved = true;
+      this.setRay(e);
+      const v = new T.Vector3();
+      if (
+        this.ray.ray.intersectPlane(
+          new T.Plane(new T.Vector3(0, 1, 0), -0.8),
+          v,
+        )
+      ) {
+        d.g.position.set(
+          THREE.MathUtils.clamp(v.x, -7, 7),
+          0.8,
+          THREE.MathUtils.clamp(v.z, -3.5, 3.8),
+        );
+      }
+  }
+  restoreCursorHand() {
+    if(this.hand&&!this.hand.group.visible&&this.pointerInside&&this.lastPointer&&!this.readingHand&&!this.toolMotion?.hidesHand){this.updateHand(this.lastPointer);return true}
+    return false;
+  }
   updateHand(e) {
+    this.lastPointer={clientX:e.clientX,clientY:e.clientY};
     if (!this.hand) return;
     if (this.toolMotion?.hidesHand && !this.readingHand) { this.hand.group.visible = false; return; }
     this.needsRender = true;
@@ -1283,6 +1296,9 @@ window.CookieScene = class CookieScene {
     this.observer?.disconnect();
     this.labelLayer?.remove();
     this.pendingPointer=null;
+    this.root.removeEventListener("pointermove",this.move);
+    this.root.removeEventListener("pointerenter",this.move);
+    this.root.removeEventListener("pointerleave",this.leave);
     for(const [event,handler] of [['pointerdown',this.down],['pointermove',this.move],['pointerup',this.up],['pointercancel',this.cancel],['pointerleave',this.leave],['contextmenu',this.contextMenu]])
       this.renderer.domElement.removeEventListener(event,handler);
     this.renderer.domElement.removeEventListener("wheel", this.wheel);
