@@ -1,80 +1,96 @@
-/* Somente os elementos da abertura. A imagem e as regras do fundo permanecem intactas. */
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .shell { max-width:1920px; padding:22px 30px 12px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .top { min-height:84px; border:0; padding:0; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .logo { font-size:32px; filter:drop-shadow(0 4px 2px #000); }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .logo div > span { font-size:25px; color:#fff3ff; text-shadow:2px 3px #39134a,0 0 14px #a22cc8; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .sub { display:inline-block; margin-top:10px; padding:5px 12px; color:#fff4ff; background:linear-gradient(95deg,#291134,#602078); border-bottom:1px solid #d892ef; transform:skewX(-8deg); }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status { margin:0 0 0 auto; opacity:1; gap:12px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #engine { display:none; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .sync-status { max-width:230px; padding:12px 15px; border:1px solid #b8de6c99; border-radius:30px; color:#f8ffe8; font-size:11px; background:linear-gradient(#1b2121,#0b0c13); box-shadow:inset 0 0 5px #c6ff3a44,0 0 12px #a9ff0022; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs { margin:-66px 250px 42px 31%; min-height:54px; align-self:stretch; justify-content:space-evenly; flex-wrap:nowrap; padding:5px; background:linear-gradient(#1a1023ee,#0b0b13f5); border:1px solid #9f67ae99; border-radius:36px; gap:2px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab { padding:10px 17px; white-space:nowrap; font-size:13px; min-height:40px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status .admin-unlock-btn { position:static; width:46px; flex:0 0 46px; padding:8px; border:1px solid #bfa16e; border-radius:50%; font-size:25px; background:#111017ee; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)).is-admin #mainTabs { margin-right:0; flex-wrap:wrap; margin-top:8px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)).is-admin #mainTabs .lobby-link { display:none; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro { margin-left:27%; padding-top:32px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading { padding:0; background:none; text-align:center; margin:0 0 24px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-hero { display:grid; grid-template-columns:minmax(0,1fr) 218px; align-items:center; gap:24px; margin-bottom:20px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign { position:relative; padding:18px 12px 9px; border:2px solid #ffca4b; border-radius:30px 30px 20px 20px; background:repeating-linear-gradient(1deg,#ffffff03 0 2px,#00000009 3px 5px),linear-gradient(#492812,#24120d 65%,#51271a); box-shadow:inset 0 0 0 4px #713510,inset 0 0 16px #000,0 0 6px #ffdb56,0 0 20px #f18a242e,0 7px 0 #1a0712; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign-crown { position:absolute; top:-42px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:12px; color:#ffcc35; font-size:22px; filter:drop-shadow(0 0 5px #ff9900); white-space:nowrap; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign-crown svg { width:58px; height:56px; fill:#2b0b1a; stroke:#ffcc36; stroke-width:3; stroke-linejoin:round; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 { margin:0 0 11px; font-size:clamp(25px,2.4vw,45px); line-height:1.12; white-space:nowrap; letter-spacing:-1.3px; text-transform:uppercase; color:#fff0ff; text-shadow:0 3px #6b297b,0 6px 1px #080309; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 i { font-style:normal; font-size:.66em; color:#ffcf37; vertical-align:middle; text-shadow:0 2px #a44d08; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 .accent { color:#c7f526; text-shadow:0 3px #3f6b00,0 6px 1px #080309; }
+/* Abertura inspirada em um caderno de culinária. Não altera a imagem de fundo. */
+body.lobby-screen:has(#play.active #intro:not(.hidden)) { --lobby-ink:#3e194d; --lobby-paper:#fff0e5; --lobby-purple:#7a32ac; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .shell { max-width:1920px; padding:20px 30px 10px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .top { position:absolute; top:24px; right:42px; min-height:0; padding:0; border:0; z-index:5; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .top > div:first-child, body.lobby-screen:has(#play.active #intro:not(.hidden)) #engine { display:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status { display:flex; margin:0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status .admin-unlock-btn { position:static; width:44px; height:44px; padding:5px; border:0; border-radius:50%; background:transparent; color:#29183e; font-size:28px; box-shadow:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs { width:68%; margin:0 0 0 auto; min-height:56px; display:flex; justify-content:space-evenly; align-items:center; padding:5px 54px 5px 12px; gap:6px; border:1px solid #fff7ef; border-radius:40px; background:#fff0e5f5; box-shadow:0 5px 25px #180e2230; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab { display:flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:9px 20px; border:0; border-radius:28px; background:transparent; color:#241638; font-size:15px; font-weight:700; box-shadow:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab.active { background:linear-gradient(135deg,#8c3fb9,#642398); color:#fff; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab:hover { background:#7a32ac16; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab.active:hover { background:#6c289e; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab svg { width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro { margin-left:31%; padding:0; display:flex; flex-direction:column; gap:0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand { position:relative; display:flex; flex-direction:column; align-items:center; width:80%; margin:12px auto 18px; color:white; filter:drop-shadow(0 3px 4px #100a20b0); }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-hat { width:65px; height:45px; fill:none; stroke:#fff5f0; stroke-width:3; stroke-linejoin:round; margin-bottom:-2px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand strong { font:900 italic clamp(32px,3.5vw,65px)/1 'Outfit',sans-serif; text-transform:uppercase; letter-spacing:-1.8px; color:#ffe581; text-shadow:0 3px 0 #785411; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand > span { background:linear-gradient(100deg,#873cb0,#64248d); padding:5px 20px 7px; margin-top:4px; color:#fff8ff; font-size:clamp(20px,2.2vw,36px); line-height:1; font-style:italic; font-weight:900; text-transform:uppercase; border-radius:8px 2px 9px 3px; transform:skew(-8deg); }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand small { margin-top:12px; color:#fff6ee; letter-spacing:4px; font-size:10px; font-weight:600; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-whisk, body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-pin { position:absolute; width:85px; height:85px; left:0; top:50%; transform:translateY(-50%); fill:none; stroke:#fff1e9; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-pin { left:auto; right:-5px; width:110px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading { padding:0; background:transparent; text-align:center; margin:0 1% 24px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-hero { display:block; margin:0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign { position:relative; padding:15px 28px 18px; border:0; border-radius:48% 4% 42% 3% / 15% 50% 17% 45%; color:var(--lobby-ink); background:linear-gradient(115deg,#fff0ce,#fff5e1 55%,#ffebbd); box-shadow:0 7px 20px #20101e25; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign::before,body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign::after { content:'✦'; position:absolute; top:27%; left:18px; color:#eebc1f; font-size:28px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign::after { left:auto; right:18px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign-crown,body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now,body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading > .muted { display:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 { margin:0 0 6px; font-size:clamp(25px,2.65vw,47px); line-height:1.15; font-weight:900; font-style:italic; letter-spacing:-1px; text-transform:none; color:var(--lobby-ink); text-shadow:none; white-space:nowrap; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 .accent,body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 i { color:inherit; text-shadow:none; font-style:inherit; }
 body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro h1 .accent::after { display:none; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign > .eyebrow { display:inline-block; padding:7px 18px; color:#fff4ff; font-size:9px; letter-spacing:1.6px; background:linear-gradient(#8638a7,#49135d 75%); border:1px solid #b979d1; border-radius:4px; box-shadow:inset 0 0 8px #e3a7ff44,0 3px #19051e; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now { border:2px solid #ffe74e; border-radius:40px 20px 40px 20px; padding:15px 10px 10px; white-space:nowrap; background:linear-gradient(#d6ff55,#a8e600 58%,#679b00); color:#111500; font:900 19px/1.2 'Outfit',sans-serif; box-shadow:inset 0 0 0 3px #eeff9670,0 0 7px #f5e44f,0 0 20px #b7f51c44,0 6px #152200; cursor:pointer; text-shadow:0 1px #e8ff81; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now span { margin-right:4px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now small { display:block; margin-top:6px; font-size:10px; font-weight:700; letter-spacing:1px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now:hover { filter:brightness(1.1); transform:translateY(-2px); }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now:focus-visible { outline:3px solid white; outline-offset:5px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading > .muted { max-width:none; font-size:14px; line-height:1.65; text-shadow:0 2px 6px #000; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading strong { color:#d5f52a; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid { grid-template-columns:minmax(0,1fr) 215px; gap:22px; align-items:stretch; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe-list { gap:18px; align-items:stretch; padding:4px 0; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe { --card-color:#ffc64e; position:relative; border:2px solid #ffd449; border-radius:32px 24px 32px 24px; padding:0 14px 14px; overflow:hidden; background:radial-gradient(ellipse at 50% 16%,#9b3a722b,transparent 65%),linear-gradient(145deg,#371a35f5,#1c0c23f5 65%,#482044f5); box-shadow:inset 0 0 0 2px #feae3e40,inset 0 -5px 12px #d22d9d77,0 0 7px #ffcb43,0 5px 0 #713e21,0 8px 18px #0008; text-align:center; align-items:center; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe[data-recipe="lemonade"] { background:radial-gradient(ellipse at 50% 16%,#92d63230,transparent 60%),linear-gradient(145deg,#263b11f5,#102208f5 65%,#38450ef5); box-shadow:inset 0 0 0 2px #e9f96c40,inset 0 -5px 12px #8cd00066,0 0 7px #ffcb43,0 5px 0 #716321,0 8px 18px #0008; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe:hover { border-color:#fff49a; box-shadow:inset 0 0 0 2px #fff49a55,0 0 18px #ffbf5977,0 8px 18px #0008; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe:focus-visible { outline:3px solid white; outline-offset:6px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-art { width:calc(100% + 28px); height:clamp(160px,13vw,245px); margin:-1px -14px 0; object-fit:contain; filter:drop-shadow(0 8px 8px #0008); }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe[data-recipe="brownie"] .recipe-art { object-fit:cover; object-position:50% 45%; mask-image:linear-gradient(#000 80%,transparent); }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-kicker { width:calc(100% + 6px); display:flex; align-items:center; justify-content:center; gap:7px; padding:5px 4px; margin:-2px 0 10px; border:1px solid #ffe373; border-radius:7px; color:#170f05; background:linear-gradient(#ffe478,#eeb117); box-shadow:0 2px 5px #0008; font-size:8px; font-weight:900; letter-spacing:.3px; position:relative; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-crown { font-size:19px; line-height:1; color:#4a2630; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe b { font-size:clamp(22px,1.75vw,31px); line-height:1.05; color:#fff5ff; letter-spacing:-.7px; font-style:italic; text-shadow:0 3px #28102e; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe p { color:#f1eaf2; font-size:13px; line-height:1.4; margin:12px 0 14px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe .badge { margin-top:auto; gap:6px; border:1px solid #f2c74e; border-radius:24px; color:#fff9da; padding:7px 10px; font-size:11px; background:linear-gradient(#27192d,#0e1014); box-shadow:inset 0 1px #ffffff22,0 2px 5px #000; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe .badge .recipe-step-icon { color:#ffd653; font-size:22px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe .badge .recipe-arrow { color:#261600; background:linear-gradient(#ffe888,#f4b318); width:27px; height:27px; border-radius:50%; border:1px solid #fff0a0; box-shadow:0 0 0 2px #98790f; margin:0 0 0 auto; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-arrow::after { width:8px; height:8px; border-top:3px solid #432500; border-right:3px solid #432500; top:8px; right:9px; transform:rotate(45deg); background:none; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress { display:flex; flex-direction:column; gap:0; position:relative; padding:27px 13px 18px; border:2px solid #ffe36c; border-radius:40px 40px 38px 38px; background:linear-gradient(155deg,#572047f5,#170c22f5 60%,#3b163bf5); box-shadow:inset 0 0 0 3px #b342b555,inset 0 -5px 16px #e242b780,0 0 8px #ffd643,0 7px #542645; text-align:center; overflow:visible; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .diary-emblem { position:absolute; top:-28px; left:50%; transform:translateX(-50%); border:2px solid #ffdb56; border-radius:16px; width:54px; height:51px; background:linear-gradient(#802e91,#2b113b); color:#ffdd43; font-size:35px; line-height:45px; box-shadow:0 0 10px #e7aa37; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress > .eyebrow { color:#fff0ff; font-size:17px; letter-spacing:.3px; font-weight:900; margin:0; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress > h2 { margin:3px 0 14px; padding:0 0 12px; font-size:12px; font-style:normal; font-weight:500; border-bottom:1px solid #d59b2e77; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric { margin:0 0 10px; padding:10px 8px; min-height:72px; border:1px solid #c68cab99; border-radius:18px; gap:9px; text-align:left; background:linear-gradient(#40233e99,#120d19bb); box-shadow:inset 0 0 9px #e79edb18,0 3px 8px #0004; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric > span { font-size:26px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric small { font-size:10px; color:#f6e8f5; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric strong { display:block; color:#d4ff28; font-size:23px; line-height:1.2; margin-top:4px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-note { font-size:10px; color:#d5bdd4; line-height:1.5; margin:3px 0 0; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto { margin:26px 0 14px; gap:17px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto > div { border:1px solid #f4c34c; border-radius:23px 9px; padding:13px 10px; background:linear-gradient(135deg,#2b1929f2,#110f1bf5); box-shadow:inset 0 0 8px #a45fbb44,0 0 5px #fbb33866; font-size:25px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto b { font-size:12px; color:#fff6ff; text-transform:uppercase; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto span { color:#e7dbe9; font-size:12px; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation { display:none; }
-body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro > .foot { font-size:10px; margin-top:12px; padding:7px 10px; background:#0b0716b8; }
-body:not(.lobby-screen) .lobby-link { display:none; }
-@media(max-width:1350px){body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-hero{grid-template-columns:1fr 176px;gap:16px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now{font-size:17px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid{grid-template-columns:minmax(0,1fr) 175px;gap:16px}body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe-list{gap:12px}body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs{margin-left:29%;margin-right:220px}body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs .tab{padding:9px 12px;font-size:12px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .sync-status{max-width:175px;font-size:9px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign>.eyebrow{font-size:7px;letter-spacing:1px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress>.eyebrow{font-size:14px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric strong{font-size:20px}}
-@media(max-width:1100px){body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro{margin-left:25%}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-hero{grid-template-columns:1fr}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now{justify-self:center;padding:10px 24px;font-size:16px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now small{display:none}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid{grid-template-columns:1fr}body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:25px 16px 12px;gap:8px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress>.eyebrow,body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-progress>h2,body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-note{grid-column:1/-1}body.lobby-screen:has(#play.active #intro:not(.hidden)) .quest-metric{margin:0}body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs{margin:12px 0 28px 25%}body.lobby-screen:has(#play.active #intro:not(.hidden)) .top{min-height:70px}body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status{margin-right:50px}body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto{grid-template-columns:repeat(2,1fr)}}
-@media(prefers-reduced-motion:reduce){body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now{transition:none}body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-play-now:hover{transform:none}}
-
-body.lobby-screen .recipe-step-icon svg { width:24px; height:24px; fill:none; stroke:#ffd653; stroke-width:3; vertical-align:middle; }
-body.lobby-screen .diary-emblem svg { width:35px; height:35px; margin-top:6px; fill:none; stroke:#ffdd43; stroke-width:3; }
-body.lobby-screen .lobby-link svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:3; vertical-align:middle; margin-right:3px; }
-@media(max-height:900px) and (min-width:1101px){
-  body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro{padding-top:20px}
-  body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-art{height:clamp(145px,20vh,185px)}
-  body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading{margin-bottom:18px}
-  body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto{margin-top:20px}
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-sign > .eyebrow { display:block; margin:0; padding:0 8px; color:#291936; background:none; border:0; box-shadow:none; font-size:clamp(12px,1.1vw,18px); letter-spacing:0; line-height:1.5; font-weight:600; text-transform:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid { display:block; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; padding:0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe { position:relative; display:flex; flex-direction:column; padding:0; border:3px solid #fff3e9; border-radius:30px; background:var(--lobby-paper); overflow:hidden; box-shadow:0 8px 24px #1b0b1933; text-align:left; transition:box-shadow .2s,translate .2s; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe:hover { border-color:#fff9f1; box-shadow:0 12px 25px #1b0b1966,0 0 0 3px #b47ad5; translate:0 -5px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe:focus-visible,body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs button:focus-visible,body.lobby-screen:has(#play.active #intro:not(.hidden)) .admin-unlock-btn:focus-visible { outline:3px solid #e9c44e; outline-offset:5px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-image { display:block; width:100%; background:radial-gradient(ellipse at 45% 15%,#80518b,#3b1c49); border-radius:24px 24px 14px 14px; overflow:hidden; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe[data-recipe="lemonade"] .recipe-image { background:radial-gradient(ellipse at 45% 25%,#597a2a,#172c0a); }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-art { display:block; width:100%; height:clamp(140px,15vw,270px); margin:0; object-fit:contain; object-position:center; filter:drop-shadow(0 7px 5px #160b2030); mask-image:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe[data-recipe="brownie"] .recipe-art { object-fit:cover; object-position:50% 45%; mask-image:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-caption { display:grid; grid-template-columns:42px minmax(0,1fr) 34px; align-items:center; gap:10px; width:100%; padding:16px 15px 18px; color:var(--lobby-ink); }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe b { font-size:clamp(18px,1.5vw,28px); font-weight:800; font-style:italic; line-height:1.08; letter-spacing:-.65px; text-shadow:none; color:var(--lobby-ink); max-width:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-food-icon { width:42px; height:44px; stroke:currentColor; stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-arrow { position:relative; display:block; width:34px; height:34px; border-radius:50%; background:#843bb2; border:0; box-shadow:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-arrow::after { content:''; position:absolute; top:10px; right:12px; width:10px; height:10px; border:0; border-top:3px solid white; border-right:3px solid white; transform:rotate(45deg); background:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto { display:flex; justify-content:center; gap:12px; margin:23px -2% 0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto > div { display:flex; align-items:center; justify-content:center; gap:9px; padding:12px 18px; border:1px solid #fff5ec; border-radius:35px; background:#fff0e5f2; box-shadow:0 3px 9px #1f0c2122; clip-path:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto > div::after { display:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto svg { flex:none; width:29px; height:29px; fill:none; stroke:var(--lobby-ink); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto b { color:#321b43; font-size:clamp(10px,.82vw,15px); font-weight:600; line-height:1.2; text-transform:none; white-space:nowrap; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation { margin:20px 0 0; min-height:25px; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation p { color:#fff2e4; font-size:11px; letter-spacing:2px; text-shadow:0 2px 8px #1b0b20; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation small { display:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .invitation-line { background:#e9c6ec70; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro > .foot { margin:5px 0 0; color:#fff5ea; font-size:10px; text-shadow:0 1px 4px #130a21; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-motion-toggle { background:#fff0e5e8; color:#4c255b; border-color:#e5cfe3; }
+body.lobby-screen.is-admin:has(#play.active #intro:not(.hidden)) #mainTabs { width:100%; padding-right:55px; flex-wrap:wrap; }
+body.lobby-screen.is-admin:has(#play.active #intro:not(.hidden)) #mainTabs .tab { padding:8px 12px; font-size:12px; }
+@media (max-width:1200px) {
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .shell { padding:18px 22px 10px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .top { right:32px; top:23px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #mainTabs { width:72%; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro { margin-left:29%; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-whisk { width:65px; left:-15px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-pin { width:80px; right:-20px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-caption { grid-template-columns:30px minmax(0,1fr) 28px; padding:14px 10px; gap:6px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-food-icon { width:30px; height:36px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-arrow { width:28px; height:28px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-arrow::after { top:8px; right:10px; width:8px; height:8px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe-list { gap:14px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto { flex-wrap:wrap; gap:8px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto > div { padding:9px 13px; }
 }
+@media (max-height:800px) and (min-width:1000px) {
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .shell { padding-top:18px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .top { top:23px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand { margin:9px auto 14px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .brand-hat { height:35px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand strong { font-size:45px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand > span { font-size:27px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-brand small { margin-top:8px; font-size:8px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading { margin-bottom:20px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .recipe-art { height:clamp(140px,23vh,185px); }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .howto { margin-top:19px; }
+ body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation { margin-top:14px; }
+}
+@media (prefers-reduced-motion:reduce) { body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro .recipe { transition:none; } }
 
-/* A abertura agora dedica toda a linha aos três cards de receitas. */
-body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-grid { grid-template-columns:minmax(0,1fr); }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .intro-heading { text-shadow:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status .admin-unlock-btn svg { width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2; stroke-linejoin:round; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .lobby-invitation { display:none; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) #intro > .foot { margin:14px 0 0; padding:0; background:none; border-radius:0; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .shell > footer { margin-top:8px; padding:6px 0 0; background:none; color:#f1ded1; font-size:9px; text-align:center; text-shadow:0 1px 4px #170c20; }
+
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status .admin-unlock-btn { border:0!important; color:#29183e!important; }
+body.lobby-screen:has(#play.active #intro:not(.hidden)) .engine-status .admin-unlock-btn:hover { color:#6d289b!important; background:#7a32ac16!important; }

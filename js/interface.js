@@ -67,7 +67,7 @@
     ]));content.append(summary);
     content.append(
       rule('1. Escolha e acompanhe uma receita',[
-        'Na tela inicial, escolha Cookies de chocolate, Limonada especial ou Brownie de chocolate. O botão “Jogar agora” leva à seleção; a partida começa ao escolher um card.',
+        'Na tela inicial, escolha Cookies de chocolate, Limonada especial ou Brownie de chocolate. A partida começa ao escolher um card.',
         'O caderno começa no topo. Role com o mouse ou arraste a página com a mão 3D. Os procedimentos concluídos ficam tachados em verde; “Ir ao preparo atual” ajuda a localizar a etapa.',
         'Cada senha física permite uma tentativa. O monitor deve conferir a senha antes de iniciar.',
       ]),
@@ -96,10 +96,18 @@
       ]),
     );
   }
+  function renderLearning() {
+    content.replaceChildren();
+    content.append(element('p','Aprenda fazendo: leia o caderno, escolha os ingredientes e prepare sua receita na bancada.','lobby-information-intro'),
+      rule('Organize sua bancada',['Identifique os recipientes e os utensílios. Consulte os ingredientes no caderno antes de começar.']),
+      rule('Pratique medidas e tempo',['Arraste o ingrediente ao recipiente e informe a quantidade da receita. Configure o tempo dos utensílios e acompanhe o preparo.']),
+      rule('Cuide dos alimentos',['Respeite a higienização, o ponto de cozimento e o resfriamento. Use as luvas térmicas para retirar a assadeira.']),
+      rule('Compartilhe o aprendizado',['Converse com o monitor e os colegas sobre as escolhas de preparo. Cada receita é uma oportunidade de aprender uma técnica diferente.']));
+  }
   async function open(panel,button) {
     mode=panel;launcher=button;
-    heading.textContent=mode==='recipes'?'Receitas da Cozinha Quest':'Regras do jogo';
-    if(mode==='recipes')renderRecipe();else renderRules();
+    heading.textContent=mode==='recipes'?'Receitas da Cozinha Quest':mode==='learn'?'Aprenda na cozinha':'Regras do jogo';
+    if(mode==='recipes')renderRecipe();else if(mode==='learn')renderLearning();else renderRules();
     content.scrollTop=0;dialog.showModal();close.focus({preventScroll:true});
     if(mode==='rules') {
       const connected=await ControlSync.refresh();
