@@ -8,3 +8,4 @@ require('./kitchen-tool-motion.test.cjs');
 require('./kitchen-mitts.test.cjs');
 require('./supabase-store.test.cjs');
 require('./performance.test.cjs');
+require('./kitchen-shadows.test.cjs');

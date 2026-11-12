@@ -1,9 +1,10 @@
 /* A abertura funciona antes de baixar/inicializar WebGL. */
 window.GameLoader = (() => {
   const scripts = [
-    "public/three.min.js?v=3b3a1c97de3c",
+    "public/three.module.min.js?v=158",
     "js/kitchen-resources.js?v=2",
     "js/kitchen-performance.js?v=1",
+    "js/kitchen-shadows.js?v=1",
     "public/models/hand-surface.js?v=1",
     "js/kitchen-mitts.js?v=1",
     "js/kitchen-hand.js?v=4",
@@ -12,11 +13,11 @@ window.GameLoader = (() => {
     "js/kitchen-assets.js?v=4",
     "js/kitchen-lighting.js?v=3",
     "js/kitchen-tool-motion.js?v=2",
-    "js/cookie-scene.js?v=14",
+    "js/cookie-scene.js?v=15",
     "js/recipe-scene.js?v=6",
     "js/brownie-scene.js?v=2",
     "js/recipe-notebook.js?v=3",
-    "js/cookie-game.js?v=17",
+    "js/cookie-game.js?v=18",
   ];
   const wood = ["diffuse", "bump", "roughness"].map(
     (n) => "public/textures/kitchen/hardwood2_" + n + ".jpg",
@@ -25,6 +26,7 @@ window.GameLoader = (() => {
     "THREE",
     "KitchenResources",
     "KitchenPerformance",
+    "KitchenShadows",
     "KitchenHandSurface",
     "KitchenMitts",
     "KitchenHand",
@@ -42,7 +44,8 @@ window.GameLoader = (() => {
   const loaded = new Set();
   let pending = null,
     warmed = false,
-    request = 0;
+    request = 0,
+    moduleFailures = 0;
   const panel = document.createElement("div");
   panel.className = "game-loading";
   panel.hidden = true;
@@ -82,9 +85,9 @@ window.GameLoader = (() => {
   function warm() {
     if (warmed) return;
     warmed = true;
-    for (const url of window.KitchenRuntimeURL ? [KitchenRuntimeURL] : scripts) {
+    for (const url of window.KitchenRuntimeURL ? [KitchenThreeURL, KitchenRuntimeURL] : scripts) {
       const link = document.createElement("link");
-      link.rel = "prefetch";
+      link.rel = (url === (window.KitchenThreeURL || scripts[0])) ? "modulepreload" : "prefetch";
       link.as = "script";
       link.href = url;
       document.head.append(link);
@@ -96,14 +99,23 @@ window.GameLoader = (() => {
   }
   function load() {
     if (pending) return pending;
-    for (const url of window.KitchenRuntimeURL ? [KitchenRuntimeURL] : scripts) {
+    for (const url of window.KitchenRuntimeURL ? [KitchenThreeURL, KitchenRuntimeURL] : scripts) {
       const link = document.createElement("link");
-      link.rel = "preload";
+      link.rel = (url === (window.KitchenThreeURL || scripts[0])) ? "modulepreload" : "preload";
       link.as = "script";
       link.href = url;
       document.head.append(link);
     }
     pending = (async () => {
+      if (!window.THREE) {
+        const moduleURL=new URL(window.KitchenThreeURL || scripts[0],document.baseURI);
+        // Falhas de import podem ficar no mapa de módulos do navegador. Uma nova
+        // identidade permite tentar novamente sem invalidar o cache HTTP do asset.
+        if(moduleFailures)moduleURL.hash='retry-'+moduleFailures;
+        try { window.THREE=await import(moduleURL.href); }
+        catch(error){moduleFailures++;throw error;}
+      }
+      loaded.add(scripts[0]);
       if (window.KitchenRuntimeURL) {
         await new Promise((resolve,reject)=>{
           const script=document.createElement('script');

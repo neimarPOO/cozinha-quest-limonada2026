@@ -840,6 +840,7 @@
     }
     notebook.setPhase(t.phase);
     scene?.sync(state);
+    if(scene?.shadowBudget)scene.shadowBudget.dirty=true;
     scene?.syncProtection(state);
     if (scene && scene.revealedStep !== statusKey) {
       scene.revealedStep = statusKey;

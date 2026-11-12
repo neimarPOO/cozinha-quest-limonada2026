@@ -11,7 +11,7 @@ vale para a sessão daquele navegador; não altera as regras do evento.
 - Three.js continua fora do carregamento inicial da página. Passar o mouse ou focar
   um card antecipa o download, sem criar uma cena nem iniciar o cronômetro.
 - No build de produção, os 15 scripts anteriormente separados da cozinha, mais o
-  controlador de desempenho, são reunidos em um único pacote com a mesma ordem de
+  controlador de desempenho, usam dois arquivos: o motor ES Modules oficial e um pacote da cozinha com a mesma ordem de
   dependências. O desenvolvimento local continua podendo carregar as fontes.
 - Scripts, CSS e imagens selecionadas recebem nomes com hash de conteúdo. Somente
   os diretórios de arquivos com hash usam cache `immutable` de um ano. O HTML
@@ -56,7 +56,7 @@ Medições locais no Chromium com renderização por software, não numa GPU fí
 
 | Verificação | Resultado |
 | --- | --- |
-| Pacote da cozinha | 15 requisições de script → 1 |
+| Motor e pacote da cozinha | 15 requisições → 2 (motor ESM e lógica do jogo) |
 | Segunda visita | 0 bytes transferidos para o pacote, reutilizado do cache |
 | Fotos e fundo | aproximadamente 25% menos bytes, pixels idênticos |
 | Seleção de objetos, 90 consultas na mesma bancada | 183 ms → 27 ms, cerca de 6 vezes mais rápida |
@@ -69,7 +69,7 @@ houve ganho relevante no tempo dessa primeira transferência. Cache, imagens men
 e seleção mais barata oferecem ganhos distintos. A compilação inicial dos shaders
 continua dependendo da GPU: estas medições não estabelecem uma meta universal de FPS.
 
-`npm test`: 64 testes de receitas, armazenamento, cache, seleção, adaptação de
+`npm test`: 69 testes de receitas, armazenamento, cache, seleção, adaptação de
 resolução, liberação de recursos e integridade do build. `npm run test:server`:
 compressão HTTP, revalidação, HEAD, erros e cache. O build mantém dados privados e
 código de servidor fora de `dist`.
@@ -89,3 +89,42 @@ continua exigindo conexão. Nenhuma alteração foi feita nos dados de produçã
 A página usa uma textura de canvas apenas para a faixa visível. Texto e legendas
 mantêm suas fontes e medidas; o documento completo continua no DOM para
 acessibilidade e fallback. Não é criado outro contexto WebGL para o caderno.
+
+
+## Revisão de latência do cursor
+
+O aviso de descontinuação do Three.js vinha da distribuição clássica UMD e não
+identificava um erro de desempenho. O navegador agora importa a distribuição
+oficial ES Modules da **mesma versão r158**, servida localmente e com hash. Não
+houve atualização de versão do motor, remoção de avisos por filtro nem alteração
+nos materiais. A versão UMD permanece apenas para os testes Node existentes.
+
+Mover a mão invalidava o mapa inteiro de sombras. Agora uma região conservadora
+verifica se algum raio de sombra da mão pode atingir um receptor da cena. Quando
+isso é impossível, o mapa anterior é reaproveitado. Se houver sobreposição ou
+uma luz não direcional, o recálculo completo continua. Transições também removem
+sombras anteriores quando necessário. Arrastes e animações de utensílios mantêm
+as atualizações de sombra existentes.
+
+O limite espacial usado contém todos os vértices visíveis da mão e da luva em
+suas sete poses; há teste para esse limite. Em três posições de cursor, no
+Chromium/SwiftShader, comparar quadros estabilizados com sombras reaproveitadas e
+recalculadas produziu **zero canais RGBA diferentes**. A contagem completa,
+incluindo o passe de sombra, passou de **723 para 502 chamadas por quadro (cerca de 31% menos)** nesse
+cenário. A contagem exige `renderer.info.autoReset=false`, porque o Three r158
+normalmente zera os contadores depois do passe de sombra.
+
+A mão pode solicitar quadros a 60 Hz, mantendo a atualização pendente enquanto a
+GPU estiver ocupada. As animações restantes continuam limitadas a 30 Hz. Isso não
+promete 60 FPS: evita um limite artificial no cursor em GPUs que conseguem atender.
+A projeção dos modais também atualiza somente a matriz do objeto consultado,
+evita propagar novamente todas as matrizes da cozinha a cada consulta.
+
+
+A revisão também foi conferida com renderização ativa: arraste da farinha para a
+tigela de secos, abertura do modal, entrada de 450 g e avanço ao próximo
+procedimento. As três receitas abriram com a mesma contagem de triângulos e sem
+avisos de descontinuação no console do navegador. Uma falha de download do módulo
+pode ser tentada novamente, sem recarregar a página nem depender de uma CDN durante
+a partida; a identidade de módulo da nova tentativa evita reutilizar a falha
+registrada pelo navegador, preservando o cache HTTP do arquivo.

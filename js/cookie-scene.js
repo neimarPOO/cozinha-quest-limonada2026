@@ -9,6 +9,7 @@ window.CookieScene = class CookieScene {
     this.disposed = false;
     this.preparing = true;
     this.needsRender = true;
+    this.cursorDirty = false;
     this.pendingAssets = [];
     this.time = 0;
     this.labels = [];
@@ -426,6 +427,7 @@ window.CookieScene = class CookieScene {
     };
     this.processMove = this.move;
     this.move = (e) => {
+      this.cursorDirty=true;
       this.pendingPointer = {clientX:e.clientX,clientY:e.clientY,pointerType:e.pointerType};
     };
     this.up = (e) => {
@@ -438,6 +440,7 @@ window.CookieScene = class CookieScene {
       if (!this.drag) return;
       const d = this.drag;
       d.g.position.copy(d.home);
+      if(d.moved){this.renderer.shadowMap.needsUpdate=true;if(this.shadowBudget)this.shadowBudget.dirty=true;}
       this.drag = null;
       const target = this.hit(e, d.id);
       if (
@@ -507,12 +510,14 @@ window.CookieScene = class CookieScene {
     this.resize();
     this.setZoom(1);
     this.toolMotion = new KitchenToolMotion(this);
+    this.shadowBudget = new KitchenShadows(this);
     this.last = performance.now();
     this.frame = (t) => {
       if (this.disposed) return;
       this.raf = requestAnimationFrame(this.frame);
       if (document.hidden || this.preparing) return;
-      if(this.pendingPointer){const event=this.pendingPointer;this.pendingPointer=null;this.processMove(event);}
+      const pointerMoved=Boolean(this.pendingPointer);
+      if(pointerMoved){const event=this.pendingPointer;this.pendingPointer=null;this.processMove(event);}
       if (this.frameFence) {
         const gl = this.renderer.getContext();
         if (gl.isContextLost()) return;
@@ -525,7 +530,7 @@ window.CookieScene = class CookieScene {
           this.needsRender=true;
         }
       }
-      if (t - this.last < 1000 / 30) return;
+      if (t - this.last < 1000 / (this.cursorDirty ? 60 : 30)) return;
       this.time = t / 1000;
       this.frameDelta = Math.min(1, (t - this.last) / 1000);
       this.last = t;
@@ -572,6 +577,7 @@ window.CookieScene = class CookieScene {
       this.beforeRender?.();
       const renderStarted=performance.now();
       this.renderer.render(this.scene, this.camera);
+      this.cursorDirty=false;
       this.frameCpuMs=performance.now()-renderStarted;
       this.frameSubmittedAt=performance.now();
       const gl = this.renderer.getContext();
@@ -981,7 +987,7 @@ window.CookieScene = class CookieScene {
   getObjectAnchor(id) {
     const object = this.objects.get(id);
     if (!object || !object.visible) return null;
-    this.scene.updateMatrixWorld(true);
+    object.updateWorldMatrix(true,false);
     this.camera.updateMatrixWorld();
     const v = object
       .localToWorld(new THREE.Vector3(0, 0.65, 0))
@@ -999,7 +1005,7 @@ window.CookieScene = class CookieScene {
     if (!this.hand) return;
     if (this.toolMotion?.hidesHand && !this.readingHand) { this.hand.group.visible = false; return; }
     this.needsRender = true;
-    this.renderer.shadowMap.needsUpdate = true;
+    this.cursorDirty=true;
     this.setRay(e);
     const group = this.hand.group;
     // Mesmos enquadramento, escala, orientação e poses do cursor das outras receitas.
@@ -1021,6 +1027,7 @@ window.CookieScene = class CookieScene {
     group.position.copy(tip).addScaledVector(forward, -0.3 * group.scale.x);
     group.position.y += Math.sin(performance.now() * 0.006) * 0.012;
     this.hand.pose(this.drag ? "grab" : this.hovered ? "pinch" : "open", 0.35);
+    this.shadowBudget?.handChanged();
   }
   resize() {
     const first =
@@ -1104,6 +1111,7 @@ window.CookieScene = class CookieScene {
       .addScaledVector(this.ray.ray.direction, 4.35)
       .addScaledVector(forward, -0.23 * 0.9);
     group.visible = true;
+    this.cursorDirty=true;
     this.hand.pose(grab ? "pageDrag" : "page", 1);
     this.needsRender = true;
   }

@@ -21,12 +21,13 @@ for(const kind of ['diffuse','bump','roughness']){
  const name=`hardwood2_${kind}.jpg`;
  assets['public/textures/kitchen/'+name]=cached('public',name,fs.readFileSync(path.join(root,'public/textures/kitchen',name)));
 }
-// Um único download para a cozinha, executado apenas depois da seleção de receita.
+// Motor ESM separado; lógica da cozinha em um pacote executado após a seleção.
 const loader=fs.readFileSync(path.join(root,'js/game-loader.js'),'utf8');
 const sources=[...loader.match(/const scripts = \[([\s\S]*?)\];/)[1].matchAll(/"([^"]+)"/g)].map(match=>match[1].split('?')[0]);
-const runtime=Buffer.from(sources.map(file=>fs.readFileSync(path.join(root,file),'utf8')+'\n;').join('\n'));
+const threeURL=cached('public','three.module.min.js',fs.readFileSync(path.join(root,sources[0])));
+const runtime=Buffer.from(sources.slice(1).map(file=>fs.readFileSync(path.join(root,file),'utf8')+'\n;').join('\n'));
 const runtimeURL=cached('js','kitchen-runtime.js',runtime);
-const manifest=cached('js','kitchen-manifest.js',Buffer.from('window.KitchenRuntimeURL='+JSON.stringify(runtimeURL)+';window.KitchenAssetURLs='+JSON.stringify(assets)+';'));
+const manifest=cached('js','kitchen-manifest.js',Buffer.from('window.KitchenThreeURL='+JSON.stringify(threeURL)+';window.KitchenRuntimeURL='+JSON.stringify(runtimeURL)+';window.KitchenAssetURLs='+JSON.stringify(assets)+';'));
 const scripts={},styles={};
 for(const file of fs.readdirSync(path.join(root,'js')).filter(file=>file.endsWith('.js')))scripts['js/'+file]=cached('js',file,fs.readFileSync(path.join(root,'js',file)));
 for(const file of fs.readdirSync(path.join(root,'css')).filter(file=>file.endsWith('.css'))){
@@ -43,4 +44,4 @@ for(const file of ['index.html','desktop.html','admin.html']){
   .replace(/href="(css\/[^"?]+)(?:\?[^\"]*)?"/g,(all,file)=>styles[file]?`href="${styles[file]}"`:all);
  fs.writeFileSync(path.join(out,file),html);
 }
-console.log('Site publicado sem dados privados. Cozinha em pacote único e assets com cache por conteúdo.');
+console.log('Site publicado sem dados privados. Motor ES Modules e pacote da cozinha com cache por conteúdo.');

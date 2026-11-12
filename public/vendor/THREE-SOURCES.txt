@@ -1,0 +1,10 @@
+Three.js r158 (MIT)
+License: THREE-LICENSE.txt
+
+Browser engine: ../three.module.min.js
+Source: https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.min.js
+SHA-256: 19b09d1f0a1d345df520f50b760ec88ba05c9bfdb00562d3d66d97ca60242e55
+Served locally; the browser does not require the CDN.
+
+The legacy ../three.min.js distribution remains for Node regression tests.
+RectAreaLightUniformsLib.js is the existing r158 lighting adapter.

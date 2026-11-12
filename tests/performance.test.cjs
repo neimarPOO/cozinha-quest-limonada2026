@@ -31,6 +31,9 @@ test('production build hashes assets and bundles runtime in dependency order wit
  const manifestURL=html.match(/src="(\/js\/cache\/kitchen-manifest\.[a-f0-9]+\.js)"/)[1];
  const context={window:{}};vm.runInNewContext(fs.readFileSync(path.join(root,manifestURL),'utf8'),context);
  const runtime=fs.readFileSync(path.join(root,context.window.KitchenRuntimeURL),'utf8');
+ assert.ok(fs.existsSync(path.join(root,context.window.KitchenThreeURL)));
+ assert.ok(!runtime.includes('Scripts \"build/three.js\"'));
+ assert.ok(fs.readFileSync(path.join(root,context.window.KitchenThreeURL),'utf8').includes('export{'));
  assert.ok(runtime.indexOf('window.KitchenResources')<runtime.indexOf('window.CookieScene'));
  assert.ok(runtime.indexOf('window.KitchenPerformance')<runtime.indexOf('window.CookieScene'));
  for(const url of Object.values(context.window.KitchenAssetURLs))assert.ok(fs.existsSync(path.join(root,url)));
