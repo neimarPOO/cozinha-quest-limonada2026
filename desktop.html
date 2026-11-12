@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/game-loading.css?v=1">
   <link rel="stylesheet" href="css/recipe-notebook.css?v=3">
   <link rel="stylesheet" href="css/wheel-design.css?v=1">
-<link rel="stylesheet" href="css/admin-wheel.css?v=1">
+<link rel="stylesheet" href="css/admin-wheel.css?v=2">
   <link rel="stylesheet" href="css/lobby-premium.css?v=3">
   <link rel="stylesheet" href="css/lobby-information.css?v=1">
 <link rel="stylesheet" href="css/control-recovery.css?v=1">
@@ -334,10 +334,11 @@
         <div class="tablewrap" id="prizeTable"></div>
         <div class="divider"></div>
         <div class="formrow">
-          <div><label>Prêmio</label><select id="prizeSelect"></select></div>
-          <div><label>Quantidade para acrescentar ao estoque</label><input id="addStock" type="number" min="1"
+          <div><label for="prizeSelect">Prêmio</label><select id="prizeSelect"></select></div>
+          <div><label for="addStock">Quantidade para acrescentar ao estoque</label><input id="addStock" type="number" min="1" max="100000" step="1" inputmode="numeric"
               value="10"></div>
-        </div><button class="btn primary" id="restockBtn">Registrar reposição</button>
+        </div><button class="btn primary" id="restockBtn" type="button">Registrar reposição</button>
+        <p id="stockSaveStatus" class="stock-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         <p class="foot">O prêmio é reservado ao ser sorteado. O monitor confirma a entrega no Histórico. Ajustes e
           confirmações ficam registrados.</p>
       </div>
@@ -398,6 +399,7 @@
           </div>
         </div>
         <h3>Itens cadastrados e disponibilidade de hoje</h3>
+        <button class="btn primary" id="manageWheelStock" type="button">Cadastrar ou acrescentar estoque</button>
         <div id="adminWheelItems" class="admin-wheel-items"></div>
       </div>
     </section>
@@ -454,12 +456,12 @@
   <script src="js/prize-catalog.js?v=1"></script><script src="js/wheel-rules.js?v=2"></script>
   <script src="js/wheel-design.js?v=2"></script>
 <script src="js/event-state.js?v=2"></script>
-<script src="js/event-session.js?v=1"></script>
+<script src="js/event-session.js?v=2"></script>
   <script src="js/app.js?v=performance-1"></script>
-  <script src="js/admin-controls.js?v=3"></script>
+  <script src="js/admin-controls.js?v=4"></script>
 
   <script src="js/control-client.js?v=2"></script>
-<script src="js/admin-wheel.js?v=1"></script>
+<script src="js/admin-wheel.js?v=2"></script>
   <script src="js/cookie-recipe.js?v=4"></script>
   <script src="js/recipe-catalog.js?v=4"></script>
   <script src="js/recipe-guide.js?v=4"></script>

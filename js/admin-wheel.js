@@ -70,6 +70,7 @@
   $w('adminWheelSpin').onclick=spin;
   for(const id of ['adminWheelMode','adminWheelScore','adminWheelCompleted'])$w(id).addEventListener('change',()=>{hadRespin=false;parameters()});
   document.addEventListener('control-state',render);
+  document.addEventListener('control-auth',render);
   document.addEventListener('DOMContentLoaded',render);
   document.addEventListener('click',event=>{if(event.target.closest('[data-tab="wheel"],#openAdminWheel'))render()});
 })();

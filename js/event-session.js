@@ -5,7 +5,7 @@ const ADMIN_TABS=['dashboard','wheel','prizes','sessions','history','settings'];
 const $=id=>document.getElementById(id),fmt=n=>String(n).padStart(2,'0');
 let pendingAdminTab='dashboard';
 function isAdminAuthenticated(){return sessionStorage.getItem(ADMIN_AUTH_KEY)==='true';}
-function updateAdminUI(){const authed=isAdminAuthenticated();document.body.classList.toggle('is-admin',authed);document.querySelector('.admin-workspace')?.toggleAttribute('hidden',!authed);if(window.ADMIN_ONLY&&!authed)$('adminLoginModal').classList.remove('hidden');}
+function updateAdminUI(){const authed=isAdminAuthenticated();document.body.classList.toggle('is-admin',authed);document.querySelector('.admin-workspace')?.toggleAttribute('hidden',!authed);if(window.ADMIN_ONLY&&!authed)$('adminLoginModal').classList.remove('hidden');document.dispatchEvent(new Event('control-auth'));}
 function openAdminLogin(tab){pendingAdminTab=tab||'dashboard';$('adminEmailInput').value='';$('adminPasswordInput').value='';$('adminLoginError').style.display='none';$('adminLoginModal').classList.remove('hidden');setTimeout(()=>$('adminEmailInput')?.focus({preventScroll:true}),120);}
 function closeAdminLogin(){if(window.ADMIN_ONLY&&!isAdminAuthenticated())return;$('adminLoginModal').classList.add('hidden');$('adminLoginError').style.display='none';}
 function handleAdminLogin(){return window.ControlSync?.login();}

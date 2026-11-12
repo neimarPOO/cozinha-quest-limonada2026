@@ -15,3 +15,7 @@
 #wheel .formrow { grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); }
 #wheel .notice { overflow-wrap:anywhere; }
 @media(max-width:760px){.admin-wheel-grid{grid-template-columns:1fr;gap:12px}.admin-wheel-visual{max-width:340px}#wheel .panel{padding:20px 14px}}
+
+.stock-feedback { padding:12px 14px; border:1px solid #a9bf9733; border-radius:10px; line-height:1.5; }
+.stock-feedback[data-state="success"] { color:#b5ef94; }
+.stock-feedback[data-state="error"] { color:#ffb3a8; }

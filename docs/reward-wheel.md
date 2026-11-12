@@ -36,3 +36,27 @@ Validação: testes de regras, disponibilidade, imutabilidade dos dados, setores
 derivados do cadastro e probabilidades. No Chromium, conferir os dois painéis,
 salvar a regra, visualizar os sete itens, testar um item específico, bloquear uma
 partida incompleta e comparar estoque/histórico antes e depois das simulações.
+
+## Cadastro e reposição de estoque
+
+Na administração da roleta, **Cadastrar ou acrescentar estoque** abre a aba
+Prêmios e posiciona o formulário na tela. Escolha o prêmio, informe a quantidade
+inteira a acrescentar (1 a 100.000) e use **Registrar reposição**. A confirmação
+mostra nome, quantidade acrescentada, estoque total e disponibilidade para o dia,
+considerando o limite geral. Quantidade em estoque e disponibilidade para sorteio
+são diferentes: o limite diário pode manter a disponibilidade em zero.
+
+A seleção agora permanece após redesenhos e sincronizações do painel. Antes da
+correção, o seletor voltava para o primeiro item e uma reposição seguinte podia
+ser registrada em outro prêmio. O botão aguarda a confirmação do servidor,
+impede cliques repetidos enquanto salva e não confirma sucesso se a conexão ou
+sessão falhar. A quantidade digitada só é limpa após o salvamento confirmado.
+
+A listagem da roleta também atualiza quando a autenticação é concluída, mesmo
+que a revisão dos dados não tenha mudado. Isso evita uma prévia vazia ao entrar
+na área administrativa ou restaurar a sessão.
+
+Validação: 77 testes automatizados; Chromium com desktop e celular usando dados
+locais isolados, reposição nos sete itens, persistência após recarregar, atualização
+da lista da roleta, falha de rede e sessão expirada. A investigação do site
+publicado foi somente leitura: estoques reais não foram ajustados.

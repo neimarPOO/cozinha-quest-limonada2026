@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controle do Monitor | Cozinha Quest</title><link rel="stylesheet" href="css/styles.css?v=87f4cac7350c"><link rel="stylesheet" href="css/admin.css?v=1"><link rel="stylesheet" href="css/admin-wheel.css?v=1">
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controle do Monitor | Cozinha Quest</title><link rel="stylesheet" href="css/styles.css?v=87f4cac7350c"><link rel="stylesheet" href="css/admin.css?v=1"><link rel="stylesheet" href="css/admin-wheel.css?v=2">
 <link rel="stylesheet" href="css/control-recovery.css?v=1">
 </head><body class="admin-only"><script>window.ADMIN_ONLY = true;</script><div class="shell"><header class="top"><div><div class="logo">🍋 COZINHA QUEST</div><p class="sub">CONTROLE DO MONITOR</p></div><p class="sync-status" role="status">Conectando ao evento…</p></header><main class="admin-workspace" hidden><nav class="tabs" aria-label="Administração"><button class="tab admin-tab" data-tab="dashboard">📊 Painel</button><button class="tab admin-tab" data-tab="wheel">🎡 Roleta</button><button class="tab admin-tab"
         data-tab="prizes">🎁 Prêmios</button><button class="tab admin-tab" data-tab="sessions">☕ Sessões</button><button
@@ -31,10 +31,11 @@
         <div class="tablewrap" id="prizeTable"></div>
         <div class="divider"></div>
         <div class="formrow">
-          <div><label>Prêmio</label><select id="prizeSelect"></select></div>
-          <div><label>Quantidade para acrescentar ao estoque</label><input id="addStock" type="number" min="1"
+          <div><label for="prizeSelect">Prêmio</label><select id="prizeSelect"></select></div>
+          <div><label for="addStock">Quantidade para acrescentar ao estoque</label><input id="addStock" type="number" min="1" max="100000" step="1" inputmode="numeric"
               value="10"></div>
-        </div><button class="btn primary" id="restockBtn">Registrar reposição</button>
+        </div><button class="btn primary" id="restockBtn" type="button">Registrar reposição</button>
+        <p id="stockSaveStatus" class="stock-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         <p class="foot">O prêmio é reservado ao ser sorteado. O monitor confirma a entrega no Histórico. Ajustes e
           confirmações ficam registrados.</p>
       </div>
@@ -95,6 +96,7 @@
           </div>
         </div>
         <h3>Itens cadastrados e disponibilidade de hoje</h3>
+        <button class="btn primary" id="manageWheelStock" type="button">Cadastrar ou acrescentar estoque</button>
         <div id="adminWheelItems" class="admin-wheel-items"></div>
       </div>
     </section>
@@ -146,7 +148,7 @@
     </div>
 <footer class="foot">Controle de prêmios, limites e configurações do evento.</footer></div><script src="js/game-settings.js?v=2"></script><script src="js/prize-catalog.js?v=1"></script><script src="js/wheel-rules.js?v=2"></script><script src="js/wheel-design.js?v=2"></script>
 <script src="js/event-state.js?v=2"></script>
-<script src="js/event-session.js?v=1"></script><script src="js/admin.js?v=3"></script><script src="js/admin-controls.js?v=3"></script>
+<script src="js/event-session.js?v=2"></script><script src="js/admin.js?v=3"></script><script src="js/admin-controls.js?v=4"></script>
 
   <script src="js/control-client.js?v=2"></script>
-<script src="js/admin-wheel.js?v=1"></script></body></html>
+<script src="js/admin-wheel.js?v=2"></script></body></html>
