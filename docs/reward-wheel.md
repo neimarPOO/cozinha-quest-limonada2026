@@ -60,3 +60,17 @@ Validação: 77 testes automatizados; Chromium com desktop e celular usando dado
 locais isolados, reposição nos sete itens, persistência após recarregar, atualização
 da lista da roleta, falha de rede e sessão expirada. A investigação do site
 publicado foi somente leitura: estoques reais não foram ajustados.
+
+
+## Chance de premiação por giro
+
+Com estoque disponível e limite diário livre, a chance de prêmio físico é de
+**50% a partir de 500 pontos**, incluindo pontuações superiores. Abaixo de 250
+pontos permanece em 8%, e de 250 a 499 pontos em 15%, quando a regra do evento
+permitir liberar a roleta nessas faixas. A pontuação mínima de acesso continua
+configurada separadamente no painel administrativo.
+
+Os 50% se referem a cada giro, não a uma garantia de premiar exatamente metade
+das partidas. O giro extra pode aumentar a chance final da tentativa. Estoque,
+limite por prêmio e limite geral continuam sendo respeitados, e o jogo e a
+simulação do admin usam a mesma função de sorteio.

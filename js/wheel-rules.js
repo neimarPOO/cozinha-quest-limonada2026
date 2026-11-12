@@ -8,7 +8,7 @@
     return Math.max(0,Math.min(prize.qty-used.length,prize.perDay-used.filter(g=>g.day===db.day).length));
   }
   function dailyPhysical(db) {return db.games.filter(g=>g.day===db.day&&g.prize&&g.status!=='cancelado').length;}
-  function chance(score) {if(score<250)return .08;if(score<500)return .15;if(score<750)return .25;if(score<900)return .35;return .45;}
+  function chance(score) {if(score<250)return .08;if(score<500)return .15;return .50;}
   function sectors(prizes) {
     const presets=Catalog.sectors();
     return [...prizes.map(p=>{
