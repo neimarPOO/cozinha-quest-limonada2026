@@ -35,74 +35,8 @@ window.KitchenEnvironment = (() => {
       texture.anisotropy = view.mobile ? 2 : 8;
       return texture;
     };
-    const wood = canvasMap(1024, (c, size) => {
-      const boardWidths = [164, 183, 148, 191, 167, 171];
-      let y = 0;
-      for (let plank = 0; plank < boardWidths.length; plank++) {
-        const height = boardWidths[plank],
-          base = [111, 74, 43];
-        const variation = (random() - 0.5) * 17;
-        c.fillStyle = `rgb(${base[0] + variation},${base[1] + variation * 0.6},${base[2] + variation * 0.35})`;
-        c.fillRect(0, y, size, height);
-        const knotX = 120 + random() * 780,
-          knotY = y + height * (0.3 + random() * 0.4);
-        // Veios interrompidos e desviados pelos nós, em vez de linhas paralelas regulares.
-        for (let grain = 0; grain < 92; grain++) {
-          const startY = y + random() * height,
-            phase = random() * Math.PI * 2;
-          c.strokeStyle =
-            grain % 4 ? "rgba(42,22,12,.13)" : "rgba(238,189,124,.14)";
-          c.lineWidth = 0.45 + random() * 1.15;
-          c.beginPath();
-          const startX = random() * 0.22 * size,
-            endX = size * (0.72 + random() * 0.28);
-          for (let x = startX; x <= endX; x += 8) {
-            const dist = (x - knotX) / 110,
-              dy = startY - knotY;
-            const warp =
-              Math.exp(-dist * dist) *
-              Math.sign(dy) *
-              (22 * Math.exp(-Math.abs(dy) / 42));
-            const gy =
-              startY +
-              Math.sin(x * 0.007 + phase) * 3.7 +
-              Math.sin(x * 0.019 + phase) * 1.1 +
-              warp;
-            if (x === startX) c.moveTo(x, gy);
-            else c.lineTo(x, gy);
-          }
-          c.stroke();
-        }
-        for (let ring = 1; ring < 10; ring++) {
-          c.strokeStyle = "rgba(42,23,14,.18)";
-          c.lineWidth = 0.7;
-          c.beginPath();
-          c.ellipse(
-            knotX,
-            knotY,
-            4 + ring * 4,
-            1 + ring * 1.4,
-            -0.04,
-            0,
-            Math.PI * 2,
-          );
-          c.stroke();
-        }
-        const sheen = c.createLinearGradient(0, y, 0, y + height);
-        sheen.addColorStop(0, "#e8be8022");
-        sheen.addColorStop(0.4, "#2f170b00");
-        sheen.addColorStop(1, "#3420141c");
-        c.fillStyle = sheen;
-        c.fillRect(0, y, size, height);
-        c.fillStyle = "#36251955";
-        c.fillRect(0, y, size, 1);
-        y += height;
-      }
-      for (let n = 0; n < 10000; n++) {
-        c.fillStyle = n % 2 ? "#f0c58d0e" : "#21140912";
-        c.fillRect(random() * size, random() * size, 1 + random() * 5, 0.5);
-      }
-    });
+    // Conserva a sequência visual após remover a textura de madeira descartada.
+    seed = 3463640705;
     const contactShadow = canvasMap(128, (c, n) => {
       const gradient = c.createRadialGradient(
         n / 2,
@@ -141,7 +75,6 @@ window.KitchenEnvironment = (() => {
     });
     const mat = (color, roughness = 0.4, metalness = 0) =>
       new T.MeshStandardMaterial({ color, roughness, metalness });
-    wood.dispose();
     const loader = new T.TextureLoader();
     const photo = (name, color = false) => {
       const url = "public/textures/kitchen/hardwood2_" + name + ".jpg";

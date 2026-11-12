@@ -127,3 +127,16 @@ test("highlight transitions keep their duration across frame rates and stop inva
   slow.hovered = null;
   assert.equal(update.call(slow), true);
 });
+
+test('picking preserves real contours but skips scenery, invisible objects and the dragged source',()=>{
+ const context={window:{},THREE};vm.runInNewContext(fs.readFileSync(require.resolve('../js/cookie-scene'),'utf8'),context);
+ const scene=new THREE.Scene(),objects=new Map();
+ for(const [id,z] of [['front',2],['back',0]]){const g=new THREE.Group();g.userData.entity=id;g.add(new THREE.Mesh(new THREE.SphereGeometry(.5),new THREE.MeshBasicMaterial()));g.position.z=z;scene.add(g);objects.set(id,g)}
+ const scenery=new THREE.Mesh(new THREE.BoxGeometry(4,4,1),new THREE.MeshBasicMaterial());scenery.position.z=4;scenery.raycast=()=>{throw Error('Scenery must not be tested')};scene.add(scenery);scene.updateMatrixWorld(true);
+ const owner={objects,ray:new THREE.Raycaster(new THREE.Vector3(.1,.1,6),new THREE.Vector3(0,0,-1)),setRay(){}};
+ const hit=context.window.CookieScene.prototype.hit;
+ assert.equal(hit.call(owner,{}).id,'front');assert.equal(hit.call(owner,{},'front').id,'back');
+ objects.get('front').visible=false;assert.equal(hit.call(owner,{}).id,'back');
+ owner.ray.ray.origin.set(.49,.49,6);assert.equal(hit.call(owner,{}),null);
+ owner.ray.ray.origin.x=2;assert.equal(hit.call(owner,{}),null);
+});

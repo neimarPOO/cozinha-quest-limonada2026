@@ -2,6 +2,35 @@
 window.KitchenResources = (() => {
   const images = new Map(),
     geometries = new Map();
+  let idleRenderer = null, releaseTimer = null;
+  const environments = new WeakMap();
+  function destroyRenderer(renderer) {
+    environments.get(renderer)?.dispose();
+    environments.delete(renderer);
+    renderer.dispose();
+    renderer.forceContextLoss?.();
+  }
+  function renderer() {
+    clearTimeout(releaseTimer);
+    if (idleRenderer) {
+      const value=idleRenderer;idleRenderer=null;
+      if (!value.getContext().isContextLost()) return value;
+      destroyRenderer(value);
+    }
+    return new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  }
+  function releaseRenderer(value) {
+    if(idleRenderer===value)return;
+    if (idleRenderer) destroyRenderer(idleRenderer);
+    if (value.getContext().isContextLost()) {destroyRenderer(value);return;}
+    value.renderLists.dispose();
+    idleRenderer=value;
+    releaseTimer=setTimeout(()=>{if(idleRenderer===value){idleRenderer=null;destroyRenderer(value)}},60000);
+  }
+  function environment(renderer, build) {
+    if (!environments.has(renderer)) environments.set(renderer,build());
+    return environments.get(renderer);
+  }
   function image(url) {
     if (!images.has(url)) {
       const promise = new Promise((resolve, reject) => {
@@ -9,7 +38,7 @@ window.KitchenResources = (() => {
         img.onload = () => resolve(img);
         img.onerror = () =>
           reject(new Error("Não foi possível carregar " + url));
-        img.src = url;
+        img.src = window.KitchenAssetURLs?.[url] || url;
       });
       images.set(url, promise);
       promise.catch(() => images.delete(url));
@@ -162,5 +191,5 @@ window.KitchenResources = (() => {
     }
     return { before, after };
   }
-  return { image, texture, geometry, releaseGeometries, batchStatic };
+  return { image, texture, geometry, releaseGeometries, batchStatic, renderer, releaseRenderer, environment };
 })();

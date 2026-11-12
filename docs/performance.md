@@ -1,77 +1,91 @@
 # Carregamento e desempenho
 
-As otimizações preservam texturas, iluminação, resolução configurada, contornos e
-mecânicas das três receitas.
+As três receitas preservam modelos, contornos, texturas, materiais, iluminação e
+sombras. O modo automático pode reduzir temporariamente a resolução interna sob
+carga: isso favorece a fluidez, mas pode diminuir a nitidez. “Visual: máxima
+nitidez”, na barra da bancada, mantém a resolução original configurada. A escolha
+vale para a sessão daquele navegador; não altera as regras do evento.
 
-## Abertura e preparação
+## Downloads e cache
 
-`game-loader.js` mantém o motor Three.js fora do carregamento inicial. Ao passar o
-mouse, tocar ou focar um card, o navegador pode antecipar os scripts e a madeira.
-Os scripts são baixados em paralelo e executados respeitando suas dependências.
-Downloads com falha podem ser tentados novamente sem duplicar controles.
+- Three.js continua fora do carregamento inicial da página. Passar o mouse ou focar
+  um card antecipa o download, sem criar uma cena nem iniciar o cronômetro.
+- No build de produção, os 15 scripts anteriormente separados da cozinha, mais o
+  controlador de desempenho, são reunidos em um único pacote com a mesma ordem de
+  dependências. O desenvolvimento local continua podendo carregar as fontes.
+- Scripts, CSS e imagens selecionadas recebem nomes com hash de conteúdo. Somente
+  os diretórios de arquivos com hash usam cache `immutable` de um ano. O HTML
+  continua sendo revalidado: uma publicação nova aponta para novos nomes, evitando
+  manter versões antigas por causa do cache.
+- Fundo original e fotos dos três cards têm cópias WebP **sem perdas**, com os
+  mesmos pixels RGBA e as mesmas dimensões. Os PNG originais permanecem no projeto.
+  Os quatro arquivos somavam 7.593.096 bytes; as cópias somam 5.662.492 bytes,
+  aproximadamente 25% menos. A aparência do fundo não foi modificada.
+- Para regerar essas cópias, use `python scripts/optimize-lobby-images.py` em um
+  ambiente com Pillow/WebP. O build do Netlify usa somente Node e os arquivos já
+  gerados; não precisa instalar Python ou Pillow.
+- As três fotografias de madeira usam URLs com hash, mas mantêm os JPEG originais,
+  sem recompressão. A CDN Netlify fornece sua própria compressão HTTP.
 
-Após selecionar a receita, uma tela de preparação aguarda as imagens, a compilação
-dos shaders e o primeiro frame. Em WebGL2, uma fence da GPU verifica a conclusão do
-frame sem bloquear a interface com `gl.finish()`. O cronômetro só começa ao fim.
-O jogador pode cancelar a preparação. Sem WebGL, os controles alternativos continuam
-abrindo automaticamente.
+## CPU, interação e GPU
 
-`kitchen-hand.js` preserva exatamente o rig e as poses da mão original sem construir
-a cozinha legada. A partida usa um único contexto WebGL; `public/models.js` deixa
-de ser necessário ao fluxo moderno.
+- O teste de seleção primeiro verifica os limites dos objetos interativos. Somente
+  candidatos próximos passam pelo teste do contorno real. Decoração, cursor,
+  objetos invisíveis e o ingrediente arrastado não entram na busca de destino.
+- Movimentos do mouse são agrupados por quadro. Soltar o botão processa a posição
+  final imediatamente, inclusive em arrastes rápidos sem um quadro intermediário.
+- Uma textura procedural de madeira que era desenhada e descartada sem ser usada
+  foi removida; a sequência aleatória da decoração restante foi preservada.
+- Imagens decodificadas e geometrias compartilhadas continuam em cache limitado.
+  As malhas estáticas equivalentes continuam agrupadas por material. A cena imóvel
+  reutiliza o último quadro; legendas recalculam posições apenas quando necessário.
+- Um contexto WebGL e a captura de iluminação podem ser reutilizados ao trocar de
+  receita. O cache contém no máximo um renderizador ocioso e expira em 60 segundos.
+  Materiais, sombras, texturas e eventos da cena anterior são liberados. Contextos
+  perdidos são descartados e o modo sem WebGL continua disponível.
+- A resolução automática começa na mesma configuração anterior, até 1,75 vezes a
+  densidade de pixels. Reduz o esforço quando medições sucessivas indicam carga
+  alta e recupera a nitidez com margem para evitar oscilações. Nunca remove assets,
+  troca materiais ou reduz os mapas de sombra. “Máxima nitidez” desativa a adaptação.
+- A preparação ainda aguarda texturas, compilação e primeiro quadro. O relógio só
+  começa depois. Fences WebGL2 evitam enfileirar vários quadros numa GPU ocupada.
 
-## Recursos e desenho
+## Resultados e limites da verificação
 
-- Imagens da madeira são decodificadas/reutilizadas entre receitas.
-- Geometrias arredondadas usam cache compartilhado com referências por cena e até
-  96 entradas ociosas retidas após a saída. Materiais e texturas por cena continuam
-  sendo descartados; não se guarda uma cozinha inteira na memória.
-- Malhas estáticas equivalentes são agrupadas por material e propriedades de sombra.
-  Instâncias, entidades interativas, mão e objetos animados permanecem independentes.
-  As posições, UVs, normais e materiais são preservados.
-- Legendas só recalculam disposição quando câmera, objetos ou estado mudam.
-- A cena imóvel reutiliza o frame existente. Câmera, interação, destaques, animações
-  e preparo invalidam esse frame; o relógio segue independente da GPU. Em WebGL2,
-  uma fence também limita o envio a um frame pendente, evitando filas de trabalho
-  em dispositivos lentos sem reduzir a resolução.
+Medições locais no Chromium com renderização por software, não numa GPU física:
 
-Medição de um frame em Chromium/SwiftShader, no mesmo enquadramento de desktop:
+| Verificação | Resultado |
+| --- | --- |
+| Pacote da cozinha | 15 requisições de script → 1 |
+| Segunda visita | 0 bytes transferidos para o pacote, reutilizado do cache |
+| Fotos e fundo | aproximadamente 25% menos bytes, pixels idênticos |
+| Seleção de objetos, 90 consultas na mesma bancada | 183 ms → 27 ms, cerca de 6 vezes mais rápida |
+| Cena inicial de cookies, mesmo enquadramento | 486 chamadas e 420.376 triângulos antes e depois |
+| Receita seguinte | contexto WebGL reutilizado nas trocas cookies → limonada → brownie |
 
-| Receita | Chamadas antes | Chamadas depois |
-| --- | ---: | ---: |
-| Cookies | 690 | 508 |
-| Limonada | 330 | 148 |
-| Focaccia | 499 | 317 |
+Com 150 ms de latência e 200 KiB/s, o download inicial da cozinha levou cerca de
+4,3 segundos nas duas versões. A transferência de bytes dominou esse teste; não
+houve ganho relevante no tempo dessa primeira transferência. Cache, imagens menores
+e seleção mais barata oferecem ganhos distintos. A compilação inicial dos shaders
+continua dependendo da GPU: estas medições não estabelecem uma meta universal de FPS.
 
-As malhas estáticas elegíveis passaram de 117 para 24 grupos. São contagens de
-renderização, não uma promessa de ganho de FPS em determinado aparelho. A qualidade
-foi conferida por captura e os testes de agrupamento verificam limites espaciais,
-UVs e normais.
+`npm test`: 64 testes de receitas, armazenamento, cache, seleção, adaptação de
+resolução, liberação de recursos e integridade do build. `npm run test:server`:
+compressão HTTP, revalidação, HEAD, erros e cache. O build mantém dados privados e
+código de servidor fora de `dist`.
 
-## Entrega HTTP
+Chromium: três receitas WebGL, imagens otimizadas, escolha de máxima nitidez,
+reutilização do contexto, cache na segunda visita e arraste real de farinha até a
+tigela, modal de 450 g e avanço da receita. O teste de interação pausou o desenho
+contínuo após a preparação para não saturar o SwiftShader do ambiente de testes.
+A compilação e o desenho inicial foram verificados com WebGL ativo.
 
-O servidor Node fornece Brotli/gzip para arquivos textuais e guarda versões comprimidas
-em cache limitado. JPEG/PNG/GLB não passam por recompressão. HTML é revalidado;
-URLs com `?v=` usam cache longo, e os demais arquivos usam ETag para revalidação.
-Ao alterar um script ou CSS publicado, atualize seu `?v=` em `index.html` ou na lista
-de `game-loader.js`. A hospedagem Netlify continua usando sua compressão de CDN e
-os cabeçalhos definidos em `netlify.toml`; o servidor Node não participa dela.
-
-## Verificação
-
-- `npm test`: regras das três receitas e cache/agrupamento de geometrias.
-- `npm run test:server`: compressão sem perdas, ETag/304, HEAD, erros e cache HTTP;
-  requer permissão para abrir uma porta local de teste.
-- Chromium: abertura sem Three.js/canvas; preparação sem consumir o relógio; um
-  contexto WebGL; cancelamento; recuperação de download; três receitas WebGL e
-  controles alternativos; interação e renderização sob demanda.
-
-KTX2 e redução adaptativa de resolução não foram introduzidos. Os ganhos desta
-etapa vêm da execução e da entrega dos mesmos recursos visuais.
+Conexão e hardware têm limites físicos. O cache não elimina o primeiro download,
+uma GPU muito limitada pode exigir redução de nitidez, e a sincronização do evento
+continua exigindo conexão. Nenhuma alteração foi feita nos dados de produção.
 
 ## Caderno de receitas
 
-A página usa uma textura de canvas apenas para a faixa visível do documento, no
-mesmo contexto WebGL da bancada e da mão. O texto completo permanece no DOM para
-acessibilidade e fallback. Rolar a página atualiza somente essa textura; não se
-rasteriza uma imagem gigante com toda a receita nem se cria outro renderizador.
+A página usa uma textura de canvas apenas para a faixa visível. Texto e legendas
+mantêm suas fontes e medidas; o documento completo continua no DOM para
+acessibilidade e fallback. Não é criado outro contexto WebGL para o caderno.

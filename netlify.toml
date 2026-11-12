@@ -65,3 +65,19 @@
   [headers.values]
     Content-Type = "application/javascript; charset=utf-8"
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# Somente arquivos cujo nome contém o hash do conteúdo podem ficar no cache permanente.
+[[headers]]
+  for = "/js/cache/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/css/cache/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/public/cache/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

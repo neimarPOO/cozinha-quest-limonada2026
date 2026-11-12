@@ -21,13 +21,10 @@ window.CookieScene = class CookieScene {
     root.append(this.labelLayer);
     const T = THREE;
     this.T = T;
-    this.renderer = new T.WebGLRenderer({
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio, 1.75),
-    );
+    this.renderer = window.KitchenResources ? KitchenResources.renderer()
+      : new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+    this.performance = new KitchenPerformance(devicePixelRatio);
+    this.renderer.setPixelRatio(this.performance.ratio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = T.PCFSoftShadowMap;
     this.renderer.toneMapping = T.ACESFilmicToneMapping;
@@ -366,6 +363,7 @@ window.CookieScene = class CookieScene {
     }
     const canvas = this.renderer.domElement;
     this.down = (e) => {
+      this.pendingPointer=null;
       if (e.button === 2) {
         this.pan = {
           x: e.clientX,
@@ -426,7 +424,13 @@ window.CookieScene = class CookieScene {
         );
       }
     };
+    this.processMove = this.move;
+    this.move = (e) => {
+      this.pendingPointer = {clientX:e.clientX,clientY:e.clientY,pointerType:e.pointerType};
+    };
     this.up = (e) => {
+      this.pendingPointer=null;
+      if(this.drag||this.pan)this.processMove(e);
       if (this.pan) {
         this.pan = null;
         return;
@@ -458,6 +462,7 @@ window.CookieScene = class CookieScene {
       this.updateHand(e);
     };
     this.cancel = () => {
+      this.pendingPointer=null;
       this.needsRender = true;
       this.renderer.shadowMap.needsUpdate = true;
       if (this.drag) this.drag.g.position.copy(this.drag.home);
@@ -466,6 +471,7 @@ window.CookieScene = class CookieScene {
       if (this.hand) this.hand.group.visible = false;
     };
     this.leave = () => {
+      this.pendingPointer=null;
       this.needsRender = true;
       this.renderer.shadowMap.needsUpdate = true;
       if (!this.drag && this.hand) this.hand.group.visible = false;
@@ -506,7 +512,7 @@ window.CookieScene = class CookieScene {
       if (this.disposed) return;
       this.raf = requestAnimationFrame(this.frame);
       if (document.hidden || this.preparing) return;
-      if (t - this.last < 1000 / 30) return;
+      if(this.pendingPointer){const event=this.pendingPointer;this.pendingPointer=null;this.processMove(event);}
       if (this.frameFence) {
         const gl = this.renderer.getContext();
         if (gl.isContextLost()) return;
@@ -514,7 +520,12 @@ window.CookieScene = class CookieScene {
         if (status === gl.TIMEOUT_EXPIRED) return;
         gl.deleteSync(this.frameFence);
         this.frameFence = null;
+        if (this.performance.sample(Math.max(this.frameCpuMs || 0, performance.now()-this.frameSubmittedAt), t)) {
+          this.renderer.setPixelRatio(this.performance.ratio);
+          this.needsRender=true;
+        }
       }
+      if (t - this.last < 1000 / 30) return;
       this.time = t / 1000;
       this.frameDelta = Math.min(1, (t - this.last) / 1000);
       this.last = t;
@@ -559,7 +570,10 @@ window.CookieScene = class CookieScene {
         this.renderer.shadowMap.needsUpdate = true;
       this.shadowKey = shadowKey;
       this.beforeRender?.();
+      const renderStarted=performance.now();
       this.renderer.render(this.scene, this.camera);
+      this.frameCpuMs=performance.now()-renderStarted;
+      this.frameSubmittedAt=performance.now();
       const gl = this.renderer.getContext();
       if (gl.fenceSync && !gl.isContextLost()) {
         this.frameFence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -614,6 +628,10 @@ window.CookieScene = class CookieScene {
     this.updateLabels();
     this.onViewChange?.();
     return true;
+  }
+  setGraphicsMode(mode) {
+    this.renderer.setPixelRatio(this.performance.setMode(mode));
+    this.needsRender=true;
   }
   material(color) {
     return new THREE.MeshStandardMaterial({
@@ -1124,7 +1142,17 @@ window.CookieScene = class CookieScene {
   }
   hit(e, ignore) {
     this.setRay(e);
-    for (const h of this.ray.intersectObjects(this.scene.children, true)) {
+    this.pickBounds ||= new THREE.Box3();
+    this.pickCandidates ||= [];
+    this.pickCandidates.length=0;
+    for(const [id,group] of this.objects){
+      if(!group.visible||id===ignore)continue;
+      group.updateWorldMatrix(true,true);
+      this.pickBounds.setFromObject(group);
+      if(!this.ray.ray.intersectsBox(this.pickBounds))continue;
+      group.traverseVisible(object=>{if(object.raycast&&!object.isSprite)this.pickCandidates.push(object)});
+    }
+    for (const h of this.ray.intersectObjects(this.pickCandidates, false)) {
       let g = h.object;
       if (g.isSprite) continue;
       while (g && !g.userData.entity) g = g.parent;
@@ -1241,10 +1269,14 @@ window.CookieScene = class CookieScene {
       this.tray.position.copy(this.objects.get("plate").position);
   }
   dispose() {
+    if(this.disposed)return;
     this.disposed = true;
     cancelAnimationFrame(this.raf);
     this.observer?.disconnect();
     this.labelLayer?.remove();
+    this.pendingPointer=null;
+    for(const [event,handler] of [['pointerdown',this.down],['pointermove',this.move],['pointerup',this.up],['pointercancel',this.cancel],['pointerleave',this.leave],['contextmenu',this.contextMenu]])
+      this.renderer.domElement.removeEventListener(event,handler);
     this.renderer.domElement.removeEventListener("wheel", this.wheel);
     this.renderer.domElement.removeEventListener(
       "webglcontextlost",
@@ -1256,6 +1288,7 @@ window.CookieScene = class CookieScene {
       materials = new Set(),
       geometries = new Set();
     this.scene.traverse((o) => {
+      o.shadow?.dispose();
       if (o.skeleton) skeletons.add(o.skeleton);
       if (o.geometry) geometries.add(o.geometry);
       for (const m of o.material
@@ -1274,13 +1307,14 @@ window.CookieScene = class CookieScene {
     for (const geometry of geometries)
       if (!geometry.userData.kitchenShared) geometry.dispose();
     window.KitchenResources?.releaseGeometries(this);
-    this.environmentTarget?.dispose();
+    if (!window.KitchenResources) this.environmentTarget?.dispose();
     if (this.frameFence) {
       const gl = this.renderer.getContext();
       if (!gl.isContextLost()) gl.deleteSync(this.frameFence);
       this.frameFence = null;
     }
-    this.renderer.dispose();
     this.renderer.domElement.remove();
+    if (window.KitchenResources) KitchenResources.releaseRenderer(this.renderer);
+    else this.renderer.dispose();
   }
 };

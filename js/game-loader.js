@@ -2,20 +2,21 @@
 window.GameLoader = (() => {
   const scripts = [
     "public/three.min.js?v=3b3a1c97de3c",
-    "js/kitchen-resources.js?v=1",
+    "js/kitchen-resources.js?v=2",
+    "js/kitchen-performance.js?v=1",
     "public/models/hand-surface.js?v=1",
     "js/kitchen-mitts.js?v=1",
     "js/kitchen-hand.js?v=4",
     "public/vendor/RectAreaLightUniformsLib.js?v=158",
-    "js/kitchen-environment.js?v=3",
+    "js/kitchen-environment.js?v=4",
     "js/kitchen-assets.js?v=4",
-    "js/kitchen-lighting.js?v=2",
+    "js/kitchen-lighting.js?v=3",
     "js/kitchen-tool-motion.js?v=2",
-    "js/cookie-scene.js?v=13",
+    "js/cookie-scene.js?v=14",
     "js/recipe-scene.js?v=6",
     "js/brownie-scene.js?v=2",
     "js/recipe-notebook.js?v=3",
-    "js/cookie-game.js?v=16",
+    "js/cookie-game.js?v=17",
   ];
   const wood = ["diffuse", "bump", "roughness"].map(
     (n) => "public/textures/kitchen/hardwood2_" + n + ".jpg",
@@ -23,6 +24,7 @@ window.GameLoader = (() => {
   const symbols = [
     "THREE",
     "KitchenResources",
+    "KitchenPerformance",
     "KitchenHandSurface",
     "KitchenMitts",
     "KitchenHand",
@@ -80,7 +82,7 @@ window.GameLoader = (() => {
   function warm() {
     if (warmed) return;
     warmed = true;
-    for (const url of scripts) {
+    for (const url of window.KitchenRuntimeURL ? [KitchenRuntimeURL] : scripts) {
       const link = document.createElement("link");
       link.rel = "prefetch";
       link.as = "script";
@@ -89,12 +91,12 @@ window.GameLoader = (() => {
     }
     for (const url of wood) {
       const img = new Image();
-      img.src = url;
+      img.src = window.KitchenAssetURLs?.[url] || url;
     }
   }
   function load() {
     if (pending) return pending;
-    for (const url of scripts) {
+    for (const url of window.KitchenRuntimeURL ? [KitchenRuntimeURL] : scripts) {
       const link = document.createElement("link");
       link.rel = "preload";
       link.as = "script";
@@ -102,6 +104,16 @@ window.GameLoader = (() => {
       document.head.append(link);
     }
     pending = (async () => {
+      if (window.KitchenRuntimeURL) {
+        await new Promise((resolve,reject)=>{
+          const script=document.createElement('script');
+          script.src=KitchenRuntimeURL;
+          script.onload=()=>{if(symbols.every(name=>window[name])){scripts.forEach(url=>loaded.add(url));resolve()}else{script.remove();reject(new Error('Cozinha incompleta'))}};
+          script.onerror=()=>{script.remove();reject(new Error('Falha no carregamento da cozinha'))};
+          document.head.append(script);
+        });
+        return;
+      }
       for (const url of scripts) {
         if (loaded.has(url)) continue;
         await new Promise((resolve, reject) => {

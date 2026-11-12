@@ -5,13 +5,13 @@ const zlib = require("node:zlib");
 const { promisify } = require("node:util");
 const brotli = promisify(zlib.brotliCompress),
   gzip = promisify(zlib.gzip);
-const ROOT = __dirname;
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".gif": "image/gif",
@@ -22,6 +22,7 @@ const MIME_TYPES = {
   ".txt": "text/plain; charset=utf-8",
 };
 function createServer(options = {}) {
+  const ROOT = path.resolve(options.root || __dirname);
   const {fileStore} = require("./lib/file-store.cjs");
   const {createControlHandler} = require("./lib/control-service.cjs");
   const store = options.store || (process.env.CONTROL_STORAGE === 'supabase'
@@ -134,7 +135,7 @@ function createServer(options = {}) {
         "Cache-Control":
           ext === ".html"
             ? "no-cache"
-            : parsed.searchParams.has("v")
+            : (parsed.searchParams.has("v") || /\/cache\/[^/]+\.[a-f0-9]{16}\.[^/]+$/.test(reqPath))
               ? "public, max-age=31536000, immutable"
               : "public, max-age=0, must-revalidate",
         ETag: etag,

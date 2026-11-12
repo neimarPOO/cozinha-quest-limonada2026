@@ -853,6 +853,16 @@
     }
     positionOverlays();
   }
+  const qualityButton=document.createElement('button');
+  qualityButton.type='button';qualityButton.className='btn';qualityButton.id='cookieQuality';
+  qualityButton.title='Automático preserva os detalhes e adapta a nitidez sob carga. Máxima mantém a resolução original.';
+  function refreshQualityButton(){
+    const native=scene?.performance.mode==='native';
+    qualityButton.textContent=native?'Visual: máxima nitidez':'Visual: automático';
+    qualityButton.setAttribute('aria-pressed',String(native));
+  }
+  qualityButton.onclick=()=>{if(scene){scene.setGraphicsMode(scene.performance.mode==='native'?'auto':'native');refreshQualityButton()}};
+  viewportTools.append(qualityButton);
   function tick() {
     if (!active) return;
     const now = performance.now(),
@@ -962,6 +972,7 @@
                   useFallback,
                   definition,
                 );
+        refreshQualityButton();
         notebook.attach(scene);
         scene.onViewChange = positionOverlays;
         scene.onHoverChange = onHover;

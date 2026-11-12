@@ -6,39 +6,44 @@ window.KitchenLighting = {
       RectAreaLightUniformsLib.init();
       window.kitchenAreaLightReady = true;
     }
-    // Captura de ambiente em alta faixa dinâmica: o vidro e o esmalte refletem
-    // uma janela com montantes, não uma cor ambiente uniforme.
-    const studio = new T.Scene();
-    studio.background = new T.Color("#151b17");
-    const panel = (w, h, color, p, target, intensity = 1) => {
-      const m = new T.Mesh(
-        new T.PlaneGeometry(w, h),
-        new T.MeshBasicMaterial({
-          color: new T.Color(color).multiplyScalar(intensity),
-          side: T.DoubleSide,
-        }),
-      );
-      m.position.set(...p);
-      m.lookAt(...target);
-      studio.add(m);
-      return m;
+    const buildEnvironment = () => {
+      // Captura de ambiente em alta faixa dinâmica: o vidro e o esmalte refletem
+      // uma janela com montantes, não uma cor ambiente uniforme.
+      const studio = new T.Scene();
+      studio.background = new T.Color("#151b17");
+      const panel = (w, h, color, p, target, intensity = 1) => {
+        const m = new T.Mesh(
+          new T.PlaneGeometry(w, h),
+          new T.MeshBasicMaterial({
+            color: new T.Color(color).multiplyScalar(intensity),
+            side: T.DoubleSide,
+          }),
+        );
+        m.position.set(...p);
+        m.lookAt(...target);
+        studio.add(m);
+        return m;
+      };
+      panel(18, 18, "#5d4530", [0, -4, 0], [0, 0, 0], 0.65);
+      panel(18, 12, "#172d24", [0, 3, -8], [0, 2, 0], 0.8);
+      for (const z of [-1.14, 0.44])
+        for (const y of [0.7, 2.55])
+          panel(1.45, 1.7, "#fff2d9", [-6, y, z], [0, 1, 0], 4.8);
+      panel(4, 2, "#c9deec", [6, 4, 2], [0, 1, 0], 0.7);
+      panel(8, 4, "#e6edf1", [3, 4, 6], [0, 0.6, 0], 0.7);
+      panel(7, 0.13, "#ffd08b", [0, 2.8, -4], [0, 0, 0], 2.7);
+      const pmrem = new T.PMREMGenerator(c.renderer);
+      const target = pmrem.fromScene(studio, 0.025, 0.1, 40);
+      pmrem.dispose();
+      studio.traverse((o) => {
+        o.geometry?.dispose();
+        o.material?.dispose();
+      });
+      return target;
     };
-    panel(18, 18, "#5d4530", [0, -4, 0], [0, 0, 0], 0.65);
-    panel(18, 12, "#172d24", [0, 3, -8], [0, 2, 0], 0.8);
-    for (const z of [-1.14, 0.44])
-      for (const y of [0.7, 2.55])
-        panel(1.45, 1.7, "#fff2d9", [-6, y, z], [0, 1, 0], 4.8);
-    panel(4, 2, "#c9deec", [6, 4, 2], [0, 1, 0], 0.7);
-    panel(8, 4, "#e6edf1", [3, 4, 6], [0, 0.6, 0], 0.7);
-    panel(7, 0.13, "#ffd08b", [0, 2.8, -4], [0, 0, 0], 2.7);
-    const pmrem = new T.PMREMGenerator(c.renderer);
-    c.environmentTarget = pmrem.fromScene(studio, 0.025, 0.1, 40);
+    c.environmentTarget = window.KitchenResources
+      ? KitchenResources.environment(c.renderer,buildEnvironment) : buildEnvironment();
     c.scene.environment = c.environmentTarget.texture;
-    pmrem.dispose();
-    studio.traverse((o) => {
-      o.geometry?.dispose();
-      o.material?.dispose();
-    });
     c.renderer.shadowMap.autoUpdate = false;
     c.renderer.shadowMap.needsUpdate = true;
     c.renderer.shadowMap.type = T.PCFSoftShadowMap;
